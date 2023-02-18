@@ -174,7 +174,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
 
-import top.qwq2333.gen.Config;
+import xyz.nextalone.gen.Config;
 
 public class PeerStoriesView extends SizeNotifierFrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
