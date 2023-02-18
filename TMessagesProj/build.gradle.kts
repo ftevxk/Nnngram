@@ -45,7 +45,7 @@ configurations {
 }
 
 var serviceAccountCredentialsFile = File(rootProject.projectDir, "service_account_credentials.json")
-val abiName = mapOf("armeabi-v7a" to "arm32", "arm64-v8a" to "arm64")
+val abiName = mapOf("arm64-v8a" to "arm64")
 
 if (serviceAccountCredentialsFile.isFile) {
     setupPlay(Version.isStable)
@@ -123,7 +123,7 @@ dependencies {
 }
 
 android {
-    defaultConfig.applicationId = "top.qwq2333.nullgram"
+    defaultConfig.applicationId = "xyz.nextalone.nnngram"
     namespace = "org.telegram.messenger"
 
     sourceSets.getByName("main") {
@@ -183,10 +183,6 @@ android {
             isDebuggable = true
             isJniDebuggable = true
         }
-
-        create("play") {
-            initWith(getByName("release"))
-        }
     }
 
     defaultConfig {
@@ -205,26 +201,24 @@ android {
         abi {
             isEnable = true
             reset()
-            include("armeabi-v7a", "arm64-v8a")
+            include("arm64-v8a")
         }
     }
 
-    androidComponents {
-        onVariants { variant ->
-            variant.buildConfigFields.put("isPlay", BuildConfigField("boolean", variant.name == "play", null))
-        }
-    }
+//    androidComponents {
+//        onVariants { variant ->
+//
+//        }
+//    }
 
     applicationVariants.all {
         outputs.all {
             val abi = this.filters.find { it.filterType == FilterConfiguration.FilterType.ABI.name }?.identifier
             val output = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val outputFileName = "Nullgram-${defaultConfig.versionName}-${abiName[abi]}.apk"
+            val outputFileName = "Nnngram-${defaultConfig.versionName}-${abiName[abi]}.apk"
             output?.outputFileName = outputFileName
         }
     }
-
-
 }
 
 kotlin {

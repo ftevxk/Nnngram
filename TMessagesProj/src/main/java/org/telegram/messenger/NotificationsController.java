@@ -102,7 +102,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
-import top.qwq2333.gen.Config;
+import xyz.nextalone.gen.Config;
 
 public class NotificationsController extends BaseController {
 
