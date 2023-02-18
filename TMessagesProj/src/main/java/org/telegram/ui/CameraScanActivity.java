@@ -101,8 +101,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import top.qwq2333.nullgram.helpers.QrHelper;
-import top.qwq2333.nullgram.utils.PermissionUtils;
+import xyz.nextalone.nnngram.helpers.QrHelper;
+import xyz.nextalone.nnngram.utils.PermissionUtils;
 
 public class CameraScanActivity extends BaseFragment {
 

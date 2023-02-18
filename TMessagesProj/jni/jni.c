@@ -9,9 +9,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "log.h"
-#include <errno.h>
-
 
 int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env);
 int videoOnJNILoad(JavaVM *vm, JNIEnv *env);

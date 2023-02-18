@@ -28,7 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.HashSet;
 
-import top.qwq2333.nullgram.utils.Log;
+import xyz.nextalone.nnngram.utils.Log;
 
 /**
  * @deprecated use {@link Log} instead
