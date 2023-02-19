@@ -116,6 +116,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
     private int doNotUnarchiveBySwipeRow;
+    private int hideInputFieldBotButtonRow;
     private int chat2Row;
 
     private int markdownRow;
@@ -366,8 +367,12 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.doNotUnarchiveBySwipe);
             }
+        } else if (position == hideInputFieldBotButtonRow) {
+            Config.toggleHideInputFieldBotButton();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.hideInputFieldBotButton);
+            }
         }
-
     }
 
     @Override
@@ -419,6 +424,7 @@ public class ChatSettingActivity extends BaseActivity {
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
+        hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
         chat2Row = addRow();
         markdownRow = addRow();
         markdownDisableRow = addRow("markdownDisabled");
@@ -557,6 +563,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString("showHideTitle", R.string.showHideTitle), Config.showHideTitle, true);
                     } else if (position == doNotUnarchiveBySwipeRow) {
                         textCell.setTextAndCheck(LocaleController.getString("doNotUnarchiveBySwipe", R.string.doNotUnarchiveBySwipe), Config.doNotUnarchiveBySwipe, true);
+                    } else if (position == hideInputFieldBotButtonRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("hideInputFieldBotButton", R.string.hideInputFieldBotButton), Config.hideInputFieldBotButton, true);
                     }
                     break;
                 }
