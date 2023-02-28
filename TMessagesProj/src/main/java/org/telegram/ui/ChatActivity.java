@@ -30251,7 +30251,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             fragmentView.invalidate();
         }
     }
-    
+
     public void setSavedDialog(long savedDialogId) {
         threadMessageId = savedDialogId;
     }
