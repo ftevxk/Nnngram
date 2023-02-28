@@ -3846,6 +3846,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
             }
+            if (chatMode != MODE_SAVED) {
+                if (currentChat != null && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat))) {
+                    headerItem.lazilyAddSubItem(delete_history, R.drawable.msg_delete, LocaleController.getString("DeleteAllFromSelf", R.string.DeleteAllFromSelf));
+                }
+            }
             if (currentChat != null && !currentChat.creator && !ChatObject.hasAdminRights(currentChat)) {
                 headerItem.lazilyAddSubItem(report, R.drawable.msg_report, LocaleController.getString("ReportChat", R.string.ReportChat));
             }
@@ -29848,7 +29853,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             fragmentView.invalidate();
         }
     }
-    
+
     public void setSavedDialog(long savedDialogId) {
         threadMessageId = savedDialogId;
     }
