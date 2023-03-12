@@ -126,6 +126,7 @@ import java.util.Stack;
 
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.utils.MessageUtils;
+import xyz.nextalone.nnngram.utils.StringUtils;
 
 
 public class DialogCell extends BaseCell implements StoriesListPlaceProvider.AvatarOverlaysView {
@@ -933,7 +934,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             String title;
             if (currentChat != null) {
-                title = currentChat.title.replace('\n', ' ');
+                title = StringUtils.zalgoFilter(currentChat.title.replace('\n', ' '));
             } else if (currentUser != null) {
                 if (UserObject.isDeleted(currentUser)) {
                     title = LocaleController.getString("HiddenName", R.string.HiddenName);
@@ -1880,7 +1881,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 }
             }
         }
-
+        nameString = StringUtils.zalgoFilter(nameString);
         int timeWidth;
         if (drawTime) {
             timeWidth = (int) Math.ceil(Theme.dialogs_timePaint.measureText(timeString));
@@ -5031,7 +5032,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
         } else if (captionMessage != null && captionMessage.caption != null) {
             MessageObject message = captionMessage;
-            CharSequence mess = message.caption.toString();
+            CharSequence mess = StringUtils.zalgoFilter(message.caption.toString());
             String emoji;
             if (!needEmoji) {
                 emoji = "";
