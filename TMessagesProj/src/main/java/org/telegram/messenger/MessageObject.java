@@ -4773,6 +4773,8 @@ public class MessageObject {
 
         if (messageText == null) {
             messageText = "";
+        } else {
+            messageText = StringUtils.zalgoFilter(messageText);
         }
     }
 
