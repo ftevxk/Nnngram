@@ -1030,6 +1030,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int OPTION_SAVE_MESSAGE = 93;
     private final static int OPTION_REPEAT = 94;
     private final static int OPTION_NOQUOTE_FORWARD = 95;
+    private final static int OPTION_REPEAT_AS_COPY = 96;
     private final static int OPTION_SEND_NOW = 100;
     private final static int OPTION_EDIT_SCHEDULE_TIME = 102;
     private final static int OPTION_SPEED_PROMO = 103;
@@ -1698,7 +1699,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         processSelectedOption(OPTION_REPEAT);
                         break;
                     case Defines.doubleTabRepeatAsCopy:
-                        processSelectedOption(96);
+                        processSelectedOption(OPTION_REPEAT_AS_COPY);
                         break;
                     case Defines.doubleTabEdit:
                         processSelectedOption(OPTION_EDIT);
@@ -25142,7 +25143,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             icons.add(R.drawable.msg_forward);
                             if (Config.showNoQuoteForward && !UserObject.isUserSelf(currentUser)) {
                                 items.add(LocaleController.getString("NoQuoteForward", R.string.NoQuoteForward));
-                                options.add(forward_noquote);
+                                options.add(OPTION_NOQUOTE_FORWARD);
                                 icons.add(R.drawable.msg_noquote_forward);
                             }
                             if (Config.showSaveMessages && !UserObject.isUserSelf(currentUser)) {
@@ -25172,7 +25173,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     selectedObjectGroup) != null);
                                 if (allowRepeat) {
                                     items.add(LocaleController.getString("RepeatAsCopy", R.string.RepeatAsCopy));
-                                    options.add(96);
+                                    options.add(OPTION_REPEAT_AS_COPY);
                                     icons.add(R.drawable.msg_repeat);
                                 }
                             }
@@ -25187,7 +25188,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (Config.showViewHistory) {
                             boolean allowViewHistory = currentChat != null && chatMode == 0 && !currentChat.broadcast && !(threadMessageObjects != null && threadMessageObjects.contains(message));
                             if (allowViewHistory) {
-                                items.add(LocaleController.getString("ViewUserHistory", R.string.ViewHistory));
+                                items.add(LocaleController.getString("ViewHistory", R.string.ViewHistory));
                                 options.add(OPTION_VIEW_HISTORY);
                                 icons.add(R.drawable.msg_recent);
                             }
@@ -27015,7 +27016,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             case OPTION_FORWARD:
             case OPTION_NOQUOTE_FORWARD: {
-                setForwardParams(option == 95);
+                setForwardParams(option == OPTION_NOQUOTE_FORWARD);
                 forwardingMessage = selectedObject;
                 forwardingMessageGroup = selectedObjectGroup;
                 Bundle args = new Bundle();
@@ -27703,7 +27704,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 processRepeatMessage();
                 break;
             }
-            case 96: {
+            case OPTION_REPEAT_AS_COPY: {
                 if (checkSlowMode(chatActivityEnterView.getSendButton())) {
                     return;
                 }
@@ -27830,7 +27831,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 fragment.setDelegate(this);
                 presentFragment(fragment);
             }
-            case 94 -> {
+            case OPTION_REPEAT -> {
                 if (checkSlowMode(chatActivityEnterView.getSendButton())) {
                     return;
                 }
