@@ -2666,7 +2666,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         buttonTextView.setOnClickListener(v -> {
             if (ApplicationLoader.isStandaloneBuild()) {
                 if (LaunchActivity.instance != null) {
-                    LaunchActivity.instance.checkAppUpdate(true);
+//                LaunchActivity.instance.checkAppUpdate(true);
                 }
             }
         });
