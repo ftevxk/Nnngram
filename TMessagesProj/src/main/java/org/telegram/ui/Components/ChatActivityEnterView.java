@@ -9427,7 +9427,9 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
             && defPeer != null && (delegate.getSendAsPeers() == null || delegate.getSendAsPeers().peers.size() > 1) &&
             !isEditingMessage() && !isRecordingAudioVideo() && (recordedAudioPanel == null || recordedAudioPanel.getVisibility() != View.VISIBLE);
         if (isVisible) {
-            createSenderSelectView();
+            if (!Config.hideSendAsButton) {
+                createSenderSelectView();
+            }
         }
         if (defPeer != null) {
             if (defPeer.channel_id != 0) {
@@ -9486,8 +9488,10 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                     @Override
                     public void onAnimationStart(Animator animation) {
                         if (isVisible) {
-                            createSenderSelectView();
-                            senderSelectView.setVisibility(VISIBLE);
+                            if (!Config.hideSendAsButton) {
+                                createSenderSelectView();
+                                senderSelectView.setVisibility(VISIBLE);
+                            }
                         }
                         float tx = 0;
                         if (senderSelectView != null) {
@@ -9520,7 +9524,9 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                     public void onAnimationCancel(Animator animation) {
                         float tx = 0;
                         if (isVisible) {
-                            createSenderSelectView();
+                            if (!Config.hideSendAsButton) {
+                                createSenderSelectView();
+                            }
                         }
                         if (senderSelectView != null) {
                             senderSelectView.setVisibility(isVisible ? VISIBLE : GONE);
@@ -9540,7 +9546,9 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 }
             } else {
                 if (isVisible) {
-                    createSenderSelectView();
+                    if (!Config.hideSendAsButton) {
+                        createSenderSelectView();
+                    }
                 }
                 if (senderSelectView != null) {
                     senderSelectView.setVisibility(isVisible ? VISIBLE : GONE);
