@@ -378,6 +378,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuItem animatingItem;
     private ActionBarMenuItem callItem;
     private ActionBarMenuItem videoCallItem;
+    private ActionBarMenuItem eventLogItem;
     private ActionBarMenuItem editItem;
     private ActionBarMenuItem otherItem;
     private ActionBarMenuItem searchItem;
@@ -1534,6 +1535,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     videoCallItem.setScaleY(1f - value);
                     videoCallItem.setAlpha(1f - value);
                 }
+                if (canSearchMembers) {
+                    eventLogItem.setScaleX(1f - value);
+                    eventLogItem.setScaleY(1f - value);
+                    eventLogItem.setAlpha(1f - value);
+                }
                 setScaleX(value);
                 setScaleY(value);
                 setAlpha(value);
@@ -1555,6 +1561,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         if (videoCallItemVisible) {
                             videoCallItem.setVisibility(GONE);
                         }
+                        if (canSearchMembers) {
+                            eventLogItem.setVisibility(GONE);
+                        }
                     } else {
                         setVisibility(GONE);
                     }
@@ -1574,6 +1583,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                     if (videoCallItemVisible) {
                         videoCallItem.setVisibility(VISIBLE);
+                    }
+                    if (canSearchMembers) {
+                        eventLogItem.setVisibility(VISIBLE);
                     }
                     setVisibility(VISIBLE);
                     updateStoriesViewBounds(false);
@@ -3051,6 +3063,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 callItem.setVisibility(expanded || !callItemVisible ? GONE : INVISIBLE);
                 videoCallItem.setVisibility(expanded || !videoCallItemVisible ? GONE : INVISIBLE);
                 editItem.setVisibility(expanded || !editItemVisible ? GONE : INVISIBLE);
+                eventLogItem.setVisibility(expanded || !canSearchMembers ? GONE : INVISIBLE);
                 otherItem.setVisibility(expanded ? GONE : INVISIBLE);
                 if (qrItem != null) {
                     qrItem.setVisibility(expanded ? GONE : INVISIBLE);
@@ -3135,6 +3148,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             callItem = menu.addItem(call_item, R.drawable.ic_call);
             callItem.setContentDescription(LocaleController.getString("Call", R.string.Call));
         }
+        eventLogItem = menu.addItem(event_log, R.drawable.msg_log);
+        eventLogItem.setContentDescription(LocaleController.getString("EventLog", R.string.EventLog));
         editItem = menu.addItem(edit_channel, R.drawable.group_edit_profile);
         editItem.setContentDescription(LocaleController.getString("Edit", R.string.Edit));
         otherItem = menu.addItem(10, R.drawable.ic_ab_other, resourcesProvider);
@@ -6229,6 +6244,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             callItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
             videoCallItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
             editItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
+            eventLogItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
 
             if (verifiedDrawable[0] != null) {
                 color1 = getThemedColor(Theme.key_profile_verifiedBackground);
@@ -6300,6 +6316,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (editItemVisible) {
                 editItem.setVisibility(View.VISIBLE);
             }
+            if (canSearchMembers) {
+                eventLogItem.setVisibility(View.VISIBLE);
+            }
             otherItem.setVisibility(View.VISIBLE);
             if (mediaOptionsItem != null) {
                 mediaOptionsItem.setVisibility(View.GONE);
@@ -6331,10 +6350,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         animators.add(ObjectAnimator.ofFloat(videoCallItem, View.ALPHA, visible ? 0.0f : 1.0f));
         animators.add(ObjectAnimator.ofFloat(otherItem, View.ALPHA, visible ? 0.0f : 1.0f));
         animators.add(ObjectAnimator.ofFloat(editItem, View.ALPHA, visible ? 0.0f : 1.0f));
+        animators.add(ObjectAnimator.ofFloat(eventLogItem, View.ALPHA, visible ? 0.0f : 1.0f));
         animators.add(ObjectAnimator.ofFloat(callItem, View.TRANSLATION_Y, visible ? -AndroidUtilities.dp(10) : 0.0f));
         animators.add(ObjectAnimator.ofFloat(videoCallItem, View.TRANSLATION_Y, visible ? -AndroidUtilities.dp(10) : 0.0f));
         animators.add(ObjectAnimator.ofFloat(otherItem, View.TRANSLATION_Y, visible ? -AndroidUtilities.dp(10) : 0.0f));
-        animators.add(ObjectAnimator.ofFloat(editItem, View.TRANSLATION_Y, visible ? -AndroidUtilities.dp(10) : 0.0f));
+        animators.add(ObjectAnimator.ofFloat(editItem, View.ALPHA, visible ? 0.0f : 1.0f));
+        animators.add(ObjectAnimator.ofFloat(eventLogItem, View.TRANSLATION_Y, visible ? -AndroidUtilities.dp(10) : 0.0f));
         animators.add(ObjectAnimator.ofFloat(mediaSearchItem, View.ALPHA, visible ? 1.0f : 0.0f));
         animators.add(ObjectAnimator.ofFloat(mediaSearchItem, View.TRANSLATION_Y, visible ? 0.0f : AndroidUtilities.dp(10)));
         animators.add(ObjectAnimator.ofFloat(sharedMediaLayout.photoVideoOptionsItem, View.ALPHA, visible ? 1.0f : 0.0f));
@@ -6367,6 +6388,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                         if (editItemVisible) {
                             editItem.setVisibility(View.GONE);
+                        }
+                        if (canSearchMembers) {
+                            eventLogItem.setVisibility(View.GONE);
                         }
                         otherItem.setVisibility(View.GONE);
                     } else {
@@ -7840,6 +7864,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     editItem.setAlpha(0.0f);
                     animators.add(ObjectAnimator.ofFloat(editItem, View.ALPHA, 1.0f));
                 }
+                if (canSearchMembers) {
+                    eventLogItem.setAlpha(0.0f);
+                    animators.add(ObjectAnimator.ofFloat(eventLogItem, View.ALPHA, 1.0f));                }
                 if (ttlIconView.getTag() != null) {
                     ttlIconView.setAlpha(0f);
                     animators.add(ObjectAnimator.ofFloat(ttlIconView, View.ALPHA, 1.0f));
@@ -7910,6 +7937,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (editItemVisible) {
                     editItem.setAlpha(1.0f);
                     animators.add(ObjectAnimator.ofFloat(editItem, View.ALPHA, 0.0f));
+                }
+                if (canSearchMembers) {
+                    eventLogItem.setAlpha(1.0f);
+                    animators.add(ObjectAnimator.ofFloat(eventLogItem, View.ALPHA, 0.0f));
                 }
                 if (ttlIconView != null) {
                     animators.add(ObjectAnimator.ofFloat(ttlIconView, View.ALPHA, ttlIconView.getAlpha(), 0.0f));
@@ -9508,6 +9539,19 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     editItem.setVisibility(View.GONE);
                 }
             }
+            if (canSearchMembers) {
+                if (eventLogItem.getVisibility() != View.VISIBLE) {
+                    eventLogItem.setVisibility(View.VISIBLE);
+                    if (animated) {
+                        eventLogItem.setAlpha(0);
+                        eventLogItem.animate().alpha(1f).setDuration(150).start();
+                    }
+                }
+            } else {
+                if (eventLogItem.getVisibility() != View.GONE) {
+                    eventLogItem.setVisibility(View.GONE);
+                }
+            }
         }
         if (avatarsViewPagerIndicatorView != null) {
             if (avatarsViewPagerIndicatorView.isIndicatorFullyVisible()) {
@@ -9525,6 +9569,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     videoCallItem.setVisibility(View.GONE);
                     videoCallItem.animate().cancel();
                     videoCallItem.setAlpha(1f);
+                }
+                if (canSearchMembers) {
+                    eventLogItem.setVisibility(View.GONE);
+                    eventLogItem.animate().cancel();
+                    eventLogItem.setAlpha(1f);
                 }
             }
         }
