@@ -27,7 +27,7 @@
     <string name="ViewSourceCode">ソースコードを表示</string>
     <string name="Categories">カテゴリー</string>
     <string name="About">Nullgramについて</string>
-    <string name="OfficialChannelName">Nullgramクライアント</string>
+    <string name="OfficialChannelName">nagram_group</string>
     <string name="noAvailableUpdate">アップデートはありません。</string>
     <string name="updateAvailable">新しいバージョンが利用可能です。</string>
     <string name="variantsNotFound">リリースバリアントを自動でチェックしましたが一致しませんでした。\nGitHubから手動でダウンロードしてください。</string>
@@ -329,7 +329,7 @@
     <string name="CreateCode">コードを作成</string>
     <string name="CreateCodeLanguage">言語</string>
     <string name="UnsupportedMediaNullgram">このメッセージはお使いのバージョンのNullgramではサポートされていません。表示するにはアプリをアップデートしてください:
-https://t.me/NullgramClient</string>
+https://t.me/nagram_group</string>
     <string name="ignoreUserSpecifiedReplyColor">ユーザーが設定した返信の色を無視</string>
     <string name="ShowTitle">タイトルを表示</string>
     <string name="HideTitle">タイトルを非表示</string>
