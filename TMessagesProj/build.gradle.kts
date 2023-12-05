@@ -137,6 +137,14 @@ android {
     }
 
     signingConfigs {
+        create("androiddebug") {
+            storeFile = File(projectDir, "config/debug.keystore")
+            storePassword = ("android")
+            keyAlias = ("androiddebugkey")
+            keyPassword = ("android")
+            enableV3Signing = true
+            enableV4Signing = true
+        }
         create("release") {
             storeFile = File(projectDir, "config/release.keystore")
             storePassword = (keystorePwd ?: System.getenv("KEYSTORE_PASS"))
@@ -164,7 +172,7 @@ android {
         }
 
         getByName("debug") {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("androiddebug")
             isDefault = true
             isDebuggable = true
             isJniDebuggable = true

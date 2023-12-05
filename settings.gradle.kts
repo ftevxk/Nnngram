@@ -1,9 +1,12 @@
 @file:Suppress("UnstableApiUsage")
 pluginManagement {
     repositories {
-        gradlePluginPortal()
         google()
         mavenCentral()
+        gradlePluginPortal()
+        maven("https://maven.aliyun.com/repository/public/")
+        maven("https://maven.aliyun.com/repository/google/")
+        maven("https://maven.aliyun.com/repository/gradle-plugin/")
     }
 }
 
@@ -15,6 +18,9 @@ dependencyResolutionManagement {
         gradlePluginPortal()
 
         maven("https://jitpack.io")
+        maven("https://maven.aliyun.com/repository/public/")
+        maven("https://maven.aliyun.com/repository/google/")
+        maven("https://maven.aliyun.com/repository/gradle-plugin/")
     }
 }
 
