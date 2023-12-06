@@ -37,6 +37,7 @@ import android.util.Pair;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.collection.LongSparseArray;
 import androidx.core.graphics.ColorUtils;
 
@@ -8043,6 +8044,15 @@ public class MessageObject {
         return isVideoMessage(messageOwner);
     }
 
+    public boolean isLongVideo(boolean allowOther) {
+        return isLongVideo(allowOther, 30 * 60);
+    }
+
+    //wd 判断是否为长视频
+    public boolean isLongVideo(boolean allowOther, long minDuration) {
+        return isVideo() ? getDuration() >= minDuration : allowOther;
+    }
+
     public boolean isVideoStory() {
         TLRPC.MessageMedia media = MessageObject.getMedia(messageOwner);
         if (media == null) {
@@ -8898,7 +8908,8 @@ public class MessageObject {
         }
     }
 
-    public void createMediaThumbs() {
+    //wd 返回缩略图
+    public ImageLocation createMediaThumbs() {
         if (isStoryMedia()) {
             TL_stories.StoryItem storyItem = getMedia(messageOwner).storyItem;
             if (storyItem != null && storyItem.media != null) {
@@ -8927,15 +8938,29 @@ public class MessageObject {
             mediaThumb = ImageLocation.getForObject(currentPhotoObject, photoThumbsObject);
             mediaSmallThumb = ImageLocation.getForObject(currentPhotoObjectThumb, photoThumbsObject);
         }
+        return mediaThumb;
     }
 
     public boolean hasHighlightedWords() {
         return highlightedWords != null && !highlightedWords.isEmpty();
     }
 
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (obj instanceof MessageObject messageObject){
+            return equals(messageObject);
+        }
+        return super.equals(obj);
+    }
+
+    //wd 比较两个对象是否相同
     public boolean equals(MessageObject obj) {
         if (obj == null) {
             return false;
+        }
+        if (isVideo() && obj.isVideo() && getSize() == obj.getSize() &&
+            getDuration() == obj.getDuration()) {
+            return true;
         }
         return getId() == obj.getId() && getDialogId() == obj.getDialogId();
     }

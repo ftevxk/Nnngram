@@ -26,6 +26,9 @@ import java.io.OutputStream
 
 object FileUtils {
 
+    //wd 自用修改自定义根目录文件夹
+    @JvmStatic val rootPath = ".Nnngram"
+
     @JvmStatic
     fun deleteDirectory(directoryToBeDeleted: File): Boolean {
         val allContents = directoryToBeDeleted.listFiles()
