@@ -4450,74 +4450,76 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         floatingButtonContainer.setVisibility(onlySelect && initialDialogsType != 10 || folderId != 0 ? View.GONE : View.VISIBLE);
         contentView.addView(floatingButtonContainer, LayoutHelper.createFrame((Build.VERSION.SDK_INT >= 21 ? 56 : 60), (Build.VERSION.SDK_INT >= 21 ? 56 : 60), (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 14 : 0, 0, LocaleController.isRTL ? 0 : 14, 14));
         floatingButtonContainer.setOnClickListener(v -> {
-            if (parentLayout != null && parentLayout.isInPreviewMode()) {
-                finishPreviewFragment();
-                return;
-            }
-            if (initialDialogsType == DIALOGS_TYPE_WIDGET) {
-                if (delegate == null || selectedDialogs.isEmpty()) {
-                    return;
-                }
-                ArrayList<MessagesStorage.TopicKey> topicKeys = new ArrayList<>();
-                for (int i = 0; i < selectedDialogs.size(); i++) {
-                    topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
-                }
-                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, null, false, null);
-            } else {
-                if (floatingButton.getVisibility() != View.VISIBLE) {
-                    return;
-                }
-
-                if (!storiesEnabled) {
-                    Bundle args = new Bundle();
-                    args.putBoolean("destroyAfterSelect", true);
-                    presentFragment(new ContactsActivity(args));
-                    return;
-                }
-
-                if (storyHint != null) {
-                    storyHint.hide();
-                }
-
-                final StoriesController.StoryLimit storyLimit = MessagesController.getInstance(currentAccount).getStoriesController().checkStoryLimit();
-                if (storyLimit != null) {
-                    showDialog(new LimitReachedBottomSheet(this, getContext(), storyLimit.getLimitReachedType(), currentAccount, null));
-                    return;
-                }
-
-                StoryRecorder.getInstance(getParentActivity(), currentAccount)
-                        .closeToWhenSent(new StoryRecorder.ClosingViewProvider() {
-                            @Override
-                            public void preLayout(long dialogId, Runnable runnable) {
-                                if (dialogStoriesCell != null) {
-                                    scrollToTop(false, true);
-                                    invalidateScrollY = true;
-                                    fragmentView.invalidate();
-                                    if (dialogId == 0 || dialogId == getUserConfig().getClientUserId()) {
-                                        dialogStoriesCell.scrollToFirstCell();
-                                    } else {
-                                        dialogStoriesCell.scrollTo(dialogId);
-                                    }
-                                    viewPages[0].listView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                                        @Override
-                                        public boolean onPreDraw() {
-                                            viewPages[0].listView.getViewTreeObserver().removeOnPreDrawListener(this);
-                                            AndroidUtilities.runOnUIThread(runnable, 100);
-                                            return false;
-                                        }
-                                    });
-                                } else {
-                                    runnable.run();
-                                }
-                            }
-
-                            @Override
-                            public StoryRecorder.SourceView getView(long dialogId) {
-                                return StoryRecorder.SourceView.fromStoryCell(dialogStoriesCell != null ? dialogStoriesCell.findStoryCell(dialogId) : null);
-                            }
-                        })
-                        .open(StoryRecorder.SourceView.fromFloatingButton(floatingButtonContainer), true);
-            }
+            //wd 修改浮动按钮跳转为缓存管理页面
+            presentFragment(new CacheControlActivity());
+//            if (parentLayout != null && parentLayout.isInPreviewMode()) {
+//                finishPreviewFragment();
+//                return;
+//            }
+//            if (initialDialogsType == DIALOGS_TYPE_WIDGET) {
+//                if (delegate == null || selectedDialogs.isEmpty()) {
+//                    return;
+//                }
+//                ArrayList<MessagesStorage.TopicKey> topicKeys = new ArrayList<>();
+//                for (int i = 0; i < selectedDialogs.size(); i++) {
+//                    topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
+//                }
+//                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, null, false, null);
+//            } else {
+//                if (floatingButton.getVisibility() != View.VISIBLE) {
+//                    return;
+//                }
+//
+//                if (!storiesEnabled) {
+//                    Bundle args = new Bundle();
+//                    args.putBoolean("destroyAfterSelect", true);
+//                    presentFragment(new ContactsActivity(args));
+//                    return;
+//                }
+//
+//                if (storyHint != null) {
+//                    storyHint.hide();
+//                }
+//
+//                final StoriesController.StoryLimit storyLimit = MessagesController.getInstance(currentAccount).getStoriesController().checkStoryLimit();
+//                if (storyLimit != null) {
+//                    showDialog(new LimitReachedBottomSheet(this, getContext(), storyLimit.getLimitReachedType(), currentAccount, null));
+//                    return;
+//                }
+//
+//                StoryRecorder.getInstance(getParentActivity(), currentAccount)
+//                        .closeToWhenSent(new StoryRecorder.ClosingViewProvider() {
+//                            @Override
+//                            public void preLayout(long dialogId, Runnable runnable) {
+//                                if (dialogStoriesCell != null) {
+//                                    scrollToTop(false, true);
+//                                    invalidateScrollY = true;
+//                                    fragmentView.invalidate();
+//                                    if (dialogId == 0 || dialogId == getUserConfig().getClientUserId()) {
+//                                        dialogStoriesCell.scrollToFirstCell();
+//                                    } else {
+//                                        dialogStoriesCell.scrollTo(dialogId);
+//                                    }
+//                                    viewPages[0].listView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+//                                        @Override
+//                                        public boolean onPreDraw() {
+//                                            viewPages[0].listView.getViewTreeObserver().removeOnPreDrawListener(this);
+//                                            AndroidUtilities.runOnUIThread(runnable, 100);
+//                                            return false;
+//                                        }
+//                                    });
+//                                } else {
+//                                    runnable.run();
+//                                }
+//                            }
+//
+//                            @Override
+//                            public StoryRecorder.SourceView getView(long dialogId) {
+//                                return StoryRecorder.SourceView.fromStoryCell(dialogStoriesCell != null ? dialogStoriesCell.findStoryCell(dialogId) : null);
+//                            }
+//                        })
+//                        .open(StoryRecorder.SourceView.fromFloatingButton(floatingButtonContainer), true);
+//            }
         });
 
         if (!isArchive() && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -7307,7 +7309,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             searchViewPager.setPosition(searchViewPager.getPositionForType(initialSearchType));
         }
         if (!show) {
-            initialSearchType = -1;
+            //wd 无关键词默认打开媒体页面
+            if (TextUtils.isEmpty(searchString)) {
+                initialSearchType = 0;
+            } else {
+                initialSearchType = -1;
+            }
         }
         if (show && startFromDownloads) {
             searchViewPager.showDownloads();
@@ -8349,8 +8356,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             floatingButton.setAnimation(R.raw.write_contacts_fab_icon_camera, 56, 56);
             floatingButtonContainer.setContentDescription(LocaleController.getString("AccDescrCaptureStory", R.string.AccDescrCaptureStory));
         } else {
-            floatingButton.setAnimation(R.raw.write_contacts_fab_icon, 52, 52);
-            floatingButtonContainer.setContentDescription(LocaleController.getString("NewMessageTitle", R.string.NewMessageTitle));
+//            floatingButton.setAnimation(R.raw.write_contacts_fab_icon, 52, 52);
+//            floatingButtonContainer.setContentDescription(LocaleController.getString("NewMessageTitle", R.string.NewMessageTitle));
+            //wd 修改浮动按钮图标为清理图标
+            floatingButton.setImageResource(R.drawable.msg_clear);
+            floatingButtonContainer.setContentDescription(LocaleController.getString("Clear", R.string.Clear));
         }
     }
 

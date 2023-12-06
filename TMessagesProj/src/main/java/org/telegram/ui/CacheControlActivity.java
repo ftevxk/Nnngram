@@ -148,7 +148,8 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
     private LinearLayoutManager layoutManager;
     AlertDialog progressDialog;
 
-    private boolean[] selected = new boolean[] { true, true, true, true, true, true, true, true, true, true };
+    //wd 用户信息资源和私聊资源默认不清理
+    private boolean[] selected = new boolean[] { true, false, true, true, true, true, true, false, true, true };
     private long databaseSize = -1;
     private long cacheSize = -1, cacheEmojiSize = -1, cacheTempSize = -1;
     private long documentsSize = -1;
