@@ -571,7 +571,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             thumbImage[i].setRoundRadius(AndroidUtilities.dp(2));
             thumbImage[i].setAllowLoadingOnAttachedOnly(true);
         }
-        useForceThreeLines = forceThreeLines;
+//        useForceThreeLines = forceThreeLines;
+        //wd 强制最多只显示2行
+        useForceThreeLines = false;
         currentAccount = account;
 
         emojiStatus = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, AndroidUtilities.dp(22));
@@ -946,7 +948,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
             Theme.dialogs_messagePaint[1].setColor(Theme.dialogs_messagePaint[1].linkColor = Theme.getColor(Theme.key_chats_message_threeLines, resourcesProvider));
             paintIndex = 1;
-            thumbSize = 18;
+//            thumbSize = 18;
+            //wd 修改视频/图片缩略图大小
+            thumbSize = 48;
         } else {
             Theme.dialogs_namePaint[0].setTextSize(AndroidUtilities.dp(17));
             Theme.dialogs_nameEncryptedPaint[0].setTextSize(AndroidUtilities.dp(17));
@@ -955,7 +959,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
             Theme.dialogs_messagePaint[0].setColor(Theme.dialogs_messagePaint[0].linkColor = Theme.getColor(Theme.key_chats_message, resourcesProvider));
             paintIndex = 0;
-            thumbSize = 19;
+//            thumbSize = 19;
+            //wd 修改视频/图片缩略图大小
+            thumbSize = 49;
         }
 
         currentDialogFolderDialogsCount = 0;
@@ -1515,7 +1521,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         }
                                         messageString = new SpannableStringBuilder(emoji).append(msgBuilder);
                                     }
-                                } else if (thumbsCount > 1) {
+//                                } else if (thumbsCount > 1) {
+                                    //wd 图片/视频依旧显示内容
+                                } else if (false) {
                                     if (hasVideoThumb) {
                                         messageString = LocaleController.formatPluralString("Media", groupMessages == null ? 0 : groupMessages.size());
                                     } else {
@@ -1576,12 +1584,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                                     }
                                 }
-                                if (message.isReplyToStory()) {
-                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
-                                    builder.insert(0, "d ");
-                                    builder.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
-                                    messageString = builder;
-                                }
+                                //wd 不显示回复信息
+//                                if (message.isReplyToStory()) {
+//                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
+//                                    builder.insert(0, "d ");
+//                                    builder.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
+//                                    messageString = builder;
+//                                }
                                 if (thumbsCount > 0) {
                                     if (message.hasHighlightedWords() && !TextUtils.isEmpty(message.messageOwner.message)) {
                                         messageString = message.messageTrimmedToHighlight;
@@ -1611,15 +1620,16 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         }
                                     }
                                 }
-                                if (message.isForwarded()) {
-                                    drawForwardIcon = true;
-                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
-                                    builder.insert(0, "d ");
-                                    ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
-                                    coloredImageSpan.setAlpha(0.9f);
-                                    builder.setSpan(coloredImageSpan, 0, 1, 0);
-                                    messageString = builder;
-                                }
+                                //wd 不显示转发按钮图标
+//                                if (message.isForwarded()) {
+//                                    drawForwardIcon = true;
+//                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
+//                                    builder.insert(0, "d ");
+//                                    ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
+//                                    coloredImageSpan.setAlpha(0.9f);
+//                                    builder.setSpan(coloredImageSpan, 0, 1, 0);
+//                                    messageString = builder;
+//                                }
                             }
                         }
                         if (currentDialogFolderId != 0) {
@@ -1946,7 +1956,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + AndroidUtilities.dp(56), avatarTop + AndroidUtilities.dp(56));
             for (int i = 0; i < thumbImage.length; ++i) {
-                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + AndroidUtilities.dp(31) + (twoLinesForName ?  AndroidUtilities.dp(20) : 0), AndroidUtilities.dp(18), AndroidUtilities.dp(18));
+//                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + AndroidUtilities.dp(31) + (twoLinesForName ?  AndroidUtilities.dp(20) : 0), AndroidUtilities.dp(18), AndroidUtilities.dp(18));
+                //wd 修改图片/视频缩略图大小位置
+                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop, AndroidUtilities.dp(thumbSize), AndroidUtilities.dp(thumbSize));
             }
         } else {
             avatarTop = AndroidUtilities.dp(9);
@@ -1969,8 +1981,16 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
             storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + AndroidUtilities.dp(54), avatarTop + AndroidUtilities.dp(54));
             for (int i = 0; i < thumbImage.length; ++i) {
-                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + AndroidUtilities.dp(30) + (twoLinesForName ? AndroidUtilities.dp(20) : 0), AndroidUtilities.dp(thumbSize), AndroidUtilities.dp(thumbSize));
+//                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + AndroidUtilities.dp(30) + (twoLinesForName ? AndroidUtilities.dp(20) : 0), AndroidUtilities.dp(thumbSize), AndroidUtilities.dp(thumbSize));
+                //wd 修改图片/视频缩略图大小位置
+                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop, AndroidUtilities.dp(thumbSize), AndroidUtilities.dp(thumbSize));
             }
+        }
+        //wd 标题向右偏移位置
+        if (!LocaleController.isRTL && thumbsCount > 0) {
+            int oldNameLeft = nameLeft;
+            nameLeft = AndroidUtilities.dp(thumbSize + 2) * thumbsCount + thumbLeft;
+            nameWidth -= (nameLeft - oldNameLeft);
         }
         if (twoLinesForName) {
             messageNameTop += AndroidUtilities.dp(20);
@@ -4716,8 +4736,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 drawPlay[index] = (message.isVideo() || message.isRoundVideo()) && !message.hasMediaSpoilers();
                 drawSpoiler[index] = message.hasMediaSpoilers();
                 int size = message.type == MessageObject.TYPE_PHOTO && selectedThumb != null ? selectedThumb.size : 0;
-                String filter = message.hasMediaSpoilers() ? "5_5_b" : "20_20";
-                thumbImage[index].setImage(ImageLocation.getForObject(selectedThumb, photoThumbsObject), filter, ImageLocation.getForObject(smallThumb, photoThumbsObject), filter, size, null, message, 0);
+//                String filter = message.hasMediaSpoilers() ? "5_5_b" : "20_20";
+//                thumbImage[index].setImage(ImageLocation.getForObject(selectedThumb, photoThumbsObject), filter, ImageLocation.getForObject(smallThumb, photoThumbsObject), filter, size, null, message, 0);
+                //wd 图片/视频显示缩略图
+                String filter = message.hasMediaSpoilers() ? "5_5_b" : "100_100";
+                thumbImage[index].setImage(message.createMediaThumbs(), filter, ImageLocation.getForObject(smallThumb, photoThumbsObject), filter, size, null, message, 0);
                 thumbImage[index].setRoundRadius(message.isRoundVideo() ? AndroidUtilities.dp(18) : AndroidUtilities.dp(2));
                 needEmoji = false;
             }
