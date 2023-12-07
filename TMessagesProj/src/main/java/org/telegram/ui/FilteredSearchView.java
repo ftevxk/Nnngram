@@ -568,7 +568,9 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             if (dialogId != 0) {
                 final TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
                 req.q = query;
-                req.limit = 20;
+//                req.limit = 20;
+                //wd 一次请求获取200条数据
+                req.limit = 200;
                 req.filter = currentSearchFilter == null ? new TLRPC.TL_inputMessagesFilterEmpty() : currentSearchFilter.filter;
                 req.peer = AccountInstance.getInstance(currentAccount).getMessagesController().getInputPeer(dialogId);
                 if (minDate > 0) {
@@ -593,7 +595,9 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 }
 
                 final TLRPC.TL_messages_searchGlobal req = new TLRPC.TL_messages_searchGlobal();
-                req.limit = 20;
+//                req.limit = 20;
+                //wd 一次请求获取200条数据
+                req.limit = 200;
                 req.q = query;
                 req.filter = currentSearchFilter == null ? new TLRPC.TL_inputMessagesFilterEmpty() : currentSearchFilter.filter;
                 if (minDate > 0) {
@@ -631,8 +635,16 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     int n = res.messages.size();
                     for (int i = 0; i < n; i++) {
                         MessageObject messageObject = new MessageObject(currentAccount, res.messages.get(i), false, true);
-                        messageObject.setQuery(query);
-                        messageObjects.add(messageObject);
+//                        messageObject.setQuery(query);
+//                        messageObjects.add(messageObject);
+                        //wd 全局搜索-媒体-过滤只显示时长时长视频，并排除重复视频
+                        if (currentSearchFilter == null ||
+                            (currentSearchFilter.filterType != FiltersView.FILTER_TYPE_CHAT &&
+                                currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA) ||
+                            (messageObject.isLongVideo(false) && !messages.contains(messageObject))) {
+                            messageObject.setQuery(query);
+                            messageObjects.add(messageObject);
+                        }
                     }
                 }
 
@@ -662,23 +674,46 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         sections.clear();
                         sectionArrays.clear();
                     }
+                    //wd 过滤后需要移除的数量
+                    int removeCount = 0;
                     totalCount = res.count;
                     currentDataQuery = query;
                     int n = messageObjects.size();
                     for (int i = 0; i < n; i++) {
                         MessageObject messageObject = messageObjects.get(i);
-                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
-                        if (messageObjectsByDate == null) {
-                            messageObjectsByDate = new ArrayList<>();
-                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
-                            sections.add(messageObject.monthKey);
-                        }
-                        messageObjectsByDate.add(messageObject);
-                        messages.add(messageObject);
-                        messagesById.put(messageObject.getId(), messageObject);
+//                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
+//                        if (messageObjectsByDate == null) {
+//                            messageObjectsByDate = new ArrayList<>();
+//                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
+//                            sections.add(messageObject.monthKey);
+//                        }
+//                        messageObjectsByDate.add(messageObject);
+//                        messages.add(messageObject);
+//                        messagesById.put(messageObject.getId(), messageObject);
+//
+//                        if (PhotoViewer.getInstance().isVisible()) {
+//                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+//                        }
+                        //wd 全局搜索默认只显示长视频，并过滤去除重复视频
+                        if (currentSearchFilter == null ||
+                            (currentSearchFilter.filterType != FiltersView.FILTER_TYPE_CHAT &&
+                                currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA) ||
+                            (messageObject.isLongVideo(false) && !messages.contains(messageObject))) {
+                            ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
+                            if (messageObjectsByDate == null) {
+                                messageObjectsByDate = new ArrayList<>();
+                                sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
+                                sections.add(messageObject.monthKey);
+                            }
+                            messageObjectsByDate.add(messageObject);
+                            messages.add(messageObject);
+                            messagesById.put(messageObject.getId(), messageObject);
 
-                        if (PhotoViewer.getInstance().isVisible()) {
-                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+                            if (PhotoViewer.getInstance().isVisible()) {
+                                PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+                            }
+                        } else {
+                            removeCount++;
                         }
                     }
                     if (messages.size() > totalCount) {
@@ -718,11 +753,13 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     if (currentSearchFilter != null) {
                         switch (currentSearchFilter.filterType) {
                             case FiltersView.FILTER_TYPE_MEDIA:
-                                if (TextUtils.isEmpty(currentDataQuery)) {
-                                    adapter = sharedPhotoVideoAdapter;
-                                } else {
-                                    adapter = dialogsAdapter;
-                                }
+                                //wd 使用图片墙形式显示全局搜索-媒体的搜索结果
+//                                if (TextUtils.isEmpty(currentDataQuery)) {
+//                                    adapter = sharedPhotoVideoAdapter;
+//                                } else {
+//                                    adapter = dialogsAdapter;
+//                                }
+                                adapter = sharedPhotoVideoAdapter;
                                 break;
                             case FiltersView.FILTER_TYPE_FILES:
                                 adapter = sharedDocumentsAdapter;

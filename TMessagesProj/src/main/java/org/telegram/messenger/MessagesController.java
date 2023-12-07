@@ -14902,6 +14902,17 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean processUpdateArray(ArrayList<TLRPC.Update> updates, ArrayList<TLRPC.User> usersArr, ArrayList<TLRPC.Chat> chatsArr, boolean fromGetDifference, int date) {
+        //wd 消息防撤回
+        ArrayList<TLRPC.Update> newUpdates = new ArrayList<>();
+        for (TLRPC.Update update : updates) {
+            if (!(update instanceof TLRPC.TL_updateDeleteChannelMessages) &&
+                !(update instanceof TLRPC.TL_updateDeleteMessages)) {
+                newUpdates.add(update);
+            }
+        }
+        updates.clear();
+        updates.addAll(newUpdates);
+
         if (updates.isEmpty()) {
             if (usersArr != null || chatsArr != null) {
                 AndroidUtilities.runOnUIThread(() -> {

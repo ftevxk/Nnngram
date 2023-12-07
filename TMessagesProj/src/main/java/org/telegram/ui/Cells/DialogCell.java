@@ -1584,13 +1584,51 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                                     }
                                 }
-                                //wd 不显示回复信息
 //                                if (message.isReplyToStory()) {
 //                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
 //                                    builder.insert(0, "d ");
 //                                    builder.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
 //                                    messageString = builder;
 //                                }
+//                                if (thumbsCount > 0) {
+//                                    if (message.hasHighlightedWords() && !TextUtils.isEmpty(message.messageOwner.message)) {
+//                                        messageString = message.messageTrimmedToHighlight;
+//                                        if (message.messageTrimmedToHighlight != null) {
+//                                            messageString = message.messageTrimmedToHighlight;
+//                                        }
+//                                        int w = getMeasuredWidth() - AndroidUtilities.dp(messagePaddingStart + 23 + (thumbSize + 2) * thumbsCount - 2 + 5);
+//                                        messageString = AndroidUtilities.ellipsizeCenterEnd(messageString, message.highlightedWords.get(0), w, currentMessagePaint, 130).toString();
+//                                    } else {
+//                                        if (messageString.length() > 150) {
+//                                            messageString = messageString.subSequence(0, 150);
+//                                        }
+//                                        messageString = AndroidUtilities.replaceNewLines(messageString);
+//                                    }
+//                                    if (!(messageString instanceof SpannableStringBuilder)) {
+//                                        messageString = new SpannableStringBuilder(messageString);
+//                                    }
+//                                    checkMessage = false;
+//                                    SpannableStringBuilder builder = (SpannableStringBuilder) messageString;
+//                                    builder.insert(0, " ");
+//                                    builder.setSpan(new FixedWidthSpan(AndroidUtilities.dp((thumbSize + 2) * thumbsCount - 2 + 5)), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+//                                    Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), AndroidUtilities.dp(17), false);
+//                                    if (message.hasHighlightedWords()) {
+//                                        CharSequence s = AndroidUtilities.highlightText(builder, message.highlightedWords, resourcesProvider);
+//                                        if (s != null) {
+//                                            messageString = s;
+//                                        }
+//                                    }
+//                                }
+//                                if (message.isForwarded()) {
+//                                    drawForwardIcon = true;
+//                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
+//                                    builder.insert(0, "d ");
+//                                    ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
+//                                    coloredImageSpan.setAlpha(0.9f);
+//                                    builder.setSpan(coloredImageSpan, 0, 1, 0);
+//                                    messageString = builder;
+//                                }
+                                //wd 图片/视频不显示回复转发等信息
                                 if (thumbsCount > 0) {
                                     if (message.hasHighlightedWords() && !TextUtils.isEmpty(message.messageOwner.message)) {
                                         messageString = message.messageTrimmedToHighlight;
@@ -1619,17 +1657,23 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                             messageString = s;
                                         }
                                     }
+                                } else {
+                                    if (message.isReplyToStory()) {
+                                        SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
+                                        builder.insert(0, "d ");
+                                        builder.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
+                                        messageString = builder;
+                                    }
+                                    if (message.isForwarded()) {
+                                        drawForwardIcon = true;
+                                        SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
+                                        builder.insert(0, "d ");
+                                        ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
+                                        coloredImageSpan.setAlpha(0.9f);
+                                        builder.setSpan(coloredImageSpan, 0, 1, 0);
+                                        messageString = builder;
+                                    }
                                 }
-                                //wd 不显示转发按钮图标
-//                                if (message.isForwarded()) {
-//                                    drawForwardIcon = true;
-//                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
-//                                    builder.insert(0, "d ");
-//                                    ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
-//                                    coloredImageSpan.setAlpha(0.9f);
-//                                    builder.setSpan(coloredImageSpan, 0, 1, 0);
-//                                    messageString = builder;
-//                                }
                             }
                         }
                         if (currentDialogFolderId != 0) {

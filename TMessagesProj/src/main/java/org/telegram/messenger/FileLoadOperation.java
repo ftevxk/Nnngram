@@ -1515,13 +1515,13 @@ public class FileLoadOperation {
                             }
                         } else {
                             try {
+                                String newFileName = storeFileName;
                                 if (pathSaveData != null) {
                                     synchronized (lockObject) {
                                         cacheFileFinal = new File(storePath, storeFileName);
                                         int count = 1;
                                         while (cacheFileFinal.exists()) {
                                             int lastDotIndex = storeFileName.lastIndexOf('.');
-                                            String newFileName;
                                             if (lastDotIndex > 0) {
                                                 newFileName = storeFileName.substring(0, lastDotIndex) + " (" + count + ")" + storeFileName.substring(lastDotIndex);
                                             } else {
@@ -1531,6 +1531,17 @@ public class FileLoadOperation {
                                             count++;
                                         }
                                     }
+                                }
+                                //wd 非手动触发下载的文件保留在缓存文件夹
+                                if (parentObject instanceof MessageObject messageObject &&
+                                    !messageObject.putInDownloadsStore) {
+                                    storePath = AndroidUtilities.getCacheDir();
+                                    if (pathSaveData != null) {
+                                        pathSaveData = new FilePathDatabase.PathData(
+                                            pathSaveData.id, pathSaveData.dc,
+                                            FileLoader.MEDIA_DIR_CACHE);
+                                    }
+                                    cacheFileFinal = new File(storePath, newFileName);
                                 }
                                 renameResult = cacheFileTempLocal.renameTo(cacheFileFinal);
                             } catch (Exception e) {
