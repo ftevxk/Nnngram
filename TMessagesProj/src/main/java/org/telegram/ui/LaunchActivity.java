@@ -2621,7 +2621,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                             open_settings = 1;
                                         }
                                     } else if (url.startsWith("tg:upgrade") || url.startsWith("tg://upgrade") || url.startsWith("tg:update") || url.startsWith("tg://update")) {
-//                                        checkAppUpdate(true);
+                                        checkAppUpdate(true);
                                     } else if ((url.startsWith("tg:search") || url.startsWith("tg://search"))) {
                                         url = url.replace("tg:search", "tg://telegram.org").replace("tg://search", "tg://telegram.org");
                                         data = Uri.parse(url);
@@ -5275,9 +5275,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     if (force) {
                         if (!error) {
 //                            if (!BuildConfig.isPlay) {
-//                                showBulletin(factory -> factory.createErrorBulletin(LocaleController.getString("VersionUpdateNoUpdate", R.string.VersionUpdateNoUpdate)));
+                                showBulletin(factory -> factory.createErrorBulletin(LocaleController.getString("VersionUpdateNoUpdate", R.string.VersionUpdateNoUpdate)));
 //                            } else {
-                            showBulletin(factory -> factory.createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString("NoUpdateAvailablePlay", R.string.NoUpdateAvailablePlay), LocaleController.getString("NoUpdateAvailablePlayDelay", R.string.NoUpdateAvailablePlayDelay)));
+//                                showBulletin(factory -> factory.createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString("NoUpdateAvailablePlay", R.string.NoUpdateAvailablePlay), LocaleController.getString("NoUpdateAvailablePlayDelay", R.string.NoUpdateAvailablePlayDelay)));
 //                            }
                         } else {
                             AlertsCreator.createSimpleAlert(this, LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred) + "\n" + error).show();
@@ -6033,7 +6033,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } else if (SharedConfig.pendingAppUpdate != null && SharedConfig.pendingAppUpdate.can_not_skip) {
             showUpdateActivity(UserConfig.selectedAccount, SharedConfig.pendingAppUpdate, true);
         }
-//        checkAppUpdate(false);
+        checkAppUpdate(false);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             ApplicationLoader.canDrawOverlays = Settings.canDrawOverlays(this);
