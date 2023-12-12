@@ -1325,7 +1325,12 @@ public class FileLoader extends BaseController {
                 return new File(path);
             }
         }
-        return new File(dir, getAttachFileName(attach, ext));
+        //wd 文件对应目录获取不到尝试从缓存目录获取
+        File attachFile = new File(dir, getAttachFileName(attach, ext));
+        if (!attachFile.exists() && !dir.equals(getDirectory(MEDIA_DIR_CACHE))) {
+            attachFile = new File(getDirectory(MEDIA_DIR_CACHE), getAttachFileName(attach, ext));
+        }
+        return attachFile;
     }
 
     public FilePathDatabase getFileDatabase() {

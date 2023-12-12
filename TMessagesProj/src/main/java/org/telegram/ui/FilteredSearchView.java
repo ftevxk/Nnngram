@@ -637,11 +637,10 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         MessageObject messageObject = new MessageObject(currentAccount, res.messages.get(i), false, true);
 //                        messageObject.setQuery(query);
 //                        messageObjects.add(messageObject);
-                        //wd 全局搜索-媒体-过滤只显示时长时长视频，并排除重复视频
-                        if (currentSearchFilter == null ||
-                            (currentSearchFilter.filterType != FiltersView.FILTER_TYPE_CHAT &&
-                                currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA) ||
-                            (messageObject.isLongVideo(false) && !messages.contains(messageObject))) {
+                        //wd 全局搜索只显示长时长视频，并排除重复视频
+                        if (!messages.contains(messageObject) && messageObject.isLongVideo(
+                            currentSearchFilter == null ||
+                                currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
                             messageObject.setQuery(query);
                             messageObjects.add(messageObject);
                         }
@@ -695,10 +694,9 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 //                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
 //                        }
                         //wd 全局搜索默认只显示长视频，并过滤去除重复视频
-                        if (currentSearchFilter == null ||
-                            (currentSearchFilter.filterType != FiltersView.FILTER_TYPE_CHAT &&
-                                currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA) ||
-                            (messageObject.isLongVideo(false) && !messages.contains(messageObject))) {
+                        if (!messages.contains(messageObject) && messageObject.isLongVideo(
+                            currentSearchFilter == null ||
+                            currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
                             ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
                             if (messageObjectsByDate == null) {
                                 messageObjectsByDate = new ArrayList<>();
@@ -716,6 +714,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             removeCount++;
                         }
                     }
+                    totalCount -= removeCount;
                     if (messages.size() > totalCount) {
                         totalCount = messages.size();
                     }
