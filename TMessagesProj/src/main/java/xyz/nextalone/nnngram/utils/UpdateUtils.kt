@@ -312,15 +312,7 @@ object UpdateUtils {
                         val fileName = if (apkDocument.attributes.size == 0) "" else apkDocument.attributes[0].file_name
                         Log.d("checkUpdate", "file_name： ${apkDocument.attributes[0].file_name}")
 
-                        // this is a temporary solution
-                        val abi = when (Build.SUPPORTED_ABIS.first()) {
-                            "arm64-v8a" -> "arm64"
-                            "armeabi-v7a" -> "arm32"
-                            "x86_64" -> "x86_64"
-                            "x86" -> "x86"
-                            else -> "arm64"
-                        }
-
+                        val abi = "arm64"
                         if (!(fileName.contains(abi) && fileName.contains(metadata.versionName))) continue
                         val update = TLRPC.TL_help_appUpdate().apply {
                             version = metadata.versionName
@@ -328,7 +320,6 @@ object UpdateUtils {
                             can_not_skip = metadata.canNotSkip
                             flags = flags or 2
                         }
-
                         if (metadata.updateLog != null) {
                             update.text = metadata.updateLog
                             update.entities = metadata.updateLogEntities
