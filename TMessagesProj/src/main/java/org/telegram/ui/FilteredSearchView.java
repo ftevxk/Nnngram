@@ -79,6 +79,7 @@ import org.telegram.ui.Components.StickerEmptyView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 
 public class FilteredSearchView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
@@ -629,22 +630,28 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             final ArrayList<FiltersView.DateData> dateData = new ArrayList<>();
             FiltersView.fillTipDates(lastMessagesSearchString, dateData);
             ConnectionsManager.getInstance(currentAccount).sendRequest(request, (response, error) -> {
+//                ArrayList<MessageObject> messageObjects = new ArrayList<>();
+//                if (error == null) {
+//                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+//                    int n = res.messages.size();
+//                    for (int i = 0; i < n; i++) {
+//                        MessageObject messageObject = new MessageObject(currentAccount, res.messages.get(i), false, true);
+//                        messageObject.setQuery(query);
+//                        messageObjects.add(messageObject);
+//                    }
+//                }
+                //wd 过滤搜索返回结果中的重复视频
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
+                HashSet<MessageObject> messageObjectSets = new HashSet<>();
                 if (error == null) {
                     TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
                     int n = res.messages.size();
                     for (int i = 0; i < n; i++) {
                         MessageObject messageObject = new MessageObject(currentAccount, res.messages.get(i), false, true);
-//                        messageObject.setQuery(query);
-//                        messageObjects.add(messageObject);
-                        //wd 全局搜索只显示长时长视频，并排除重复视频
-                        if (!messages.contains(messageObject) && messageObject.isLongVideo(
-                            currentSearchFilter == null ||
-                                currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
-                            messageObject.setQuery(query);
-                            messageObjects.add(messageObject);
-                        }
+                        messageObject.setQuery(query);
+                        messageObjectSets.add(messageObject);
                     }
+                    messageObjects.addAll(messageObjectSets);
                 }
 
                 AndroidUtilities.runOnUIThread(() -> {

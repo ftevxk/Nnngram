@@ -15643,7 +15643,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         } else if (ev.getActionMasked() == MotionEvent.ACTION_MOVE) {
             //wd 视频左右滑动为调整视频进度
             if (currentMessageObject.isVideo()) {
-                if (Math.abs(ev.getY() - moveStartY) > AndroidUtilities.dp(10)) {
+                if (Math.abs(ev.getY() - moveStartY) > AndroidUtilities.dp(20)) {
                     return rawMoveEvent(ev);
                 } else {
                     double total = getVideoDuration();

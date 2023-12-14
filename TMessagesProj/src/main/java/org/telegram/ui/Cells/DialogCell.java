@@ -575,6 +575,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 //        useForceThreeLines = forceThreeLines;
         //wd 强制最多只显示2行
         useForceThreeLines = false;
+        SharedConfig.useThreeLinesLayout = false;
         currentAccount = account;
 
         emojiStatus = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, AndroidUtilities.dp(22));
