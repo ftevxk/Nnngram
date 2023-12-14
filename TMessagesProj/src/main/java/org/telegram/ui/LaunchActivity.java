@@ -5291,9 +5291,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     }
                     if (SharedConfig.setNewAppVersionAvailable(res)) {
                         Log.d("checkUpdate: new version available: " + res.version);
-//                        if (res.can_not_skip) {
-                        showUpdateActivity(accountNum, res, false);
-//                        }
+                        if (res.can_not_skip) {
+                            showUpdateActivity(accountNum, res, false);
+                        }
                         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
                     }
                 } else {
