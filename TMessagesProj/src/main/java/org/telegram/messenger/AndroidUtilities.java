@@ -206,6 +206,7 @@ import java.util.regex.Pattern;
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.AnalyticsUtils;
+import xyz.nextalone.nnngram.utils.TypefaceUtils;
 import xyz.nextalone.nnngram.utils.FileUtils;
 
 public class AndroidUtilities {
@@ -458,11 +459,11 @@ public class AndroidUtilities {
         return null;
     }
 
-    public static CharSequence premiumText(String str, Runnable runnable) {
+    public static SpannableStringBuilder premiumText(String str, Runnable runnable) {
         return replaceSingleTag(str, -1, REPLACING_TAG_TYPE_LINKBOLD, runnable);
     }
 
-    public static CharSequence replaceSingleTag(String str, Runnable runnable) {
+    public static SpannableStringBuilder replaceSingleTag(String str, Runnable runnable) {
         return replaceSingleTag(str, -1, 0, runnable);
     }
 
@@ -520,6 +521,10 @@ public class AndroidUtilities {
     }
 
     public static SpannableStringBuilder replaceSingleLink(String str, int color) {
+        return replaceSingleLink(str, color, null);
+    }
+
+    public static SpannableStringBuilder replaceSingleLink(String str, int color, Runnable onClick) {
         int startIndex = str.indexOf("**");
         int endIndex = str.indexOf("**", startIndex + 1);
         str = str.replace("**", "");
@@ -541,7 +546,9 @@ public class AndroidUtilities {
 
                 @Override
                 public void onClick(@NonNull View view) {
-
+                    if (onClick != null) {
+                        onClick.run();
+                    }
                 }
             }, index, index + len, 0);
         }
@@ -1065,7 +1072,7 @@ public class AndroidUtilities {
     public static int[] calcDrawableColor(Drawable drawable) {
         if (drawable instanceof ChatBackgroundDrawable) {
             ChatBackgroundDrawable chatBackgroundDrawable = (ChatBackgroundDrawable) drawable;
-            return calcDrawableColor(chatBackgroundDrawable.getDrawable());
+            return calcDrawableColor(chatBackgroundDrawable.getDrawable(true));
         }
         int bitmapColor = 0xff000000;
         int[] result = new int[4];
@@ -1936,17 +1943,43 @@ public class AndroidUtilities {
             if (!typefaceCache.containsKey(assetPath)) {
                 try {
                     Typeface t;
-                    if (Build.VERSION.SDK_INT >= 26) {
-                        Typeface.Builder builder = new Typeface.Builder(ApplicationLoader.applicationContext.getAssets(), assetPath);
-                        if (assetPath.contains("medium")) {
-                            builder.setWeight(700);
-                        }
-                        if (assetPath.contains("italic")) {
-                            builder.setItalic(true);
-                        }
-                        t = builder.build();
-                    } else {
-                        t = Typeface.createFromAsset(ApplicationLoader.applicationContext.getAssets(), assetPath);
+                    switch (assetPath) {
+                        case TYPEFACE_ROBOTO_MEDIUM:
+                            if (TypefaceUtils.isMediumWeightSupported()) {
+                                t = Typeface.create("sans-serif-medium", Typeface.NORMAL);
+                            } else {
+                                t = Typeface.create("sans-serif", Typeface.BOLD);
+                            }
+                            break;
+                        case "fonts/ritalic.ttf":
+                            t = Typeface.create("sans-serif", Typeface.ITALIC);
+                            break;
+                        case TYPEFACE_ROBOTO_MEDIUM_ITALIC:
+                            if (TypefaceUtils.isMediumWeightSupported()) {
+                                t = Typeface.create("sans-serif-medium", Typeface.ITALIC);
+                            } else {
+                                t = Typeface.create("sans-serif", Typeface.BOLD_ITALIC);
+                            }
+                            break;
+                        case TYPEFACE_ROBOTO_MONO:
+                            t = Typeface.MONOSPACE;
+                            break;
+                        case "fonts/rcondensedbold.ttf":
+                            t = Typeface.create("sans-serif-condensed", Typeface.BOLD);
+                            break;
+                        default:
+                            if (Build.VERSION.SDK_INT >= 26) {
+                                Typeface.Builder builder = new Typeface.Builder(ApplicationLoader.applicationContext.getAssets(), assetPath);
+                                if (assetPath.contains("medium")) {
+                                    builder.setWeight(700);
+                                }
+                                if (assetPath.contains("italic")) {
+                                    builder.setItalic(true);
+                                }
+                                t = builder.build();
+                            } else {
+                                t = Typeface.createFromAsset(ApplicationLoader.applicationContext.getAssets(), assetPath);
+                            }
                     }
                     typefaceCache.put(assetPath, t);
                 } catch (Exception e) {
@@ -5470,6 +5503,9 @@ public class AndroidUtilities {
     }
 
     public static void forEachViews(RecyclerView recyclerView, Consumer<View> consumer) {
+        if (recyclerView == null) {
+            return;
+        }
         for (int i = 0; i < recyclerView.getChildCount(); i++) {
             consumer.accept(recyclerView.getChildAt(i));
         }
