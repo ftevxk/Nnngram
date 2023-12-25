@@ -9766,16 +9766,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     private boolean hasSelectedNoforwardsMessage() {
-        try {
-            for (int i = 0; i < selectedMessagesIds.length; ++i) {
-                for (int j = 0; j < selectedMessagesIds[i].size(); ++j) {
-                    MessageObject msg = selectedMessagesIds[i].valueAt(j);
-                    if (msg != null && msg.messageOwner != null && msg.messageOwner.noforwards) {
-                        return true;
-                    }
-                }
-            }
-        } catch (Exception ignore) {}
+        //wd 去除复制保存消息限制
+//        try {
+//            for (int i = 0; i < selectedMessagesIds.length; ++i) {
+//                for (int j = 0; j < selectedMessagesIds[i].size(); ++j) {
+//                    MessageObject msg = selectedMessagesIds[i].valueAt(j);
+//                    if (msg != null && msg.messageOwner != null && msg.messageOwner.noforwards) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        } catch (Exception ignore) {}
         return false;
     }
 

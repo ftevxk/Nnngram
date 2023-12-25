@@ -1523,16 +1523,17 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         }
                                         messageString = new SpannableStringBuilder(emoji).append(msgBuilder);
                                     }
-//                                } else if (thumbsCount > 1) {
-                                    //wd 图片/视频依旧显示内容
-                                } else if (false) {
-                                    if (hasVideoThumb) {
-                                        messageString = LocaleController.formatPluralString("Media", groupMessages == null ? 0 : groupMessages.size());
-                                    } else {
-                                        messageString = LocaleController.formatPluralString("Photos", groupMessages == null ? 0 : groupMessages.size());
-                                    }
-                                    currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
-                                } else {
+                                }
+                                //wd 图片、视频消息内容保留显示
+//                                else if (thumbsCount > 1) {
+//                                    if (hasVideoThumb) {
+//                                        messageString = LocaleController.formatPluralString("Media", groupMessages == null ? 0 : groupMessages.size());
+//                                    } else {
+//                                        messageString = LocaleController.formatPluralString("Photos", groupMessages == null ? 0 : groupMessages.size());
+//                                    }
+//                                    currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
+//                                }
+                                else {
                                     if (message.messageOwner.media instanceof TLRPC.TL_messageMediaGiveaway) {
                                         TLRPC.TL_messageMediaGiveaway mediaPoll = (TLRPC.TL_messageMediaGiveaway) message.messageOwner.media;
                                         messageString = LocaleController.getString("BoostingGiveawayChannelStarted", R.string.BoostingGiveawayChannelStarted);
@@ -2035,7 +2036,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         //wd 标题向右偏移位置
         if (!LocaleController.isRTL && thumbsCount > 0) {
             int oldNameLeft = nameLeft;
-            nameLeft = AndroidUtilities.dp(thumbSize + 2) * thumbsCount + thumbLeft;
+            int thumbsWidth = AndroidUtilities.dp(thumbSize + 2) * thumbsCount;
+            nameLeft = thumbsWidth + thumbLeft;
             nameWidth -= (nameLeft - oldNameLeft);
         }
         if (twoLinesForName) {
@@ -4797,6 +4799,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (message == null) {
             return null;
         }
+        //wd 视频、图片不显示消息名称
+        if (thumbsCount > 0) {
+            return "";
+        }
+
         TLRPC.User user;
         TLRPC.User fromUser = null;
         TLRPC.Chat fromChat = null;
