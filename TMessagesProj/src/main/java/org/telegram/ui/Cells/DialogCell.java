@@ -1005,7 +1005,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             if ((!useForceThreeLines && !SharedConfig.useThreeLinesLayout || currentDialogFolderId != 0) || isForumCell()) {
                 //1 - "%2$s: \u2068%1$s\u2069";
                 messageFormatType = 1;
-                hasNameInMessage = true;
+//                hasNameInMessage = true;
+                //wd 视频、图片不显示消息名称
+                hasNameInMessage = thumbSize == 0;
             } else {
                 //2 - "\u2068%1$s\u2069";
                 messageFormatType = 2;
@@ -1015,7 +1017,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             if ((!useForceThreeLines && !SharedConfig.useThreeLinesLayout || currentDialogFolderId != 0) || isForumCell()) {
                 //3 - "%2$s: %1$s";
                 messageFormatType = 3;
-                hasNameInMessage = true;
+//                hasNameInMessage = true;
+                //wd 视频、图片不显示消息名称
+                hasNameInMessage = thumbSize == 0;
             } else {
                 //4 - "%1$s";
                 messageFormatType = 4;
@@ -2451,6 +2455,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     private SpannableStringBuilder formatInternal(int messageFormatType, CharSequence s1, CharSequence s2) {
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
+        //wd 视频、图片不显示消息名称
+        if (thumbsCount > 0) {
+            return spannableStringBuilder;
+        }
         switch (messageFormatType) {
             case 1:
                 //"%2$s: \u2068%1$s\u2069"
