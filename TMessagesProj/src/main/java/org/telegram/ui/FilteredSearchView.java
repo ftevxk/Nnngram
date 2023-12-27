@@ -570,8 +570,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 final TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
                 req.q = query;
 //                req.limit = 20;
-                //wd 一次请求获取200条数据
-                req.limit = 200;
+                //wd 一次请求获取更多条数据
+                req.limit = 100;
                 req.filter = currentSearchFilter == null ? new TLRPC.TL_inputMessagesFilterEmpty() : currentSearchFilter.filter;
                 req.peer = AccountInstance.getInstance(currentAccount).getMessagesController().getInputPeer(dialogId);
                 if (minDate > 0) {
@@ -597,8 +597,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 
                 final TLRPC.TL_messages_searchGlobal req = new TLRPC.TL_messages_searchGlobal();
 //                req.limit = 20;
-                //wd 一次请求获取200条数据
-                req.limit = 200;
+                //wd 一次请求获取更多条数据
+                req.limit = 100;
                 req.q = query;
                 req.filter = currentSearchFilter == null ? new TLRPC.TL_inputMessagesFilterEmpty() : currentSearchFilter.filter;
                 if (minDate > 0) {
@@ -642,16 +642,23 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 //                }
                 //wd 过滤搜索返回结果中的重复视频
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                HashSet<MessageObject> messageObjectSets = new HashSet<>();
+                ArrayList<TLRPC.Message> newMessages = new ArrayList<>();
                 if (error == null) {
                     TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
                     int n = res.messages.size();
                     for (int i = 0; i < n; i++) {
-                        MessageObject messageObject = new MessageObject(currentAccount, res.messages.get(i), false, true);
-                        messageObject.setQuery(query);
-                        messageObjectSets.add(messageObject);
+                        TLRPC.Message message = res.messages.get(i);
+                        MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
+                        if (!messages.contains(messageObject) && !messageObjects.contains(messageObject)) {
+                            newMessages.add(message);
+                            messageObject.setQuery(query);
+                            messageObjects.add(messageObject);
+                        } else {
+                            res.count -= 1;
+                        }
                     }
-                    messageObjects.addAll(messageObjectSets);
+                    res.messages.clear();
+                    res.messages.addAll(newMessages);
                 }
 
                 AndroidUtilities.runOnUIThread(() -> {
@@ -700,9 +707,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 //                        if (PhotoViewer.getInstance().isVisible()) {
 //                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
 //                        }
-                        //wd 全局搜索默认只显示长视频，并过滤去除重复视频
-                        if (!messages.contains(messageObject) && messageObject.isLongVideo(
-                            currentSearchFilter == null ||
+                        //wd 全局搜索-媒体默认只显示长视频
+                        if (messageObject.isLongVideo(currentSearchFilter == null ||
                             currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
                             ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
                             if (messageObjectsByDate == null) {

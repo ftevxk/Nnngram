@@ -362,7 +362,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         final long dialogId = delegate.getSearchForumDialogId();
 
         final TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
-        req.limit = 20;
+//        req.limit = 20;
+        //wd 一次请求获取更多条数据
+        req.limit = 50;
         req.q = query;
         req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
         req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
@@ -385,12 +387,27 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     TLRPC.User user = res.users.get(a);
                     usersMap.put(user.id, user);
                 }
+//                for (int a = 0; a < res.messages.size(); a++) {
+//                    TLRPC.Message message = res.messages.get(a);
+//                    MessageObject messageObject = new MessageObject(currentAccount, message, usersMap, chatsMap, false, true);
+//                    messageObjects.add(messageObject);
+//                    messageObject.setQuery(query);
+//                }
+                //wd 对话搜索过滤重复信息
+                ArrayList<TLRPC.Message> newMessages = new ArrayList<>();
                 for (int a = 0; a < res.messages.size(); a++) {
                     TLRPC.Message message = res.messages.get(a);
                     MessageObject messageObject = new MessageObject(currentAccount, message, usersMap, chatsMap, false, true);
-                    messageObjects.add(messageObject);
-                    messageObject.setQuery(query);
+                    if (!searchForumResultMessages.contains(messageObject) && !messageObjects.contains(messageObject)) {
+                        newMessages.add(message);
+                        messageObjects.add(messageObject);
+                        messageObject.setQuery(query);
+                    } else {
+                        res.count -= 1;
+                    }
                 }
+                res.messages.clear();
+                res.messages.addAll(newMessages);
             }
             AndroidUtilities.runOnUIThread(() -> {
                 if (currentReqId == lastForumReqId && (searchId <= 0 || searchId == lastSearchId)) {
@@ -415,7 +432,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             searchForumResultMessages.add(messageObjects.get(a));
                         }
                         searchWas = true;
-                        localMessagesSearchEndReached = res.messages.size() != 20;
+//                        localMessagesSearchEndReached = res.messages.size() != 20;
+                        //wd 一次请求获取更多条数据
+                        localMessagesSearchEndReached = res.messages.size() != req.limit;
                         if (searchId > 0) {
                             lastMessagesSearchId = searchId;
                             if (lastLocalSearchId != searchId) {
@@ -489,7 +508,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
 
         final TLRPC.TL_messages_searchGlobal req = new TLRPC.TL_messages_searchGlobal();
-        req.limit = 20;
+//        req.limit = 20;
+        //wd 一次请求获取更多条数据
+        req.limit = 50;
         req.q = query;
         req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
         req.flags |= 1;
@@ -522,12 +543,27 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     TLRPC.User user = res.users.get(a);
                     usersMap.put(user.id, user);
                 }
+//                for (int a = 0; a < res.messages.size(); a++) {
+//                    TLRPC.Message message = res.messages.get(a);
+//                    MessageObject messageObject = new MessageObject(currentAccount, message, usersMap, chatsMap, false, true);
+//                    messageObjects.add(messageObject);
+//                    messageObject.setQuery(query);
+//                }
+                //wd 全局搜索-对话过滤重复信息
+                ArrayList<TLRPC.Message> newMessages = new ArrayList<>();
                 for (int a = 0; a < res.messages.size(); a++) {
                     TLRPC.Message message = res.messages.get(a);
                     MessageObject messageObject = new MessageObject(currentAccount, message, usersMap, chatsMap, false, true);
-                    messageObjects.add(messageObject);
-                    messageObject.setQuery(query);
+                    if (!searchResultMessages.contains(messageObject) && !messageObjects.contains(messageObject)) {
+                        newMessages.add(message);
+                        messageObjects.add(messageObject);
+                        messageObject.setQuery(query);
+                    } else {
+                        res.count -= 1;
+                    }
                 }
+                res.messages.clear();
+                res.messages.addAll(newMessages);
             }
             AndroidUtilities.runOnUIThread(() -> {
                 if (currentReqId == lastReqId && (searchId <= 0 || searchId == lastSearchId)) {
@@ -574,7 +610,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             message.unread = value < message.id;
                         }
                         searchWas = true;
-                        messagesSearchEndReached = res.messages.size() != 20;
+//                        messagesSearchEndReached = res.messages.size() != 20;
+                        //wd 一次请求获取更多条数据
+                        messagesSearchEndReached = res.messages.size() != req.limit;
                         if (searchId > 0) {
                             lastMessagesSearchId = searchId;
                             if (lastLocalSearchId != searchId) {
