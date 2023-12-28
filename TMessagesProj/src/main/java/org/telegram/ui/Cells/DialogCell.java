@@ -22,6 +22,7 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
@@ -388,6 +389,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private boolean[] thumbImageSeen = new boolean[3];
     private ImageReceiver[] thumbImage = new ImageReceiver[3];
     private boolean[] drawPlay = new boolean[3];
+    //wd 绘制视频时长
+    private String[] drawDuration = new String[3];
     private boolean[] drawSpoiler = new boolean[3];
 
     public ImageReceiver avatarImage = new ImageReceiver(this);
@@ -3906,6 +3909,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         int y = (int) (thumbImage[i].getCenterY() - Theme.dialogs_playDrawable.getIntrinsicHeight() / 2);
                         setDrawableBounds(Theme.dialogs_playDrawable, x, y);
                         Theme.dialogs_playDrawable.draw(canvas);
+
+                        //wd 视频绘制时长
+                        Paint paint = Theme.dialogs_timePaint;
+                        Rect rect = new Rect();
+                        paint.getTextBounds(drawDuration[i], 0, drawDuration[i].length(), rect);
+                        canvas.drawText(drawDuration[i], thumbImage[i].getCenterX() - rect.width() / 2f,
+                            thumbImage[i].getImageY2() - rect.height() / 2f, paint);
                     }
                 }
 
@@ -4799,6 +4809,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 thumbImage[index].setImage(message.createMediaThumbs(), filter, ImageLocation.getForObject(smallThumb, photoThumbsObject), filter, size, null, message, 0);
                 thumbImage[index].setRoundRadius(message.isRoundVideo() ? AndroidUtilities.dp(18) : AndroidUtilities.dp(2));
                 needEmoji = false;
+                //wd 记录视频时长
+                drawDuration[index] = AndroidUtilities.formatDuration((int) message.getDuration(), false);
             }
         }
     }

@@ -402,10 +402,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                         newMessages.add(message);
                         messageObjects.add(messageObject);
                         messageObject.setQuery(query);
-                    } else {
-                        res.count -= 1;
                     }
                 }
+                //wd 是否可加载更多数据
+                localMessagesSearchEndReached = res.messages.size() != req.limit;
                 res.messages.clear();
                 res.messages.addAll(newMessages);
             }
@@ -432,9 +432,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             searchForumResultMessages.add(messageObjects.get(a));
                         }
                         searchWas = true;
+                        //wd 是否可加载更多数据改到前面判断处理
 //                        localMessagesSearchEndReached = res.messages.size() != 20;
-                        //wd 一次请求获取更多条数据
-                        localMessagesSearchEndReached = res.messages.size() != req.limit;
                         if (searchId > 0) {
                             lastMessagesSearchId = searchId;
                             if (lastLocalSearchId != searchId) {
@@ -558,10 +557,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                         newMessages.add(message);
                         messageObjects.add(messageObject);
                         messageObject.setQuery(query);
-                    } else {
-                        res.count -= 1;
                     }
                 }
+                //wd 是否可加载更多数据
+                messagesSearchEndReached = res.messages.size() != req.limit;
                 res.messages.clear();
                 res.messages.addAll(newMessages);
             }
@@ -610,9 +609,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             message.unread = value < message.id;
                         }
                         searchWas = true;
+                        //wd 是否可加载更多数据改到前面判断处理
 //                        messagesSearchEndReached = res.messages.size() != 20;
-                        //wd 一次请求获取更多条数据
-                        messagesSearchEndReached = res.messages.size() != req.limit;
                         if (searchId > 0) {
                             lastMessagesSearchId = searchId;
                             if (lastLocalSearchId != searchId) {

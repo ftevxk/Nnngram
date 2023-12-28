@@ -8113,8 +8113,9 @@ public class MessageObject {
         return isVideoMessage(messageOwner);
     }
 
+    //wd 判断是否为长视频(时长大于20分钟)
     public boolean isLongVideo(boolean allowOther) {
-        return isLongVideo(allowOther, 30 * 60);
+        return isLongVideo(allowOther, 20 * 60);
     }
 
     //wd 判断是否为长视频
