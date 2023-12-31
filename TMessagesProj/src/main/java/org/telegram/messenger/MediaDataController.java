@@ -3553,7 +3553,11 @@ public class MediaDataController extends BaseController {
     }
 
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, TLRPC.User user, TLRPC.Chat chat, ReactionsLayoutInBubble.VisibleReaction reaction) {
-        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction);
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction, false);
+    }
+
+    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, TLRPC.User user, TLRPC.Chat chat, ReactionsLayoutInBubble.VisibleReaction reaction, boolean firstSearch) {
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction, firstSearch);
     }
 
     public void jumpToSearchedMessage(int guid, int index) {
@@ -3587,8 +3591,20 @@ public class MediaDataController extends BaseController {
         return messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1] || (loadingSearchLocal || loadedPredirectedSearchLocal);
     }
 
+    public void setCurrentMessage(int index) {
+        lastReturnedNum = index;
+    }
+
+    public void setCurrentMaxMessage() {
+        lastReturnedNum = searchResultMessages.size() - 1;
+    }
+
     public void loadMoreSearchMessages(boolean fromList) {
-        if (loadingMoreSearchMessages || reqId != 0 || messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1]) {
+        loadMoreSearchMessages(fromList, false);
+    }
+
+    public void loadMoreSearchMessages(boolean fromList, boolean force) {
+        if (!force && (loadingMoreSearchMessages || reqId != 0 || messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1])) {
             return;
         }
         int temp = lastReturnedNum;
@@ -3601,8 +3617,12 @@ public class MediaDataController extends BaseController {
     public boolean isSearchLoading() {
         return reqId != 0;
     }
-
+    
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction) {
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, internal, user, chat, jumpToMessage, reaction, false);
+    }
+    
+    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction, boolean firstSearch) {
         int max_id = 0;
         long queryWithDialog = dialogId;
         boolean firstQuery = !internal;
@@ -3858,7 +3878,7 @@ public class MediaDataController extends BaseController {
                                         lastReturnedNum = searchResultMessages.size() - 1;
                                     }
                                     MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
-                                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, getSearchCount(), jumpToMessage);
+                                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, getSearchCount(), jumpToMessage, firstSearch);
                                 } else if (isSaved) {
                                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), false);
                                 }
