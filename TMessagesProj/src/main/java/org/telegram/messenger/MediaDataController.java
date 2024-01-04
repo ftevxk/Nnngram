@@ -34,7 +34,6 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
@@ -264,6 +263,7 @@ public class MediaDataController extends BaseController {
     private LongSparseArray<TLRPC.TL_messages_stickerSet> groupStickerSets = new LongSparseArray<>();
     private ConcurrentHashMap<String, TLRPC.TL_messages_stickerSet> stickerSetsByName = new ConcurrentHashMap<>(100, 1.0f, 1);
     private TLRPC.TL_messages_stickerSet stickerSetDefaultStatuses = null;
+    private TLRPC.TL_messages_stickerSet stickerSetDefaultChannelStatuses = null;
     private HashMap<String, TLRPC.TL_messages_stickerSet> diceStickerSetsByEmoji = new HashMap<>();
     private LongSparseArray<String> diceEmojiStickerSetsById = new LongSparseArray<>();
     private HashSet<String> loadingDiceStickerSets = new HashSet<>();
@@ -321,11 +321,11 @@ public class MediaDataController extends BaseController {
     public final ArrayList<TLRPC.Document> premiumPreviewStickers = new ArrayList<>();
     boolean previewStickersLoading;
 
-    private long[] emojiStatusesHash = new long[2];
-    private ArrayList<TLRPC.EmojiStatus>[] emojiStatuses = new ArrayList[2];
-    private Long[] emojiStatusesFetchDate = new Long[2];
-    private boolean[] emojiStatusesFromCacheFetched = new boolean[2];
-    private boolean[] emojiStatusesFetching = new boolean[2];
+    private long[] emojiStatusesHash = new long[4];
+    private ArrayList<TLRPC.EmojiStatus>[] emojiStatuses = new ArrayList[4];
+    private Long[] emojiStatusesFetchDate = new Long[4];
+    private boolean[] emojiStatusesFromCacheFetched = new boolean[4];
+    private boolean[] emojiStatusesFetching = new boolean[4];
 
     public void cleanup() {
         for (int a = 0; a < recentStickers.length; a++) {
@@ -1229,6 +1229,8 @@ public class MediaDataController extends BaseController {
             cacheSet = stickerSetsByName.get(inputStickerSet.short_name.toLowerCase());
         } else if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiDefaultStatuses && stickerSetDefaultStatuses != null) {
             cacheSet = stickerSetDefaultStatuses;
+        } else if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiChannelDefaultStatuses && stickerSetDefaultChannelStatuses != null) {
+            cacheSet = stickerSetDefaultChannelStatuses;
         }
         if (cacheSet != null) {
             if (onResponse != null) {
@@ -1275,6 +1277,9 @@ public class MediaDataController extends BaseController {
                         stickerSetsByName.put(set.set.short_name.toLowerCase(), set);
                         if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiDefaultStatuses) {
                             stickerSetDefaultStatuses = set;
+                        }
+                        if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiDefaultStatuses) {
+                            stickerSetDefaultChannelStatuses = set;
                         }
                     }
                     saveStickerSetIntoCache(set);
@@ -3379,9 +3384,13 @@ public class MediaDataController extends BaseController {
     public boolean isMessageFound(int messageId, boolean mergeDialog) {
         return searchResultMessagesMap[mergeDialog ? 1 : 0].indexOfKey(messageId) >= 0;
     }
-
+    
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, int replyMessageId, TLRPC.User user, TLRPC.Chat chat) {
-        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true);
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, user, chat, false);
+    }
+    
+    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, int replyMessageId, TLRPC.User user, TLRPC.Chat chat, boolean firstSearch) {
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, firstSearch);
     }
 
     public void jumpToSearchedMessage(int guid, int index) {
@@ -3392,9 +3401,21 @@ public class MediaDataController extends BaseController {
         MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
         getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, messagesSearchCount[0] + messagesSearchCount[1], true);
     }
-
+    
+    public void setCurrentMessage(int index) {
+        lastReturnedNum = index;
+    }
+    
+    public void setCurrentMaxMessage() {
+        lastReturnedNum = searchResultMessages.size() - 1;
+    }
+    
     public void loadMoreSearchMessages() {
-        if (loadingMoreSearchMessages || messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1]) {
+        loadMoreSearchMessages(false);
+    }
+    
+    public void loadMoreSearchMessages(boolean force) {
+        if (!force && (loadingMoreSearchMessages || messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1])) {
             return;
         }
         int temp = searchResultMessages.size();
@@ -3403,8 +3424,12 @@ public class MediaDataController extends BaseController {
         lastReturnedNum = temp;
         loadingMoreSearchMessages = true;
     }
-
+    
     private void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, int replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage) {
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, internal, user, chat, jumpToMessage, false);
+    }
+    
+    private void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, int replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, boolean firstSearch) {
         int max_id = 0;
         long queryWithDialog = dialogId;
         boolean firstQuery = !internal;
@@ -3603,7 +3628,9 @@ public class MediaDataController extends BaseController {
                                     lastReturnedNum = searchResultMessages.size() - 1;
                                 }
                                 MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
-                                getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, messagesSearchCount[0] + messagesSearchCount[1], jumpToMessage);
+                                getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(),
+                                    messageObject.getDialogId(), lastReturnedNum, messagesSearchCount[0] + messagesSearchCount[1], jumpToMessage,
+                                    firstSearch);
                             }
                         }
                         if (queryWithDialogFinal == dialogId && messagesSearchEndReached[0] && mergeDialogId != 0 && !messagesSearchEndReached[1]) {
@@ -5579,6 +5606,13 @@ public class MediaDataController extends BaseController {
                         }
                     }
 
+                    if (channelId != 0 && messageObject.getDialogId() != -channelId) {
+                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(channelId);
+                        if (chat != null && !ChatObject.isPublic(chat)) {
+                            continue;
+                        }
+                    }
+
                     SparseArray<ArrayList<MessageObject>> sparseArray = replyMessageOwners.get(dialogId);
                     ArrayList<Integer> ids = dialogReplyMessagesIds.get(channelId);
                     if (sparseArray == null) {
@@ -7458,7 +7492,7 @@ public class MediaDataController extends BaseController {
             loadFeaturedDate[0] = 0;
             loadFeaturedDate[1] = 0;
         }
-        loadRecents(MediaDataController.TYPE_FAVE, false, true, false);
+        loadRecents(MediaDataController.TYPE_FAVE, false, false, true);
         loadRecents(MediaDataController.TYPE_GREETINGS, false, true, false);
         loadRecents(MediaDataController.TYPE_PREMIUM_STICKERS, false, false, true);
         checkFeaturedStickers();
@@ -8205,6 +8239,16 @@ public class MediaDataController extends BaseController {
         return emojiStatuses[type];
     }
 
+    public ArrayList<TLRPC.EmojiStatus> getDefaultChannelEmojiStatuses() {
+        final int type = 2; // default channel
+        if (!emojiStatusesFromCacheFetched[type]) {
+            fetchEmojiStatuses(type, true);
+        } else if (emojiStatuses[type] == null || emojiStatusesFetchDate[type] != null && (System.currentTimeMillis() / 1000 - emojiStatusesFetchDate[type]) > 60 * 30) {
+            fetchEmojiStatuses(type, false);
+        }
+        return emojiStatuses[type];
+    }
+
     public ArrayList<TLRPC.EmojiStatus> getRecentEmojiStatuses() {
         final int type = 0; // recent
         if (!emojiStatusesFromCacheFetched[type]) {
@@ -8296,8 +8340,12 @@ public class MediaDataController extends BaseController {
                 TLRPC.TL_account_getRecentEmojiStatuses recentReq = new TLRPC.TL_account_getRecentEmojiStatuses();
                 recentReq.hash = emojiStatusesHash[type];
                 req = recentReq;
-            } else {
+            } else if (type == 1) {
                 TLRPC.TL_account_getDefaultEmojiStatuses defaultReq = new TLRPC.TL_account_getDefaultEmojiStatuses();
+                defaultReq.hash = emojiStatusesHash[type];
+                req = defaultReq;
+            } else {
+                TLRPC.TL_account_getChannelDefaultEmojiStatuses defaultReq = new TLRPC.TL_account_getChannelDefaultEmojiStatuses();
                 defaultReq.hash = emojiStatusesHash[type];
                 req = defaultReq;
             }
@@ -8537,6 +8585,44 @@ public class MediaDataController extends BaseController {
                     replyIconsDefault = (TLRPC.TL_emojiList) response;
                     editor.putString("replyicons",  Utilities.bytesToHex(data.toByteArray()));
                     editor.putLong("replyicons_last_check", System.currentTimeMillis());
+
+                    editor.apply();
+                }
+            }));
+        }
+    }
+
+    public TLRPC.TL_emojiList restrictedStatusEmojis;
+    public void loadRestrictedStatusEmojis() {
+        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("restrictedstatuses_" + currentAccount, Context.MODE_PRIVATE);
+
+        String value = preferences.getString("restrictedstatuses", null);
+        long lastCheckTime = preferences.getLong("restrictedstatuses_last_check", 0);
+
+        TLRPC.TL_emojiList emojiList = null;
+        if (value != null) {
+            SerializedData serializedData = new SerializedData(Utilities.hexToBytes(value));
+            try {
+                emojiList = (TLRPC.TL_emojiList) TLRPC.TL_emojiList.TLdeserialize(serializedData, serializedData.readInt32(true), true);
+                restrictedStatusEmojis = emojiList;
+            } catch (Throwable e) {
+                FileLog.e(e);
+            }
+        }
+
+        if (emojiList == null || (System.currentTimeMillis() - lastCheckTime) > 24 * 60 * 60 * 1000) {
+            TLRPC.TL_account_getChannelRestrictedStatusEmojis req = new TLRPC.TL_account_getChannelRestrictedStatusEmojis();
+            if (emojiList != null) {
+                req.hash = emojiList.hash;
+            }
+            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (response instanceof TLRPC.TL_emojiList) {
+                    SerializedData data = new SerializedData(response.getObjectSize());
+                    response.serializeToStream(data);
+                    SharedPreferences.Editor editor = preferences.edit();
+                    restrictedStatusEmojis = (TLRPC.TL_emojiList) response;
+                    editor.putString("restrictedstatuses",  Utilities.bytesToHex(data.toByteArray()));
+                    editor.putLong("restrictedstatuses_last_check", System.currentTimeMillis());
 
                     editor.apply();
                 }

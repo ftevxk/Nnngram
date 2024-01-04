@@ -131,6 +131,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int mergeMessageRow;
     private int filterZalgoRow;
     private int hideKeyboardWhenScrollingRow;
+    private int searchInPlaceRow;
     private int chat2Row;
 
     private int markdownRow;
@@ -427,6 +428,11 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.hideKeyboardWhenScrolling);
             }
+        } else if (position == searchInPlaceRow) {
+            Config.toggleSearchInPlace();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.searchInPlace);
+            }
         }
     }
 
@@ -488,6 +494,7 @@ public class ChatSettingActivity extends BaseActivity {
         mergeMessageRow = addRow("mergeMessage");
         filterZalgoRow = addRow("filterZalgo");
         hideKeyboardWhenScrollingRow = addRow("hideKeyboardWhenScrolling");
+        searchInPlaceRow = addRow("searchInPlace");
         chat2Row = addRow();
         markdownRow = addRow();
         markdownDisableRow = addRow("markdownDisabled");
@@ -650,6 +657,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString("filterZalgo", R.string.filterZalgo), Config.filterZalgo, true);
                     } else if (position == hideKeyboardWhenScrollingRow) {
                         textCell.setTextAndCheck(LocaleController.getString("hideKeyboardWhenScrolling", R.string.hideKeyboardWhenScrolling), Config.hideKeyboardWhenScrolling, true);
+                    } else if (position == searchInPlaceRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("searchInPlace", R.string.searchInPlace), Config.searchInPlace, true);
                     }
                     break;
                 }
@@ -937,7 +946,7 @@ public class ChatSettingActivity extends BaseActivity {
                     AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
                 } else {
                     final int targetNum = Integer.parseInt(editText.getText().toString().trim());
-                    if (targetNum > 150 || targetNum < 20)
+                    if (targetNum > 200 || targetNum < 20)
                         AlertUtil.showToast(LocaleController.getString("numberInvalid", R.string.numberInvalid));
                     else
                         Config.setMaxRecentSticker(Integer.parseInt(editText.getText().toString()));

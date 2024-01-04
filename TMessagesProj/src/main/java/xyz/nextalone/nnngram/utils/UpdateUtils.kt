@@ -20,7 +20,6 @@
 package xyz.nextalone.nnngram.utils
 
 import android.content.Context
-import android.os.Build
 import android.util.Base64
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +45,7 @@ object UpdateUtils {
 
     private const val channelUsername = "Nnngram"
 
-    private val originalChannelUsername = String(Base64.decode("Tm5uZ3JhbQo=", Base64.DEFAULT))
+    private val originalChannelUsername = String(Base64.decode("TnVsbGdyYW1DbGllbnQK", Base64.DEFAULT))
 
     @JvmStatic
     fun postCheckFollowChannel(ctx: Context, currentAccount: Int) = CoroutineScope(Dispatchers.IO).launch {
@@ -122,7 +121,7 @@ object UpdateUtils {
             return
         }
 
-        if (BuildConfig.APPLICATION_ID != Arrays.toString(Base64.decode("eHl6Lm5leHRhbG9uZS5ubm5ncmFtCg==", Base64.DEFAULT))) {
+        if (BuildConfig.APPLICATION_ID != Arrays.toString(Base64.decode("dG9wLnF3cTIzMzMubnVsbGdyYW0=", Base64.DEFAULT))) {
             ApplicationLoader.applicationHandler.post {
                 val messagesCollector = MessagesController.getInstance(currentAccount)
                 val userConfig = UserConfig.getInstance(currentAccount)
@@ -312,8 +311,7 @@ object UpdateUtils {
                         val fileName = if (apkDocument.attributes.size == 0) "" else apkDocument.attributes[0].file_name
                         Log.d("checkUpdate", "file_name： ${apkDocument.attributes[0].file_name}")
 
-                        val abi = "arm64"
-                        if (!(fileName.contains(abi) && fileName.contains(metadata.versionName))) continue
+                        if (!(fileName.contains(Utils.getAbi()) && fileName.contains(metadata.versionName))) continue
                         val update = TLRPC.TL_help_appUpdate().apply {
                             version = metadata.versionName
                             document = apkDocument

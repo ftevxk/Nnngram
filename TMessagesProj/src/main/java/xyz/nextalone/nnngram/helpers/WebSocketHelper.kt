@@ -28,6 +28,7 @@ import xyz.nextalone.nnngram.config.ConfigManager
 import xyz.nextalone.nnngram.utils.AnalyticsUtils.trackEvent
 import xyz.nextalone.nnngram.utils.Defines
 import xyz.nextalone.nnngram.utils.Log
+import xyz.nextalone.nnngram.utils.Utils
 import java.net.ServerSocket
 
 object WebSocketHelper {
@@ -119,7 +120,7 @@ object WebSocketHelper {
                 tcp2wsStarted = true
                 val map = HashMap<String, String?>()
                 map["buildType"] = BuildConfig.BUILD_TYPE
-                map["buildFlavor"] = BuildConfig.ABI
+                map["buildFlavor"] = Utils.getAbi()
                 map["isPlay"] = "false"
                 trackEvent("tcp2ws started", map)
             }
