@@ -1188,20 +1188,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
 
         public ArrayList<MessageObject> getMessages() {
-//            return isFrozen ? frozenMessages : messages;
-            //wd 媒体仅显示视频时过滤较短时长视频
-            ArrayList<MessageObject> messageObjects = isFrozen ? frozenMessages : messages;
-            if (filterType == FILTER_VIDEOS_ONLY){
-                ArrayList<MessageObject> longMessageObjects = new ArrayList<>();
-                for (MessageObject messageObject : messageObjects) {
-                    if (messageObject.isLongVideo(false)) {
-                        longMessageObjects.add(messageObject);
-                    }
-                }
-                return longMessageObjects;
-            } else {
-                return messageObjects;
-            }
+            return isFrozen ? frozenMessages : messages;
         }
 
         public int getStartOffset() {
@@ -2816,14 +2803,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     sharedMediaData[0].addMessage(messageObject, 0, false, enc);
                 }
             } else {
-//                if (!messageObject.isPhoto()) {
-//                    sharedMediaData[0].addMessage(messageObject, 0, false, enc);
-//                }
-                //wd 媒体仅显示视频时过滤较短时长视频
-                if (!messageObject.isPhoto() && messageObject.isLongVideo(false)) {
+                if (!messageObject.isPhoto()) {
                     sharedMediaData[0].addMessage(messageObject, 0, false, enc);
-                } else {
-                    sharedMediaData[0].setTotalCount(sharedMediaData[0].totalCount - 1);
                 }
             }
         }

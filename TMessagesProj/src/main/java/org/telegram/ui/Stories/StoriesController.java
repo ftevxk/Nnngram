@@ -2405,9 +2405,7 @@ public class StoriesController {
         }
 
         private boolean filter(MessageObject msg, boolean photos, boolean videos) {
-//            return msg != null && msg.isStory() && (photos && msg.isPhoto() || videos && msg.isVideo() || msg.storyItem.media instanceof TLRPC.TL_messageMediaUnsupported);
-            //wd 对话页面媒体视频过滤短时长视频
-            return msg != null && msg.isStory() && (photos && msg.isPhoto() || videos && msg.isLongVideo(false) || msg.storyItem.media instanceof TLRPC.TL_messageMediaUnsupported);
+            return msg != null && msg.isStory() && (photos && msg.isPhoto() || videos && msg.isVideo() || msg.storyItem.media instanceof TLRPC.TL_messageMediaUnsupported);
         }
 
         private boolean done;
