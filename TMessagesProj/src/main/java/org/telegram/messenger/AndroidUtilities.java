@@ -2216,7 +2216,7 @@ public class AndroidUtilities {
         //wd 自用修改到下载目录下
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File cachePath = new File(path, FileUtils.getRootPath() + "/cache");
+            File cachePath = new File(path, FileUtils.getRootPath() + "/Cache");
             cachePath.mkdirs();
             AndroidUtilities.createEmptyFile(new File(cachePath, ".nomedia"));
             return cachePath;
@@ -2274,7 +2274,7 @@ public class AndroidUtilities {
         try {
             File file = ApplicationLoader.applicationContext.getFilesDir();
             if (file != null) {
-                File cacheFile = new File(file, "cache/");
+                File cacheFile = new File(file, "Cache/");
                 cacheFile.mkdirs();
                 if ((file.exists() || file.mkdirs()) && file.canWrite()) {
                     return cacheFile;
