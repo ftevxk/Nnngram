@@ -855,6 +855,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private int last_message_id = 0;
     private long mergeDialogId;
     private boolean sentBotStart;
+    private int lastSearchedMessageId = 0;
 
     private long startMessageAppearTransitionMs;
     private List<MessageSkeleton> messageSkeletons = new ArrayList<>();
@@ -10210,6 +10211,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         mentionContainer.getAdapter().searchUsernameOrHashtag(null, 0, null, false, true);
         searchItem.setSearchFieldHint(null);
         searchItem.clearSearchText();
+        lastSearchedMessageId = 0;
         getMediaDataController().searchMessagesInChat(searchingQuery = "", dialog_id, mergeDialogId, classGuid, 0, threadMessageId, searchingUserMessages, searchingChatMessages, searchingReaction);
     }
 
@@ -21186,7 +21188,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 foundMessageIds.add(message.getId());
                             }
                             Collections.sort(foundMessageIds);
-                            if (foundMessageIds.get(0) > currentMessageId) {
+                            int firstFoundMessageId = foundMessageIds.get(0);
+                            int lastFoundMessageId = foundMessageIds.get(foundMessageIds.size() -1);
+                            if (firstFoundMessageId > currentMessageId && lastSearchedMessageId != lastFoundMessageId) {
+                                lastSearchedMessageId = lastFoundMessageId;
                                 Runnable loop = () -> {
                                     getMediaDataController().setCurrentMaxMessage();
                                     getMediaDataController().searchMessagesInChat(null, dialog_id, mergeDialogId, classGuid, 1, threadMessageId, searchingUserMessages,
@@ -21200,17 +21205,23 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 return;
                             }
 
-                            int insertionPoint = Collections.binarySearch(foundMessageIds, currentMessageId);
-                            int nextLargerIndex = (insertionPoint < 0) ? Math.max(-(insertionPoint + 1) - 1, 0) : insertionPoint;
-                            if (nextLargerIndex < foundMessageIds.size()) {
-                                Integer nextLargerMessageId = foundMessageIds.get(nextLargerIndex);
-                                if (Math.abs(nextLargerMessageId) < Math.abs(messageId)) {
-                                    mask = mask | 2;
+                            if (currentMessageId < lastFoundMessageId) {
+                                int insertionPoint = Collections.binarySearch(foundMessageIds, currentMessageId);
+                                int nextLargerIndex = (insertionPoint < 0) ? Math.max(-(insertionPoint + 1) - 1, 0) : insertionPoint;
+                                if (nextLargerIndex < foundMessageIds.size()) {
+                                    Integer nextLargerMessageId = foundMessageIds.get(nextLargerIndex);
+                                    if (Math.abs(nextLargerMessageId) < Math.abs(messageId)) {
+                                        mask = mask | 2;
+                                    }
+                                    messageId = nextLargerMessageId;
+                                    nextLargerIndex = foundMessageIds.size() - nextLargerIndex - 1;
+                                    getMediaDataController().setCurrentMessage(nextLargerIndex);
+                                    num = nextLargerIndex;
                                 }
-                                messageId = nextLargerMessageId;
-                                nextLargerIndex = foundMessageIds.size() - nextLargerIndex - 1;
-                                getMediaDataController().setCurrentMessage(nextLargerIndex);
-                                num = nextLargerIndex;
+                            } else {
+                                messageId = lastFoundMessageId;
+                                num = foundMessageIds.size();
+                                mask = 2;
                             }
                         }
                     } else {
@@ -31607,6 +31618,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (searchItem != null) {
             searchItem.setSearchFieldText(text, false);
         }
+        lastSearchedMessageId = 0;
         getMediaDataController().searchMessagesInChat(searchingQuery = (text == null ? "" : text), dialog_id, mergeDialogId, classGuid, 0, threadMessageId, false, searchingUserMessages, searchingChatMessages, !TextUtils.isEmpty(text), searchingReaction, true);
         updatePinnedMessageView(true);
     }
@@ -34411,6 +34423,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         public void onSearchPressed(EditText editText) {
             searchWas = true;
             updateSearchButtons(0, 0, -1);
+            lastSearchedMessageId = 0;
             getMediaDataController().searchMessagesInChat(searchingQuery = editText.getText().toString(), dialog_id, mergeDialogId, classGuid, 0, threadMessageId, searchingUserMessages, searchingChatMessages, searchingReaction, true);
         }
 
