@@ -1012,7 +1012,7 @@ public class SharedConfig {
     }
 
     public static boolean isAppUpdateAvailable() {
-        if (pendingAppUpdate == null || pendingAppUpdate.document == null || !ApplicationLoader.isStandaloneBuild()) {
+        if (pendingAppUpdate == null || pendingAppUpdate.document == null) {
             return false;
         }
         return pendingAppUpdateBuildVersion == BuildConfig.VERSION_CODE;
@@ -1753,9 +1753,9 @@ public class SharedConfig {
         Utilities.globalQueue.postRunnable(() -> {
             try {
                 File telegramPath = new File(Environment.getExternalStorageDirectory(), "Nnngram");
-                File imagePath = new File(telegramPath, "Images");
+                File imagePath = new File(telegramPath, "Nnngram Images");
                 imagePath.mkdir();
-                File videoPath = new File(telegramPath, "Video");
+                File videoPath = new File(telegramPath, "Nnngram Video");
                 videoPath.mkdir();
 
                 if (!BuildVars.NO_SCOPED_STORAGE) {

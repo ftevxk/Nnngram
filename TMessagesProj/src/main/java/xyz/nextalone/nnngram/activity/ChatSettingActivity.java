@@ -122,6 +122,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int scrollableChatPreviewRow;
     private int showTabsOnForwardRow;
     private int disableStickersAutoReorderRow;
+    private int hideTitleRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
     private int hideMessageSeenTooltipRow;
@@ -383,6 +384,11 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.markdownDisabled);
             }
+        } else if (position == hideTitleRow) {
+            Config.toggleShowHideTitle();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.showHideTitle);
+            }
         } else if (position == doNotUnarchiveBySwipeRow) {
             Config.toggleDoNotUnarchiveBySwipe();
             if (view instanceof TextCheckCell) {
@@ -485,6 +491,7 @@ public class ChatSettingActivity extends BaseActivity {
         scrollableChatPreviewRow = addRow("scrollableChatPreview");
         showTabsOnForwardRow = addRow("showTabsOnForward");
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
+        hideTitleRow = addRow("showHideTitle");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
         hideMessageSeenTooltipRow = addRow("hideMessageSeenTooltip");
@@ -639,6 +646,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString("MarkdownParseLinks", R.string.MarkdownParseLinks), Config.markdownParseLinks, false);
                     } else if (position == markdownDisableRow) {
                         textCell.setTextAndCheck(LocaleController.getString("MarkdownDisableByDefault", R.string.MarkdownDisableByDefault), Config.markdownDisabled, true);
+                    } else if (position == hideTitleRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("showHideTitle", R.string.showHideTitle), Config.showHideTitle, true);
                     } else if (position == doNotUnarchiveBySwipeRow) {
                         textCell.setTextAndCheck(LocaleController.getString("doNotUnarchiveBySwipe", R.string.doNotUnarchiveBySwipe), Config.doNotUnarchiveBySwipe, true);
                     } else if (position == hideInputFieldBotButtonRow) {

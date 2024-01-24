@@ -12,10 +12,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 
-import com.android.billingclient.api.ProductDetails;
-
-import java.util.Objects;
-
 public class BuildVars {
 
     public static final boolean DEBUG_VERSION = true;
@@ -24,8 +20,8 @@ public class BuildVars {
     public static boolean LOGS_ENABLED = true;
     public static boolean USE_CLOUD_STRINGS = true;
     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
-    public static final int BUILD_VERSION = 4228;
-    public static final String BUILD_VERSION_STRING = "10.5.0";
+    public static final int BUILD_VERSION = 4275;
+    public static final String BUILD_VERSION_STRING = "10.6.1";
     public static final int APP_ID = 25184524;
     public static final String APP_HASH = "0cda2e05621028b7d3836504dad86b9c";
     public static final String APPCENTER_HASH = "d2efd39b-4dbe-4ca4-896b-9b2a3ddf0957";
@@ -49,23 +45,7 @@ public class BuildVars {
     }
 
     public static boolean useInvoiceBilling() {
-        return BillingController.billingClientEmpty || hasDirectCurrency();
-    }
-
-    private static boolean hasDirectCurrency() {
-        if (!BillingController.getInstance().isReady() || BillingController.PREMIUM_PRODUCT_DETAILS == null) {
-            return false;
-        }
-        for (ProductDetails.SubscriptionOfferDetails offerDetails : BillingController.PREMIUM_PRODUCT_DETAILS.getSubscriptionOfferDetails()) {
-            for (ProductDetails.PricingPhase phase : offerDetails.getPricingPhases().getPricingPhaseList()) {
-                for (String cur : MessagesController.getInstance(UserConfig.selectedAccount).directPaymentsCurrency) {
-                    if (Objects.equals(phase.getPriceCurrencyCode(), cur)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return true;
     }
 
 
@@ -73,7 +53,6 @@ public class BuildVars {
         return false;
     }
 
-    private static Boolean betaApp;
     public static boolean isBetaApp() {
         return false;
     }

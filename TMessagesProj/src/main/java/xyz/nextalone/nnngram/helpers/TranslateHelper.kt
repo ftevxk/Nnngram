@@ -50,6 +50,7 @@ import xyz.nextalone.nnngram.translate.providers.GoogleTranslator
 import xyz.nextalone.nnngram.translate.providers.LingoTranslator
 import xyz.nextalone.nnngram.translate.providers.MicrosoftTranslator
 import xyz.nextalone.nnngram.translate.providers.TelegramTranslator
+import xyz.nextalone.nnngram.translate.providers.TranSmartTranslator
 import xyz.nextalone.nnngram.translate.providers.YandexTranslator
 import xyz.nextalone.nnngram.ui.PopupBuilder
 import xyz.nextalone.nnngram.utils.Defines
@@ -98,6 +99,7 @@ object TranslateHelper {
         BaiduTranslator(5),
         YandexTranslator(6),
         DeepLTranslator(7),
+        TranSmartTranslator(8),
     }
 
     @JvmStatic
@@ -109,6 +111,7 @@ object TranslateHelper {
         ProviderType.DeepLTranslator.num -> ProviderType.DeepLTranslator
         ProviderType.LingoTranslator.num -> ProviderType.LingoTranslator
         ProviderType.BaiduTranslator.num -> ProviderType.BaiduTranslator
+        ProviderType.TranSmartTranslator.num -> ProviderType.TranSmartTranslator
         else -> ProviderType.GoogleTranslator
     }
         set(value) {
@@ -125,6 +128,7 @@ object TranslateHelper {
         ProviderType.DeepLTranslator -> DeepLTranslator
         ProviderType.LingoTranslator -> LingoTranslator
         ProviderType.BaiduTranslator -> BaiduTranslator
+        ProviderType.TranSmartTranslator -> TranSmartTranslator
     }
 
     @JvmStatic
@@ -136,6 +140,7 @@ object TranslateHelper {
         ProviderType.DeepLTranslator -> DeepLTranslator
         ProviderType.LingoTranslator -> LingoTranslator
         ProviderType.BaiduTranslator -> BaiduTranslator
+        ProviderType.TranSmartTranslator -> TranSmartTranslator
     }
 
     @JvmStatic
@@ -147,6 +152,7 @@ object TranslateHelper {
         ProviderType.DeepLTranslator.num -> ProviderType.DeepLTranslator
         ProviderType.LingoTranslator.num -> ProviderType.LingoTranslator
         ProviderType.BaiduTranslator.num -> ProviderType.BaiduTranslator
+        ProviderType.TranSmartTranslator.num -> ProviderType.TranSmartTranslator
         else -> ProviderType.GoogleTranslator
     }
 
@@ -243,6 +249,8 @@ object TranslateHelper {
         types.add(ProviderType.LingoTranslator)
         names.add(LocaleController.getString("ProviderBaiduTranslate", R.string.ProviderBaiduTranslate))
         types.add(ProviderType.BaiduTranslator)
+        names.add(LocaleController.getString("ProviderTranSmartTranslate", R.string.ProviderTranSmartTranslate))
+        types.add(ProviderType.TranSmartTranslator)
         return Pair(names, types)
     }
 

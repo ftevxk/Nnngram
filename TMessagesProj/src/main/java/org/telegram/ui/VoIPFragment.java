@@ -5,6 +5,7 @@ import static org.telegram.messenger.AndroidUtilities.isTablet;
 import static org.telegram.ui.GroupCallActivity.TRANSITION_DURATION;
 
 import android.Manifest;
+import android.Manifest.permission;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -94,9 +95,9 @@ import org.telegram.ui.Components.HideViewAfterAnimation;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.voip.AcceptDeclineView;
 import org.telegram.ui.Components.voip.EmojiRationalLayout;
+import org.telegram.ui.Components.voip.EndCloseLayout;
 import org.telegram.ui.Components.voip.HideEmojiTextView;
 import org.telegram.ui.Components.voip.ImageWithWavesView;
-import org.telegram.ui.Components.voip.EndCloseLayout;
 import org.telegram.ui.Components.voip.PrivateVideoPreviewDialogNew;
 import org.telegram.ui.Components.voip.RateCallLayout;
 import org.telegram.ui.Components.voip.VoIPBackgroundProvider;
@@ -111,6 +112,7 @@ import org.telegram.ui.Components.voip.VoIPToggleButton;
 import org.telegram.ui.Components.voip.VoIPWindowView;
 import org.telegram.ui.Components.voip.VoIpGradientLayout;
 import org.telegram.ui.Components.voip.VoIpHintView;
+import org.telegram.ui.Components.voip.VoIpCoverView;
 import org.telegram.ui.Components.voip.VoIpSnowView;
 import org.telegram.ui.Components.voip.VoIpSwitchLayout;
 import org.telegram.ui.Stories.recorder.HintView2;
@@ -122,6 +124,8 @@ import org.webrtc.TextureViewRenderer;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import xyz.nextalone.nnngram.utils.PermissionUtils;
 
 public class VoIPFragment implements VoIPService.StateListener, NotificationCenter.NotificationCenterDelegate {
 
@@ -145,6 +149,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
     private ViewGroup fragmentView;
 
     private VoIpGradientLayout gradientLayout;
+    private VoIpCoverView voIpCoverView;
     private VoIpSnowView voIpSnowView;
     private ImageWithWavesView callingUserPhotoViewMini;
 
@@ -784,6 +789,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         //     callingUserTextureView.attachBackgroundRenderer();
 
         frameLayout.addView(gradientLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        frameLayout.addView(voIpCoverView = new VoIpCoverView(context, callingUser, backgroundProvider) , LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         frameLayout.addView(voIpSnowView = new VoIpSnowView(context), LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 220));
         frameLayout.addView(callingUserTextureView);
 
@@ -866,7 +872,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         emojiLayout.setOrientation(LinearLayout.HORIZONTAL);
         emojiLayout.setPadding(0, 0, 0, AndroidUtilities.dp(30));
         emojiLayout.setClipToPadding(false);
-
+        emojiLayout.setContentDescription(LocaleController.getString("VoipHintEncryptionKey", R.string.VoipHintEncryptionKey));
         emojiLayout.setOnClickListener(view -> {
             if (System.currentTimeMillis() - lastContentTapTime < 500) {
                 return;
@@ -970,7 +976,6 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         callingUserTitle.setText(name);
         callingUserTitle.setMaxLines(2);
         callingUserTitle.setEllipsize(TextUtils.TruncateAt.END);
-        callingUserTitle.setShadowLayer(AndroidUtilities.dp(3), 0, AndroidUtilities.dp(.666666667f), 0x4C000000);
         callingUserTitle.setTextColor(Color.WHITE);
         callingUserTitle.setGravity(Gravity.CENTER_HORIZONTAL);
         callingUserTitle.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -1050,8 +1055,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                         FileLog.e(e);
                     }
                 } else {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                        activity.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 101);
+                    if (PermissionUtils.isRecordAudioPermissionGranted()) {
+                        PermissionUtils.requestRecordAudioPermission(activity);
                     } else {
                         if (VoIPService.getSharedInstance() != null) {
                             runAcceptCallAnimation(() -> {
@@ -1584,6 +1589,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
             return;
         }
         emojiExpanded = expanded;
+        voIpCoverView.onEmojiExpanded(expanded);
         if (expanded) {
             if (SharedConfig.callEncryptionHintDisplayedCount < 2) {
                 SharedConfig.incrementCallEncryptionHintDisplayed(2);
@@ -2121,6 +2127,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         updateSpeakerPhoneIcon();
 
         if (currentState == VoIPService.STATE_ESTABLISHED) {
+            voIpCoverView.onConnected();
             callingUserPhotoViewMini.onConnected();
             if (!gradientLayout.isConnectedCalled()) {
                 int[] loc = new int[2];
@@ -2131,6 +2138,7 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
         }
         boolean isVideoMode = currentUserIsVideo || callingUserIsVideo;
         voIpSnowView.setState(isVideoMode);
+        voIpCoverView.setState(isVideoMode);
         backgroundProvider.setHasVideo(isVideoMode);
 
         if (callingUserIsVideo && !wasVideo && isNearEar) {
@@ -2841,7 +2849,8 @@ public class VoIPFragment implements VoIPService.StateListener, NotificationCent
                     }
                 });
             } else {
-                if (!activity.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+                if (!activity.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
+                    || !(Build.VERSION.SDK_INT >= 34 && activity.shouldShowRequestPermissionRationale(permission.FOREGROUND_SERVICE_MICROPHONE))) {
                     VoIPService.getSharedInstance().declineIncomingCall();
                     VoIPHelper.permissionDenied(activity, () -> windowView.finish(), requestCode);
                     return;

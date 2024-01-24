@@ -27,7 +27,6 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import xyz.nextalone.nnngram.translate.BaseTranslator
 import xyz.nextalone.nnngram.utils.Log
@@ -38,7 +37,6 @@ object LingoTranslator : BaseTranslator() {
     override fun getTargetLanguages(): List<String> = targetLanguages
 
     @Serializable
-    @OptIn(ExperimentalSerializationApi::class)
     data class Request constructor(
         val source: String,
         val trans_type: String,

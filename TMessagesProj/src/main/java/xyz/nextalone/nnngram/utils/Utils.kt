@@ -28,6 +28,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.util.Base64
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +46,7 @@ import org.telegram.ui.ActionBar.ActionBarPopupWindow.ActionBarPopupWindowLayout
 import org.telegram.ui.ActionBar.BaseFragment
 import org.telegram.ui.Components.AlertsCreator
 import org.telegram.ui.Components.BulletinFactory
+import org.telegram.ui.Components.LayoutHelper
 import xyz.nextalone.gen.Config
 import xyz.nextalone.nnngram.activity.DatacenterActivity
 import xyz.nextalone.nnngram.remote.NicegramController
@@ -340,4 +342,9 @@ internal inline fun runOnIoDispatcher(crossinline block: ()->Unit) {
     CoroutineScope(Dispatchers.IO).launch {
         block()
     }
+}
+
+internal inline fun LinearLayout.addView(view: View, init: LinearLayout.LayoutParams.() -> Unit) {
+    addView(view, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) // default params
+        .apply(init))
 }

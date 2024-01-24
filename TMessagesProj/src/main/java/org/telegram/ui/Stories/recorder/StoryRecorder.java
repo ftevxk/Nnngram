@@ -121,7 +121,6 @@ import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.Easings;
 import org.telegram.ui.Components.EmojiView;
 import org.telegram.ui.Components.FilterShaders;
 import org.telegram.ui.Components.GestureDetectorFixDoubleTap;
@@ -163,6 +162,8 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import xyz.nextalone.nnngram.utils.PermissionUtils;
 
 public class StoryRecorder implements NotificationCenter.NotificationCenterDelegate {
 
@@ -3687,7 +3688,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                 return super.dispatchTouchEvent(ev);
             }
         };
-        galleryListView.allowSearch(forAddingPart);
+//        galleryListView.allowSearch(forAddingPart);
         galleryListView.setOnBackClickListener(() -> {
             animateGalleryListView(false);
             lastGallerySelectedAlbum = null;
@@ -5562,9 +5563,9 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
 
     private boolean requestAudioPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && activity != null) {
-            boolean granted = activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+            boolean granted = PermissionUtils.isRecordAudioPermissionGranted();
             if (!granted) {
-                activity.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 112);
+                PermissionUtils.requestRecordAudioPermission(activity);
                 return false;
             }
         }

@@ -123,9 +123,6 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.android.internal.telephony.ITelephony;
 import com.google.android.exoplayer2.util.Consumer;
-import com.google.android.gms.auth.api.phone.SmsRetriever;
-import com.google.android.gms.auth.api.phone.SmsRetrieverClient;
-import com.google.android.gms.tasks.Task;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
@@ -152,6 +149,8 @@ import org.telegram.ui.Components.HideViewAfterAnimation;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.PickerBottomLayout;
+import org.telegram.ui.Components.PipRoundVideoView;
+import org.telegram.ui.Components.PipVideoOverlay;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ShareAlert;
 import org.telegram.ui.Components.TypefaceSpan;
@@ -2003,22 +2002,6 @@ public class AndroidUtilities {
     }
 
     public static void setWaitingForSms(boolean value) {
-        synchronized (smsLock) {
-            waitingForSms = value;
-            try {
-                if (waitingForSms) {
-                    SmsRetrieverClient client = SmsRetriever.getClient(ApplicationLoader.applicationContext);
-                    Task<Void> task = client.startSmsRetriever();
-                    task.addOnSuccessListener(aVoid -> {
-                        if (BuildVars.DEBUG_VERSION) {
-                            FileLog.d("sms listener registered");
-                        }
-                    });
-                }
-            } catch (Throwable e) {
-                FileLog.e(e);
-            }
-        }
     }
 
     public static int getShadowHeight() {
@@ -5262,6 +5245,9 @@ public class AndroidUtilities {
             int[] location = new int[2];
             for (int i = 0; i < finalViews.size(); ++i) {
                 View view = finalViews.get(i);
+                if (view instanceof PipRoundVideoView.PipFrameLayout || view instanceof PipRoundVideoView.PipFrameLayout) {
+                    continue;
+                }
 
                 ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
                 if (layoutParams instanceof WindowManager.LayoutParams) {
