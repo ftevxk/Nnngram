@@ -151,7 +151,6 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     public interface DialogsSearchAdapterDelegate {
         void searchStateChanged(boolean searching, boolean animated);
         void didPressedOnSubDialog(long did);
-        void didPressedBlockedDialog(View view, long did);
         void needRemoveHint(long did);
         void needClearList();
         void runResultsEnterAnimation();
@@ -165,14 +164,12 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         private final int currentAccount;
         private boolean drawChecked;
         private boolean forceDarkTheme;
-        private boolean showPremiumBlock;
         private Theme.ResourcesProvider resourcesProvider;
 
-        public CategoryAdapterRecycler(Context context, int account, boolean drawChecked, boolean showPremiumBlock, Theme.ResourcesProvider resourcesProvider) {
+        public CategoryAdapterRecycler(Context context, int account, boolean drawChecked, Theme.ResourcesProvider resourcesProvider) {
             this.drawChecked = drawChecked;
             mContext = context;
             currentAccount = account;
-            this.showPremiumBlock = showPremiumBlock;
             this.resourcesProvider = resourcesProvider;
         }
 
@@ -183,9 +180,6 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             HintDialogCell cell = new HintDialogCell(mContext, drawChecked, resourcesProvider);
-            if (showPremiumBlock) {
-                cell.showPremiumBlocked();
-            }
             cell.setLayoutParams(new RecyclerView.LayoutParams(AndroidUtilities.dp(80), AndroidUtilities.dp(86)));
             return new RecyclerListView.Holder(cell);
         }
@@ -489,13 +483,25 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
             reqId = 0;
         }
-        if (query == null || query.length() == 0) {
+        if (TextUtils.isEmpty(query)) {
+            filteredRecentQuery = null;
             searchResultMessages.clear();
+            searchForumResultMessages.clear();
             lastReqId = 0;
             lastMessagesSearchString = null;
+            searchWas = false;
             notifyDataSetChanged();
+            return;
+        } else {
+            filterRecent(query);
+            searchAdapterHelper.mergeResults(searchResult, filtered2RecentSearchObjects);
+        }
+
+        if (dialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
+            waitingResponseCount--;
             if (delegate != null) {
-                delegate.searchStateChanged(false);
+                delegate.searchStateChanged(waitingResponseCount > 0, true);
+                delegate.runResultsEnterAnimation();
             }
             return;
         }
@@ -511,18 +517,11 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (query.equals(lastMessagesSearchString) && !searchResultMessages.isEmpty() && lastMessagesSearchId == lastSearchId) {
             MessageObject lastMessage = searchResultMessages.get(searchResultMessages.size() - 1);
             req.offset_id = lastMessage.getId();
-            req.offset_date = lastMessage.messageOwner.date;
-            int id;
-            if (lastMessage.messageOwner.to_id.channel_id != 0) {
-                id = -lastMessage.messageOwner.to_id.channel_id;
-            } else if (lastMessage.messageOwner.to_id.chat_id != 0) {
-                id = -lastMessage.messageOwner.to_id.chat_id;
-            } else {
-                id = lastMessage.messageOwner.to_id.user_id;
-            }
+            req.offset_rate = nextSearchRate;
+            long id = MessageObject.getPeerId(lastMessage.messageOwner.peer_id);
             req.offset_peer = MessagesController.getInstance(currentAccount).getInputPeer(id);
         } else {
-            req.offset_date = 0;
+            req.offset_rate = 0;
             req.offset_id = 0;
             req.offset_peer = new TLRPC.TL_inputPeerEmpty();
         }
@@ -611,7 +610,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                         }
                         searchWas = true;
                         //wd 是否可加载更多数据改到前面判断处理
-//                        messagesSearchEndReached = res.messages.size() != 20;                        if (searchId > 0) {
+//                        messagesSearchEndReached = res.messages.size() != 20;
+                        if (searchId > 0) {
                             lastMessagesSearchId = searchId;
                             if (lastLocalSearchId != searchId) {
                                 searchResult.clear();
@@ -642,12 +642,12 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     private boolean resentSearchAvailable() {
         return (
             dialogsType != DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO &&
-            dialogsType != DialogsActivity.DIALOGS_TYPE_USERS_ONLY &&
-            dialogsType != DialogsActivity.DIALOGS_TYPE_CHANNELS_ONLY &&
-            dialogsType != DialogsActivity.DIALOGS_TYPE_GROUPS_ONLY &&
-            dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_SHARE &&
-            dialogsType != DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS &&
-            dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER
+                dialogsType != DialogsActivity.DIALOGS_TYPE_USERS_ONLY &&
+                dialogsType != DialogsActivity.DIALOGS_TYPE_CHANNELS_ONLY &&
+                dialogsType != DialogsActivity.DIALOGS_TYPE_GROUPS_ONLY &&
+                dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_SHARE &&
+                dialogsType != DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS &&
+                dialogsType != DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER
         );
     }
 
@@ -1008,7 +1008,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             MessagesController.getInstance(currentAccount).putUsers(encUsers, true);
             searchResult = result;
             searchResultNames = names;
-         //   searchContacts = contacts;
+            //   searchContacts = contacts;
             searchAdapterHelper.mergeResults(searchResult, filtered2RecentSearchObjects);
             notifyDataSetChanged();
             if (delegate != null) {
@@ -1410,7 +1410,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         View view;
         switch (viewType) {
             case VIEW_TYPE_PROFILE_CELL:
-                view = new ProfileSearchCell(mContext).showPremiumBlock(dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD);
+                view = new ProfileSearchCell(mContext);
                 break;
             case VIEW_TYPE_GRAY_SECTION:
                 view = new GraySectionCell(mContext);
@@ -1458,14 +1458,8 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
                 horizontalListView.setLayoutManager(layoutManager);
                 //horizontalListView.setDisallowInterceptTouchEvents(true);
-                horizontalListView.setAdapter(new CategoryAdapterRecycler(mContext, currentAccount, false, dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD, resourcesProvider));
+                horizontalListView.setAdapter(new CategoryAdapterRecycler(mContext, currentAccount, false, resourcesProvider));
                 horizontalListView.setOnItemClickListener((view1, position) -> {
-                    if (view1 instanceof HintDialogCell && ((HintDialogCell) view1).isBlocked()) {
-                        if (delegate != null) {
-                            delegate.didPressedBlockedDialog(view1, ((HintDialogCell) view1).getDialogId());
-                        }
-                        return;
-                    }
                     if (delegate != null) {
                         delegate.didPressedOnSubDialog((Long) view1.getTag());
                     }
