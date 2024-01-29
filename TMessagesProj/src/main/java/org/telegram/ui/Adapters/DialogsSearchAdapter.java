@@ -489,25 +489,13 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
             reqId = 0;
         }
-        if (TextUtils.isEmpty(query)) {
-            filteredRecentQuery = null;
+        if (query == null || query.length() == 0) {
             searchResultMessages.clear();
-            searchForumResultMessages.clear();
             lastReqId = 0;
             lastMessagesSearchString = null;
-            searchWas = false;
             notifyDataSetChanged();
-            return;
-        } else {
-            filterRecent(query);
-            searchAdapterHelper.mergeResults(searchResult, filtered2RecentSearchObjects);
-        }
-
-        if (dialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
-            waitingResponseCount--;
             if (delegate != null) {
-                delegate.searchStateChanged(waitingResponseCount > 0, true);
-                delegate.runResultsEnterAnimation();
+                delegate.searchStateChanged(false);
             }
             return;
         }
@@ -523,11 +511,18 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (query.equals(lastMessagesSearchString) && !searchResultMessages.isEmpty() && lastMessagesSearchId == lastSearchId) {
             MessageObject lastMessage = searchResultMessages.get(searchResultMessages.size() - 1);
             req.offset_id = lastMessage.getId();
-            req.offset_rate = nextSearchRate;
-            long id = MessageObject.getPeerId(lastMessage.messageOwner.peer_id);
+            req.offset_date = lastMessage.messageOwner.date;
+            int id;
+            if (lastMessage.messageOwner.to_id.channel_id != 0) {
+                id = -lastMessage.messageOwner.to_id.channel_id;
+            } else if (lastMessage.messageOwner.to_id.chat_id != 0) {
+                id = -lastMessage.messageOwner.to_id.chat_id;
+            } else {
+                id = lastMessage.messageOwner.to_id.user_id;
+            }
             req.offset_peer = MessagesController.getInstance(currentAccount).getInputPeer(id);
         } else {
-            req.offset_rate = 0;
+            req.offset_date = 0;
             req.offset_id = 0;
             req.offset_peer = new TLRPC.TL_inputPeerEmpty();
         }
@@ -616,8 +611,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                         }
                         searchWas = true;
                         //wd 是否可加载更多数据改到前面判断处理
-//                        messagesSearchEndReached = res.messages.size() != 20;
-                        if (searchId > 0) {
+//                        messagesSearchEndReached = res.messages.size() != 20;                        if (searchId > 0) {
                             lastMessagesSearchId = searchId;
                             if (lastLocalSearchId != searchId) {
                                 searchResult.clear();

@@ -755,7 +755,7 @@ public class MessageObject {
 
         public void layoutCode(String lng, int codeLength, boolean noforwards) {
             noforwards = false;
-            
+
             hasCodeCopyButton = codeLength >= 75 && !noforwards;
             if (hasCodeCopyButton) {
                 copyText = new Text(LocaleController.getString(R.string.CopyCode).toUpperCase(), SharedConfig.fontSize - 3, AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
@@ -1450,7 +1450,7 @@ public class MessageObject {
                 backgroundChangeBounds = false;
             }
         }
-        
+
         public boolean contains(int messageId) {
             if (messages == null) {
                 return false;
@@ -9457,6 +9457,7 @@ public class MessageObject {
         return highlightedWords != null && !highlightedWords.isEmpty();
     }
 
+    //wd 比较两个对象是否相同
     @Override
     public boolean equals(@Nullable Object obj) {
         if (obj instanceof MessageObject messageObject){
@@ -9757,7 +9758,7 @@ public class MessageObject {
     public static CharSequence peerNameWithIcon(int currentAccount, TLRPC.Peer peer) {
         return peerNameWithIcon(currentAccount, peer, !(peer instanceof TLRPC.TL_peerUser));
     }
-    
+
     public static CharSequence peerNameWithIcon(int currentAccount, TLRPC.Peer peer, boolean anotherChat) {
         if (peer instanceof TLRPC.TL_peerUser) {
             TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(peer.user_id);

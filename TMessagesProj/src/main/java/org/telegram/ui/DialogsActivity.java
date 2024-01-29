@@ -7402,8 +7402,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (initialSearchType >= 0) {
             searchViewPager.setPosition(searchViewPager.getPositionForType(initialSearchType));
         }
+//        if (!show) {
+//            initialSearchType = -1;
+//        }
+        //wd 无关键词默认打开媒体页面
         if (!show) {
-            //wd 无关键词默认打开媒体页面
             if (TextUtils.isEmpty(searchString)) {
                 initialSearchType = 0;
             } else {
