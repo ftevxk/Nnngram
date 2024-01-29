@@ -15531,6 +15531,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     float longPressX;
+    //wd 定义视频播放偏移位置
+    double videoPositionOffset;
     Runnable longPressRunnable = this::onLongPress;
 
     private boolean onTouchEvent(MotionEvent ev) {
@@ -15638,120 +15640,37 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
             if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
                 longPressX = ev.getX();
-                AndroidUtilities.runOnUIThread(longPressRunnable, 300);
+                //wd 禁用长按倍速播放
+//                AndroidUtilities.runOnUIThread(longPressRunnable, 300);
+
+                //wd 记录视频进度
+                double current = getCurrentVideoPosition();
+                double total = getVideoDuration();
+                double x = ev.getX();
+                double width = getContainerViewWidth();
+                double progress = x * total / width;
+                videoPositionOffset = progress - current;
             } else {
                 AndroidUtilities.cancelRunOnUIThread(longPressRunnable);
             }
         } else if (ev.getActionMasked() == MotionEvent.ACTION_MOVE) {
-
-            if (canZoom && ev.getPointerCount() == 2 && !draggingDown && zooming && !changingPage) {
-                discardTap = true;
-                if (currentEditMode == EDIT_MODE_PAINT) {
-                    float newPinchCenterX = (ev.getX(0) + ev.getX(1)) / 2.0f;
-                    float newPinchCenterY = (ev.getY(0) + ev.getY(1)) / 2.0f;
-                    float moveDx = moveStartX - newPinchCenterX;
-                    float moveDy = moveStartY - newPinchCenterY;
-                    moveStartX = newPinchCenterX;
-                    moveStartY = newPinchCenterY;
-                    if (translationX < minX || translationX > maxX) {
-                        moveDx /= 3.0f;
-                    }
-                    if (translationY < minY || translationY > maxY) {
-                        moveDy /= 3.0f;
-                    }
-                    pinchStartX = (pinchCenterX - getContainerViewWidth() / 2) - ((pinchCenterX - getContainerViewWidth() / 2) - translationX) / (scale / pinchStartScale) - moveDx;
-                    pinchStartY = (pinchCenterY - getContainerViewHeight() / 2) - ((pinchCenterY - getContainerViewHeight() / 2) - translationY) / (scale / pinchStartScale) - moveDy;
-                    pinchCenterX = newPinchCenterX;
-                    pinchCenterY = newPinchCenterY;
-                }
-                scale = (float) Math.hypot(ev.getX(1) - ev.getX(0), ev.getY(1) - ev.getY(0)) / pinchStartDistance * pinchStartScale;
-                translationX = (pinchCenterX - getContainerViewWidth() / 2) - ((pinchCenterX - getContainerViewWidth() / 2) - pinchStartX) * (scale / pinchStartScale);
-                translationY = (pinchCenterY - getContainerViewHeight() / 2) - ((pinchCenterY - getContainerViewHeight() / 2) - pinchStartY) * (scale / pinchStartScale);
-                updateMinMax(scale);
-                invalidateBlur();
-                containerView.invalidate();
-            } else if (ev.getPointerCount() == 1) {
-                if (paintViewTouched == 1 && photoPaintView != null) {
-                    View v = photoPaintView.getView();
-                    MotionEvent event = MotionEvent.obtain(ev);
-                    event.offsetLocation(-v.getX(), -v.getY());
-                    photoPaintView.onTouch(event);
-                    event.recycle();
-                    return true;
-                }
-                if (velocityTracker != null) {
-                    velocityTracker.addMovement(ev);
-                }
-                float dx = Math.abs(ev.getX() - moveStartX);
-                float dy = Math.abs(ev.getY() - dragY);
-                if (dx > touchSlop || dy > touchSlop) {
-                    discardTap = true;
-                    hidePressedDrawables();
-                    AndroidUtilities.cancelRunOnUIThread(longPressRunnable);
-                    if (qualityChooseView != null && qualityChooseView.getVisibility() == View.VISIBLE) {
-                        return true;
-                    }
-                }
-                if (placeProvider.canScrollAway() && currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR && canDragDown && !draggingDown && scale == 1 && dy >= dp(30) && dy / 2 > dx) {
-                    draggingDown = true;
-                    hidePressedDrawables();
-                    moving = false;
-                    dragY = ev.getY();
-                    if (isActionBarVisible && containerView.getTag() != null) {
-                        toggleActionBar(false, true);
-                    } else if (pickerView.getVisibility() == View.VISIBLE) {
-                        toggleActionBar(false, true);
-                        togglePhotosListView(false, true);
-                        toggleCheckImageView(false);
-                    }
-                    return true;
-                } else if (draggingDown) {
-                    translationY = ev.getY() - dragY;
-                    containerView.invalidate();
-                } else if (!invalidCoords && animationStartTime == 0) {
-                    float moveDx = moveStartX - ev.getX();
-                    float moveDy = moveStartY - ev.getY();
-                    if (moving || currentEditMode != EDIT_MODE_NONE || scale == 1 && Math.abs(moveDy) + dp(12) < Math.abs(moveDx) || scale != 1) {
-                        if (!moving) {
-                            moveDx = 0;
-                            moveDy = 0;
-                            moving = true;
-                            canDragDown = false;
-                            hidePressedDrawables();
-                        }
-
-                        moveStartX = ev.getX();
-                        moveStartY = ev.getY();
-                        updateMinMax(scale);
-                        if (translationX < minX && (currentEditMode != EDIT_MODE_NONE || !rightImage.hasImageSet()) || translationX > maxX && (currentEditMode != EDIT_MODE_NONE || !leftImage.hasImageSet())) {
-                            moveDx /= 3.0f;
-                        }
-                        if (maxY == 0 && minY == 0 && currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR) {
-                            if (translationY - moveDy < minY) {
-                                translationY = minY;
-                                moveDy = 0;
-                            } else if (translationY - moveDy > maxY) {
-                                translationY = maxY;
-                                moveDy = 0;
-                            }
-                        } else {
-                            if (translationY < minY || translationY > maxY) {
-                                moveDy /= 3.0f;
-                            }
-                        }
-
-                        translationX -= moveDx;
-                        if (scale != 1 || currentEditMode != EDIT_MODE_NONE) {
-                            translationY -= moveDy;
-                        }
-                        invalidateBlur();
-                        containerView.invalidate();
-                    }
+            //wd 视频左右滑动为调整视频进度
+            if (currentMessageObject.isVideo()) {
+                if (Math.abs(ev.getY() - moveStartY) > AndroidUtilities.dp(20)) {
+                    return rawMoveEvent(ev);
                 } else {
-                    invalidCoords = false;
-                    moveStartX = ev.getX();
-                    moveStartY = ev.getY();
+                    double total = getVideoDuration();
+                    double x = ev.getX();
+                    double width = getContainerViewWidth();
+                    double progress = x * total / width - videoPositionOffset;
+                    seekVideoOrWebTo((int) progress);
+                    containerView.invalidate();
+                    videoPlayerSeekbar.setProgress((float) (progress / total), true);
+                    videoPlayerSeekbarView.invalidate();
+                    toggleActionBar(true, true);
                 }
+            } else {
+                return rawMoveEvent(ev);
             }
         } else if (ev.getActionMasked() == MotionEvent.ACTION_CANCEL || ev.getActionMasked() == MotionEvent.ACTION_UP || ev.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
             hidePressedDrawables();
