@@ -4877,7 +4877,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
         if (smallThumb != null) {
             hasVideoThumb = hasVideoThumb || (message.isVideo() || message.isRoundVideo());
-            if (thumbsCount < 3) {
+//            if (thumbsCount < 3) {
+            //wd 图片/视频缩略图仅显示一张
+            if (thumbsCount < 1) {
                 thumbsCount++;
                 drawPlay[index] = (message.isVideo() || message.isRoundVideo()) && !message.hasMediaSpoilers();
                 drawSpoiler[index] = message.hasMediaSpoilers();
