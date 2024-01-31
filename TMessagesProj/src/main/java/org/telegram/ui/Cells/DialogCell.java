@@ -1664,23 +1664,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 //                                    messageString = builder;
 //                                }
                                 //wd 图片/视频不显示回复转发等信息
-                                if (thumbsCount <= 0) {
-                                    if (message.isReplyToStory()) {
-                                        SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
-                                        builder.insert(0, "d ");
-                                        builder.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
-                                        messageString = builder;
-                                    }
-                                    if (message.isForwarded() && message.needDrawForwarded()) {
-                                        drawForwardIcon = true;
-                                        SpannableStringBuilder builder1 = new SpannableStringBuilder(messageString);
-                                        builder1.insert(0, "d ");
-                                        ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
-                                        coloredImageSpan.setAlpha(0.9f);
-                                        builder1.setSpan(coloredImageSpan, 0, 1, 0);
-                                        messageString = builder1;
-                                    }
-                                }
                                 if (message.hasHighlightedWords() && !TextUtils.isEmpty(message.messageOwner.message)) {
                                     messageString = message.messageTrimmedToHighlight;
                                     if (message.messageTrimmedToHighlight != null) {
@@ -1706,6 +1689,23 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                     CharSequence s = AndroidUtilities.highlightText(builder, message.highlightedWords, resourcesProvider);
                                     if (s != null) {
                                         messageString = s;
+                                    }
+                                }
+                                if (thumbsCount <= 0) {
+                                    if (message.isReplyToStory()) {
+                                        SpannableStringBuilder builder1 = new SpannableStringBuilder(messageString);
+                                        builder1.insert(0, "d ");
+                                        builder1.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
+                                        messageString = builder1;
+                                    }
+                                    if (message.isForwarded() && message.needDrawForwarded()) {
+                                        drawForwardIcon = true;
+                                        SpannableStringBuilder builder2 = new SpannableStringBuilder(messageString);
+                                        builder2.insert(0, "d ");
+                                        ColoredImageSpan coloredImageSpan = new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.mini_forwarded).mutate());
+                                        coloredImageSpan.setAlpha(0.9f);
+                                        builder2.setSpan(coloredImageSpan, 0, 1, 0);
+                                        messageString = builder2;
                                     }
                                 }
                             }
