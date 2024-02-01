@@ -1519,7 +1519,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int view_as_topics = 59;
 
     private final static int search = 40;
-    
+
     private final static int merge_message = 200;
 
     private final static int topic_close = 60;
@@ -27851,6 +27851,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     items.add(LocaleController.getString("SaveToGallery", R.string.SaveToGallery));
                                     options.add(OPTION_SAVE_TO_GALLERY);
                                     icons.add(R.drawable.msg_gallery);
+                                    items.add(LocaleController.getString("ShareFile", R.string.ShareFile));
+                                    options.add(OPTION_SHARE);
+                                    icons.add(R.drawable.msg_shareout);
                                     if (ConfigManager.getBooleanOrFalse(Defines.showCopyPhoto)) {
                                         items.add(LocaleController.getString("CopyPhoto", R.string.CopyPhoto));
                                         options.add(OPTION_COPY_PHOTO);
@@ -38537,7 +38540,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             clip[1] = chatListView.getMeasuredHeight() - (chatListView.getPaddingBottom() - AndroidUtilities.dp(3));
         }
     }
-    
+
     private void updateVisibleWallpaperActions() {
         if (chatListView != null && chatAdapter != null) {
             for (int i = 0; i < chatListView.getChildCount(); ++i) {
