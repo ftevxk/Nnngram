@@ -29744,6 +29744,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                         items.add(LocaleController.getString(R.string.SaveToGallery));
                                         options.add(OPTION_SAVE_TO_GALLERY);
                                         icons.add(R.drawable.msg_gallery);
+                                        items.add(LocaleController.getString("ShareFile", R.string.ShareFile));
+                                        options.add(OPTION_SHARE);
+                                        icons.add(R.drawable.msg_shareout);
                                     }
                                 }
                             }
@@ -41563,7 +41566,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             clip[1] = chatListView.getMeasuredHeight() - (chatListView.getPaddingBottom() - AndroidUtilities.dp(3));
         }
     }
-    
+
     private void updateVisibleWallpaperActions() {
         if (chatListView != null && chatAdapter != null) {
             for (int i = 0; i < chatListView.getChildCount(); ++i) {
