@@ -1097,7 +1097,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
 
             if (customDialog.type == 1) {
-                messageNameString = LocaleController.getString("FromYou", R.string.FromYou);
+//                messageNameString = LocaleController.getString("FromYou", R.string.FromYou);
+                //wd 图片/视频不显示消息名称
+                if (thumbsCount > 0) {
+                    messageNameString = LocaleController.getString("FromYou", R.string.FromYou);
+                }
                 checkMessage = false;
                 SpannableStringBuilder stringBuilder;
                 if (customDialog.isMedia) {
@@ -1710,7 +1714,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                 }
                             }
                         }
-                        if (currentDialogFolderId != 0) {
+//                        if (currentDialogFolderId != 0) {
+//                            messageNameString = formatArchivedDialogNames();
+//                        }
+                        //wd 图片/视频不显示消息名称
+                        if (currentDialogFolderId != 0 && thumbsCount <= 0) {
                             messageNameString = formatArchivedDialogNames();
                         }
                     }
@@ -4903,6 +4911,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         }
         //wd 视频、图片不显示消息名称
         if (thumbsCount > 0) {
+            hasNameInMessage = false;
             return "";
         }
 
