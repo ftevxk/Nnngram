@@ -8446,7 +8446,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             botMessageHint.show();
         });
     }
-    
+
     private void hideHints() {
         if (savedMessagesTagHint != null && savedMessagesTagHint.shown()) {
             savedMessagesTagHint.hide();
@@ -24921,7 +24921,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 bottomOverlayChat.setVisibility(View.VISIBLE);
                 chatActivityEnterView.setVisibility(View.INVISIBLE);
             } else if (chatMode == MODE_PINNED ||
-                    currentChat != null && ((ChatObject.isNotInChat(currentChat) || !ChatObject.canWriteToChat(currentChat)) && (currentChat.join_to_send || !isThreadChat() || ChatObject.isForum(currentChat)) || forumTopic != null && forumTopic.closed && !ChatObject.canManageTopic(currentAccount, currentChat, forumTopic) || shouldDisplaySwipeToLeftToReplyInForum()) ||
+                    currentChat != null && (((ChatObject.isNotInChat(currentChat) || !ChatObject.canWriteToChat(currentChat)) && !canSendMsgInCommentGroupWithoutJoin()) && (currentChat.join_to_send || !isThreadChat() || ChatObject.isForum(currentChat)) || forumTopic != null && forumTopic.closed && !ChatObject.canManageTopic(currentAccount, currentChat, forumTopic) || shouldDisplaySwipeToLeftToReplyInForum()) ||
                     currentUser != null && (UserObject.isDeleted(currentUser) || userBlocked || UserObject.isReplyUser(currentUser))) {
                 if (chatActivityEnterView.isEditingMessage()) {
                     chatActivityEnterView.setVisibility(View.VISIBLE);
@@ -38833,5 +38833,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private int getFirstVisibleMessage() {
         return MessageHelper.INSTANCE.getFirstVisibleMessage(chatLayoutManager, chatListView, chatAdapter, messages);
+    }
+
+    private boolean canSendMsgInCommentGroupWithoutJoin() {
+        return currentChat != null && currentChat.megagroup && chatInfo != null && chatInfo.linked_chat_id != 0
+            && !currentChat.join_to_send && !currentChat.min;
     }
 }
