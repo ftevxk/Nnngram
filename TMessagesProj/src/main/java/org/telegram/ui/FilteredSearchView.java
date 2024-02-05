@@ -582,9 +582,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             if (dialogId != 0) {
                 final TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
                 req.q = query;
-//                req.limit = 20;
-                //wd 一次请求获取更多条数据
-                req.limit = 100;
+                req.limit = 20;
                 req.filter = currentSearchFilter == null ? new TLRPC.TL_inputMessagesFilterEmpty() : currentSearchFilter.filter;
                 req.peer = AccountInstance.getInstance(currentAccount).getMessagesController().getInputPeer(dialogId);
                 if (minDate > 0) {
@@ -609,9 +607,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 }
 
                 final TLRPC.TL_messages_searchGlobal req = new TLRPC.TL_messages_searchGlobal();
-//                req.limit = 20;
-                //wd 一次请求获取更多条数据
-                req.limit = 100;
+                req.limit = 20;
                 req.q = query;
                 req.filter = currentSearchFilter == null ? new TLRPC.TL_inputMessagesFilterEmpty() : currentSearchFilter.filter;
                 if (minDate > 0) {
@@ -634,6 +630,14 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 req.flags |= 1;
                 req.folder_id = includeFolder ? 1 : 0;
                 request = req;
+            }
+
+            //wd 一次请求获取更多条数据
+            if (request instanceof TLRPC.TL_messages_search req) {
+                req.limit = 200;
+            } else {
+                TLRPC.TL_messages_searchGlobal req = (TLRPC.TL_messages_searchGlobal) request;
+                req.limit = 200;
             }
 
             lastMessagesSearchString = query;
