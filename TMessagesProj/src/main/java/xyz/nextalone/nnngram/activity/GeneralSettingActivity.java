@@ -596,7 +596,7 @@ public class GeneralSettingActivity extends BaseActivity {
                         }
                         textCell.setTextAndValue(LocaleController.getString("DoNotTranslate", R.string.DoNotTranslate), value, payload, true);
                     } else if (position == customTitleRow) {
-                        textCell.setTextAndValue(LocaleController.getString("customTitle", R.string.customTitle), Config.customTitle, payload, true);
+                        textCell.setTextAndValue(LocaleController.getString("customTitle", R.string.customTitle), Config.getCustomTitle(), payload, true);
                     } else if (position == drawerListRow) {
                         textCell.setText(LocaleController.getString("drawerList", R.string.drawerList), false);
                     }
@@ -792,7 +792,7 @@ public class GeneralSettingActivity extends BaseActivity {
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
         editText.setHintText(LocaleController.getString("AppName", R.string.AppName));
-        editText.setText(Config.customTitle);
+        editText.setText(Config.getCustomTitle());
         editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
         editText.setSingleLine(true);
         editText.setFocusable(true);
