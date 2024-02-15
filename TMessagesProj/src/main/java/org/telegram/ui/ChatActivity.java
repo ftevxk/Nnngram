@@ -20599,7 +20599,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         setFilterMessages(false);
                         updateVisibleRows();
                     }
-//                    updateSearchButtons(mask, num, (Integer) args[5]);
+                    updateSearchButtons(mask, num, (Integer) args[5]);
                     if (searchItem != null) {
                         searchItem.setShowSearchProgress(false);
                     }
