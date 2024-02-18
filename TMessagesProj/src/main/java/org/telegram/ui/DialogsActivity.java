@@ -3214,7 +3214,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             } else {
                 statusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(null, AndroidUtilities.dp(26));
                 statusDrawable.center = true;
-                actionBar.setTitle(Config.getCustomTitle(), statusDrawable);
+                actionBar.setTitle(Config.customTitle, statusDrawable);
                 updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
             }
             if (folderId == 0) {
@@ -4272,11 +4272,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (search && searchViewPager.dialogsSearchAdapter.getItemCount() == 0) {
                     searchViewPager.cancelEnterAnimation();
                 }
-            }
-
-            @Override
-            public void didPressedBlockedDialog(View view, long did) {
-                showPremiumBlockedToast(view, did);
             }
 
             @Override
