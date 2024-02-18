@@ -28,6 +28,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.net.Uri
 import android.text.TextUtils
 import android.util.Base64
@@ -41,7 +42,14 @@ import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.TimePicker
+import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.airbnb.lottie.LottieComposition
+import com.airbnb.lottie.LottieCompositionFactory
+import com.airbnb.lottie.LottieDrawable
+import com.airbnb.lottie.LottieResult
+import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
+import com.arthenica.mobileffmpeg.FFmpeg
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
@@ -93,11 +101,13 @@ import org.telegram.ui.Components.TranscribeButton
 import xyz.nextalone.nnngram.helpers.QrHelper
 import xyz.nextalone.nnngram.helpers.QrHelper.readQr
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Calendar
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
@@ -368,11 +378,11 @@ class MessageUtils(num: Int) : BaseController(num) {
         }
 
         return withContext(Dispatchers.IO) {
-            connectionsHelper.sendReqAndDo(req, ConnectionsManager.RequestFlagFailOnServerErrors) { response, error ->
+            connectionsHelper.sendRequestAndDo(req, ConnectionsManager.RequestFlagFailOnServerErrors) { response, error ->
                 if (response is TLRPC.messages_Messages) {
                     if (response is TLRPC.TL_messages_messagesNotModified || response.messages.isEmpty()) {
                         Log.d("response is empty")
-                        return@sendReqAndDo messagesId
+                        return@sendRequestAndDo messagesId
                     }
                     var newOffsetId = offsetId
                     for (message in response.messages) {
@@ -385,7 +395,7 @@ class MessageUtils(num: Int) : BaseController(num) {
                     runBlocking {
                         doSearchMessages(fragment, messagesId, peer, replyMessageId, fromId, newOffsetId, calcMessagesHash(response.messages), before)
                     }
-                    return@sendReqAndDo messagesId
+                    return@sendRequestAndDo messagesId
                 } else {
                     if (error != null) {
                         AndroidUtilities.runOnUIThread {
@@ -397,7 +407,7 @@ class MessageUtils(num: Int) : BaseController(num) {
                             )
                         }
                     }
-                    return@sendReqAndDo messagesId
+                    return@sendRequestAndDo messagesId
                 }
             }
         } ?: throw Exception("res is null")
@@ -415,7 +425,7 @@ class MessageUtils(num: Int) : BaseController(num) {
     }
 
     fun saveStickerToGallery(activity: Activity, messageObject: MessageObject, callback: Utilities.Callback<Uri>) {
-        saveStickerToGallery(activity, getPathToMessage(messageObject), messageObject.isVideoSticker, callback)
+        saveStickerToGallery(activity, getPathToMessage(messageObject), messageObject.isVideoSticker, messageObject.isAnimatedSticker, callback)
     }
 
     fun addMessageToClipboard(selectedObject: MessageObject, callback: Runnable) {
@@ -641,8 +651,54 @@ class MessageUtils(num: Int) : BaseController(num) {
         }
     }
 
+    fun searchUser(userName: String, callback: (TLRPC.User?) -> Unit) {
+        val req = TLRPC.TL_contacts_resolveUsername().apply {
+            username = userName
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            connectionsHelper.sendRequestAndDo(req) { response, error ->
+                if (response is TLRPC.TL_contacts_resolvedPeer) {
+                    messagesController.putUsers(response.users, false)
+                    messagesController.putChats(response.chats, false)
+                    messagesStorage.putUsersAndChats(response.users, response.chats, true, true)
+                    callback.invoke(messagesController.getUser(response.peer.user_id))
+                } else {
+                    callback.invoke(null)
+                }
+            }
+
+        }
+    }
+
+    fun searchUser(userName: String): TLRPC.User? {
+        var user: TLRPC.User? = null
+        val latch = CountDownLatch(1)
+        searchUser(userName) {
+            user = it
+            latch.countDown()
+        }
+        latch.await()
+        return user
+    }
+
+    fun searchUser(userId: Long): TLRPC.User? {
+        return runBlocking {
+            val latch = CountDownLatch(1)
+            searchUser(userId) {
+                latch.countDown()
+            }
+            latch.await()
+            messagesController.getUser(userId)
+        }
+    }
+
     @JvmOverloads
     fun searchUser(userId: Long, searchUser: Boolean = true, cache: Boolean = true, callback: (TLRPC.User?) -> Unit) {
+        messagesController.getUser(userId)?.let {
+            callback.invoke(it)
+            return
+        }
+
         val bot = messagesController.getUser(189165596L)
         if (bot == null) {
             if (searchUser) {
@@ -819,14 +875,94 @@ class MessageUtils(num: Int) : BaseController(num) {
             if (!temp.exists()) {
                 return
             }
-            saveStickerToGallery(activity, path, MessageObject.isVideoSticker(document), callback)
+            saveStickerToGallery(activity, path, MessageObject.isVideoSticker(document), MessageObject.isAnimatedStickerDocument(document), callback)
         }
 
-        private fun saveStickerToGallery(activity: Activity, path: String?, video: Boolean, callback: Utilities.Callback<Uri>) {
+        private fun saveStickerToGallery(activity: Activity, path: String?, video: Boolean, animated: Boolean, callback: Utilities.Callback<Uri>) {
             Utilities.globalQueue.postRunnable {
                 tryOrLog {
                     if (video) {
-                        MediaController.saveFile(path, activity, 1, null, null, callback)
+                        val outputPath =
+                            path!!.replace(".webm", ".gif")
+                        if (File(outputPath).exists()) {
+                            File(outputPath).delete()
+                        }
+                        val cmd = arrayOf("-y", "-i", path, "-vf", "colorkey=0x000000:0.1:0.1,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse", outputPath)
+                        FFmpeg.executeAsync(cmd) { executionId, returnCode ->
+                            if (returnCode == RETURN_CODE_SUCCESS) {
+                                MediaController.saveFile(outputPath, activity, 0, null, null, callback)
+                            } else {
+                                Log.e("FFmpeg", "Failed to convert to GIF: $returnCode, file: $path")
+                                Toast.makeText(activity, "Failed to convert to GIF, Use Mp4", Toast.LENGTH_SHORT).show()
+                                com.arthenica.mobileffmpeg.Config.printLastCommandOutput(android.util.Log.ERROR)
+                                MediaController.saveFile(path, activity, 1, null, null, callback)
+                            }
+                        }
+                    } else if (animated) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val outputPath = path!!.replace(".tgs", ".gif")
+                            if (File(outputPath).exists()) {
+                                File(outputPath).delete()
+                            }
+
+                            val result: LottieResult<LottieComposition> = LottieCompositionFactory.fromJsonInputStreamSync(
+                                FileInputStream(File(path)), path)
+                            val composition: LottieComposition? = result.value
+
+                            composition?.let { comp ->
+                                val lottieDrawable = LottieDrawable().apply { this.composition = comp }
+
+                                lottieDrawable.setBounds(0, 0, comp.bounds.width(), comp.bounds.height())
+
+                                val tempDir = File(activity.cacheDir, "temp_${System.currentTimeMillis()}")
+                                if (!tempDir.exists()) {
+                                    tempDir.mkdirs()
+                                }
+
+                                for (i in comp.startFrame.toInt() until comp.endFrame.toInt()) {
+                                    lottieDrawable.frame = i
+
+                                    val bitmap = Bitmap.createBitmap(comp.bounds.width(), comp.bounds.height(), Bitmap.Config.ARGB_8888)
+                                    val canvas = Canvas(bitmap)
+                                    lottieDrawable.draw(canvas)
+
+                                    val file = File(tempDir, "$i.png")
+                                    FileOutputStream(file).use { fos ->
+                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+                                    }
+                                }
+                                val generatePaletteCommand = arrayOf(
+                                    "-i", "${tempDir.absolutePath}/%d.png",
+                                    "-vf", "palettegen=stats_mode=diff",
+                                    "-y", "${tempDir.absolutePath}/palette.png"
+                                )
+                                val createGifCommand = arrayOf(
+                                    "-framerate", "60",
+                                    "-i", "${tempDir.absolutePath}/%d.png",
+                                    "-i", "${tempDir.absolutePath}/palette.png",
+                                    "-filter_complex", "[0:v]scale=320:-1:flags=lanczos[v];[v][1:v]paletteuse=dither=none:diff_mode=rectangle",
+                                    "-y", outputPath
+                                )
+                                FFmpeg.executeAsync(generatePaletteCommand) { executionId, returnCode ->
+                                    if (returnCode == RETURN_CODE_SUCCESS) {
+                                        FFmpeg.executeAsync(createGifCommand) { executionId, returnCode ->
+                                            if (returnCode == RETURN_CODE_SUCCESS) {
+                                                MediaController.saveFile(outputPath, activity, 0, null, null, callback)
+                                            } else {
+                                                Log.e("FFmpeg", "Failed to convert to GIF: $returnCode, file: $path")
+                                                Toast.makeText(activity, "Failed to convert to GIF, Use tgs", Toast.LENGTH_SHORT).show()
+                                                com.arthenica.mobileffmpeg.Config.printLastCommandOutput(android.util.Log.ERROR)
+                                            }
+                                            tempDir.deleteRecursively()
+                                        }
+                                    } else {
+                                        Log.e("FFmpeg", "Failed to convert to GIF: $returnCode, file: $path")
+                                        Toast.makeText(activity, "Failed to convert to GIF, Use tgs", Toast.LENGTH_SHORT).show()
+                                        com.arthenica.mobileffmpeg.Config.printLastCommandOutput(android.util.Log.ERROR)
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         val image = BitmapFactory.decodeFile(path)
                         if (image != null) {

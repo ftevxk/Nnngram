@@ -21,7 +21,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -53,13 +52,14 @@ import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stories.StoryViewer;
 
 import java.util.ArrayList;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.config.CloudStorage;
+import xyz.nextalone.nnngram.helpers.ConnectionsHelper;
 import xyz.nextalone.nnngram.utils.MessageUtils;
 import xyz.nextalone.nnngram.utils.VibrationUtils;
 
@@ -790,6 +790,14 @@ public abstract class BaseFragment {
 
     public UserConfig getUserConfig() {
         return getAccountInstance().getUserConfig();
+    }
+
+    public ConnectionsHelper getConnectionsHelper() {
+        return getAccountInstance().getConnectionsHelper();
+    }
+
+    public CloudStorage getCloudStorage() {
+        return getAccountInstance().getCloudStorage();
     }
 
     public void setFragmentPanTranslationOffset(int offset) {

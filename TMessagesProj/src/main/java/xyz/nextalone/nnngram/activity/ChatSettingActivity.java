@@ -19,6 +19,8 @@
 
 package xyz.nextalone.nnngram.activity;
 
+import static xyz.nextalone.nnngram.UIKt.createMessageFilterSetter;
+
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -123,6 +125,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int showTabsOnForwardRow;
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
+    private int messageFiltersRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
     private int hideMessageSeenTooltipRow;
@@ -270,7 +273,7 @@ public class ChatSettingActivity extends BaseActivity {
             types.add(Defines.doubleTabReverse);
             arrayList.add(LocaleController.getString("TranslateMessage", R.string.TranslateMessage));
             types.add(Defines.doubleTabTranslate);
-            PopupBuilder.show(arrayList, LocaleController.getString("customDoubleTap", R.string.customDoubleTap), types.indexOf(Config.doubleTab), getParentActivity(), view, i -> {
+            PopupBuilder.show(arrayList, LocaleController.getString("customDoubleTap", R.string.customDoubleTap), types.indexOf(Config.getDoubleTab()), getParentActivity(), view, i -> {
                 Config.setDoubleTab(types.get(i));
                 listAdapter.notifyItemChanged(customDoubleClickTapRow, PARTIAL);
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
@@ -389,6 +392,8 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
+        } else if (position == messageFiltersRow) {
+            createMessageFilterSetter(this, getContext(), resourcesProvider);
         } else if (position == doNotUnarchiveBySwipeRow) {
             Config.toggleDoNotUnarchiveBySwipe();
             if (view instanceof TextCheckCell) {
@@ -492,6 +497,7 @@ public class ChatSettingActivity extends BaseActivity {
         showTabsOnForwardRow = addRow("showTabsOnForward");
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
+        messageFiltersRow = addRow("messageFilters");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
         hideMessageSeenTooltipRow = addRow("hideMessageSeenTooltip");
@@ -546,11 +552,10 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == textStyleSettingsRow) {
                         textCell.setText(LocaleController.getString("TextStyleSettings", R.string.TextStyleSettings), false);
                     } else if (position == maxRecentStickerRow) {
-                        textCell.setTextAndValue(LocaleController.getString("maxRecentSticker", R.string.maxRecentSticker), String.valueOf(Config.maxRecentSticker), payload, true);
-
+                        textCell.setTextAndValue(LocaleController.getString("maxRecentSticker", R.string.maxRecentSticker), String.valueOf(Config.getMaxRecentSticker()), payload, true);
                     } else if (position == customDoubleClickTapRow) {
                         String value;
-                        switch (Config.doubleTab) {
+                        switch (Config.getDoubleTab()) {
                             case Defines.doubleTabNone:
                                 value = LocaleController.getString("Disable", R.string.Disable);
                                 break;
@@ -587,6 +592,8 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == markdownParserRow) {
                         textCell.setTextAndValue(LocaleController.getString("MarkdownParser", R.string.MarkdownParser), Config.newMarkdownParser ? "Nnngram" : "Telegram", payload,
                             position + 1 != markdown2Row);
+                    } else if (position == messageFiltersRow) {
+                        textCell.setText(LocaleController.getString("MessageFilter", R.string.MessageFilter), payload);
                     }
                     break;
                 }
@@ -751,7 +758,8 @@ public class ChatSettingActivity extends BaseActivity {
         public int getItemViewType(int position) {
             if (position == chat2Row || position == stickerSize2Row) {
                 return TYPE_SHADOW;
-            } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow || position == textStyleSettingsRow) {
+            } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow
+                || position == messageFiltersRow || position == textStyleSettingsRow) {
                 return TYPE_SETTINGS;
             } else if (position == chatRow || position == stickerSizeHeaderRow || position == markdownRow) {
                 return TYPE_HEADER;
@@ -934,7 +942,7 @@ public class ChatSettingActivity extends BaseActivity {
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
         editText.setHintText(LocaleController.getString("Number", R.string.Number));
-        editText.setText(Config.maxRecentSticker + "");
+        editText.setText(Config.getMaxRecentSticker() + "");
         editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
         editText.setSingleLine(true);
         editText.setFocusable(true);

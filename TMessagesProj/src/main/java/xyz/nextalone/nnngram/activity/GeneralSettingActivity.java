@@ -239,7 +239,7 @@ public class GeneralSettingActivity extends BaseActivity {
             types.add(Defines.tabMenuIcon);
             arrayList.add(LocaleController.getString("TabTitleTypeMix", R.string.TabTitleTypeMix));
             types.add(Defines.tabMenuMix);
-            PopupBuilder.show(arrayList, LocaleController.getString("TabTitleType", R.string.TabTitleType), types.indexOf(Config.tabMenu), getParentActivity(), view, i -> {
+            PopupBuilder.show(arrayList, LocaleController.getString("TabTitleType", R.string.TabTitleType), types.indexOf(Config.getTabMenu()), getParentActivity(), view, i -> {
                 Config.setTabMenu(types.get(i));
                 listAdapter.notifyItemChanged(tabsTitleTypeRow, PARTIAL);
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
@@ -255,7 +255,7 @@ public class GeneralSettingActivity extends BaseActivity {
             types.add(Defines.devicePerformanceMedium);
             arrayList.add(LocaleController.getString("DevicePerformanceHigh", R.string.DevicePerformanceHigh));
             types.add(Defines.devicePerformanceHigh);
-            PopupBuilder.show(arrayList, LocaleController.getString("OverrideDevicePerformance", R.string.OverrideDevicePerformance), types.indexOf(Config.devicePerformance), getParentActivity(), view, i -> {
+            PopupBuilder.show(arrayList, LocaleController.getString("OverrideDevicePerformance", R.string.OverrideDevicePerformance), types.indexOf(Config.getDevicePerformance()), getParentActivity(), view, i -> {
                 Config.setDevicePerformance(types.get(i));
                 listAdapter.notifyItemChanged(overrideDevicePerformanceRow, PARTIAL);
             });
@@ -508,7 +508,7 @@ public class GeneralSettingActivity extends BaseActivity {
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                     textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
                     if (position == tabsTitleTypeRow) {
-                        String value = switch (Config.tabMenu) {
+                        String value = switch (Config.getTabMenu()) {
                             case Defines.tabMenuText -> LocaleController.getString("TabTitleTypeText", R.string.TabTitleTypeText);
                             case Defines.tabMenuIcon -> LocaleController.getString("TabTitleTypeIcon", R.string.TabTitleTypeIcon);
                             case Defines.tabMenuMix -> LocaleController.getString("TabTitleTypeMix", R.string.TabTitleTypeMix);
@@ -516,7 +516,7 @@ public class GeneralSettingActivity extends BaseActivity {
                         };
                         textCell.setTextAndValue(LocaleController.getString("TabTitleType", R.string.TabTitleType), value, payload, false);
                     } else if (position == overrideDevicePerformanceRow) {
-                        String value = switch (Config.devicePerformance) {
+                        String value = switch (Config.getDevicePerformance()) {
                             case Defines.devicePerformanceLow -> LocaleController.getString("DevicePerformanceLow", R.string.DevicePerformanceLow);
                             case Defines.devicePerformanceMedium -> LocaleController.getString("DevicePerformanceMedium", R.string.DevicePerformanceMedium);
                             case Defines.devicePerformanceHigh -> LocaleController.getString("DevicePerformanceHigh", R.string.DevicePerformanceHigh);
@@ -596,7 +596,7 @@ public class GeneralSettingActivity extends BaseActivity {
                         }
                         textCell.setTextAndValue(LocaleController.getString("DoNotTranslate", R.string.DoNotTranslate), value, payload, true);
                     } else if (position == customTitleRow) {
-                        textCell.setTextAndValue(LocaleController.getString("customTitle", R.string.customTitle), Config.customTitle, payload, true);
+                        textCell.setTextAndValue(LocaleController.getString("customTitle", R.string.customTitle), Config.getCustomTitle(), payload, true);
                     } else if (position == drawerListRow) {
                         textCell.setText(LocaleController.getString("drawerList", R.string.drawerList), false);
                     }
@@ -792,7 +792,7 @@ public class GeneralSettingActivity extends BaseActivity {
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
         editText.setHintText(LocaleController.getString("AppName", R.string.AppName));
-        editText.setText(Config.customTitle);
+        editText.setText(Config.getCustomTitle());
         editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
         editText.setSingleLine(true);
         editText.setFocusable(true);

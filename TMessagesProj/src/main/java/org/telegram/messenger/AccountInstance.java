@@ -7,6 +7,7 @@ import org.telegram.ui.Components.Paint.PersistColorPalette;
 
 import xyz.nextalone.nnngram.config.CloudStorage;
 import xyz.nextalone.nnngram.helpers.ConnectionsHelper;
+import xyz.nextalone.nnngram.utils.MessageUtils;
 
 public class AccountInstance {
 
@@ -107,6 +108,10 @@ public class AccountInstance {
 
     public ConnectionsHelper getConnectionsHelper() {
         return ConnectionsHelper.getInstance(currentAccount);
+    }
+
+    public MessageUtils getMessageUtils() {
+        return MessageUtils.getInstance(currentAccount);
     }
 
     public int getCurrentAccount() {

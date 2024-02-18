@@ -45,7 +45,7 @@ fun setupPlay(stable: Boolean) {
 cargo {
     module  = "../libs/rust"
     libname = "rust"
-    targets = listOf("arm64", "x86_64", "arm", "x86")
+    targets = listOf("arm64", "arm")
 
     prebuiltToolchains = true
     profile = "release"
@@ -98,6 +98,9 @@ dependencies {
     implementation(libs.ktor.client.encoding)
     implementation(libs.ktor.client.contentNegotiation)
     implementation(libs.ktor.serialization.json)
+
+    implementation(libs.ffmpeg)
+    implementation(libs.lottie)
 
     implementation(project(":libs:tcp2ws"))
     implementation(project(":libs:pangu"))
