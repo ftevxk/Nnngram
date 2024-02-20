@@ -18,10 +18,12 @@
  */
 package xyz.nextalone.nnngram.utils
 
-import kotlin.math.ceil
+import android.text.TextUtils
 import org.telegram.tgnet.TLRPC
 import ws.vinta.pangu.Pangu
 import xyz.nextalone.gen.Config
+import java.lang.StringBuilder
+import kotlin.math.ceil
 
 object StringUtils {
     private val pangu = Pangu()
@@ -158,5 +160,21 @@ object StringUtils {
     @JvmStatic
     fun zalgoFilter(text: CharSequence?): String {
         return zalgoFilter(text.toString())
+    }
+
+    //wd 转义正则特殊字符 （$()*+.[]?\^{},|）
+    @JvmStatic
+    fun escapeExprSpecialWord(keyword: String?): String {
+        var newKeyword = keyword
+        if (!TextUtils.isEmpty(keyword)) {
+            val fbsArr =
+                arrayOf("\\", "$", "(", ")", "*", "+", ".", "[", "]", "?", "^", "{", "}", "|")
+            for (key in fbsArr) {
+                if (keyword!!.contains(key)) {
+                    newKeyword = keyword.replace(key, "\\" + key)
+                }
+            }
+        }
+        return newKeyword ?: ""
     }
 }

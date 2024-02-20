@@ -9671,7 +9671,9 @@ public class MessageObject {
             }
         }
         if (!TextUtils.isEmpty(Config.getMessageFilter())) {
-            var pattern = Pattern.compile(Config.getMessageFilter());
+//            var pattern = Pattern.compile(Config.getMessageFilter());
+            //wd 转义正则特殊字符 （$()*+.[]?\^{},|）
+            var pattern = Pattern.compile(StringUtils.escapeExprSpecialWord(Config.getMessageFilter()));
             if (messageText != null && pattern.matcher(messageText).find()) {
                 return true;
             } else if (caption != null && pattern.matcher(caption).find()) {
