@@ -171,7 +171,7 @@ object StringUtils {
                 arrayOf("\\", "$", "(", ")", "*", "+", ".", "[", "]", "?", "^", "{", "}", "|")
             for (key in fbsArr) {
                 if (keyword!!.contains(key)) {
-                    newKeyword = keyword.replace(key, "\\" + key)
+                    newKeyword = keyword.replace(key, "\\\\" + key)
                 }
             }
         }
