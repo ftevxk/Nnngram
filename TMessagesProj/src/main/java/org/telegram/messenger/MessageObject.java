@@ -35,6 +35,7 @@ import android.text.util.Linkify;
 import android.util.Base64;
 import android.util.Pair;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -94,6 +95,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.StringUtils;
 
 public class MessageObject {
@@ -9670,14 +9672,26 @@ public class MessageObject {
                 return true;
             }
         }
-        if (!TextUtils.isEmpty(Config.getMessageFilter())) {
+//        if (!TextUtils.isEmpty(Config.getMessageFilter())) {
 //            var pattern = Pattern.compile(Config.getMessageFilter());
-            //wd 转义正则特殊字符 （$()*+.[]?\^{},|）
-            var pattern = Pattern.compile(StringUtils.escapeExprSpecialWord(Config.getMessageFilter()));
-            if (messageText != null && pattern.matcher(messageText).find()) {
-                return true;
-            } else if (caption != null && pattern.matcher(caption).find()) {
-                return true;
+//            if (messageText != null && pattern.matcher(messageText).find()) {
+//                return true;
+//            } else if (caption != null && pattern.matcher(caption).find()) {
+//                return true;
+//            }
+//        }
+        //wd 捕获消息过滤正则规则不正确导致的崩溃
+        if (!TextUtils.isEmpty(Config.getMessageFilter())) {
+            try {
+                var pattern = Pattern.compile(Config.getMessageFilter());
+                if (messageText != null && pattern.matcher(messageText).find()) {
+                    return true;
+                } else if (caption != null && pattern.matcher(caption).find()) {
+                    return true;
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+                AlertUtil.showToast(e);
             }
         }
         return false;

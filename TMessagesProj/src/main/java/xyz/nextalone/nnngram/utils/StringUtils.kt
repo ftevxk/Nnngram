@@ -161,24 +161,4 @@ object StringUtils {
     fun zalgoFilter(text: CharSequence?): String {
         return zalgoFilter(text.toString())
     }
-
-    //wd 转义正则特殊字符 （$()*+.[]?\^{},|）
-    @JvmStatic
-    fun escapeExprSpecialWord(keyword: String?): String {
-        return keyword?.replace("""\""", """\\""")
-            ?.replace("""$""", """\$""")
-            ?.replace("""(""", """\(""")
-            ?.replace(""")""", """\)""")
-            ?.replace("""*""", """\*""")
-            ?.replace("""+""", """\+""")
-            ?.replace(""".""", """\.""")
-            ?.replace("""[""", """\[""")
-            ?.replace("""]""", """\]""")
-            ?.replace("""?""", """\?""")
-            ?.replace("""^""", """\^""")
-            ?.replace("""{""", """\{""")
-            ?.replace("""}""", """\}""")
-            ?.replace("""|""", """\|""")
-            ?: ""
-    }
 }
