@@ -9694,10 +9694,6 @@ public class MessageObject {
                 AlertUtil.showToast(e);
             }
         }
-        //wd 过滤小于设定的短时长视频
-        if (Config.getLongVideoMinDuration() > 0 && !isLongVideo(true)){
-            return true;
-        }
         return false;
     }
 
