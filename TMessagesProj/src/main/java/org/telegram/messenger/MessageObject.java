@@ -8599,9 +8599,9 @@ public class MessageObject {
         return isVideoMessage(messageOwner);
     }
 
-    //wd 判断是否为长视频(时长大于20分钟)
+    //wd 判断是否为长视频
     public boolean isLongVideo(boolean allowOther) {
-        return isLongVideo(allowOther, 20 * 60);
+        return isLongVideo(allowOther, Config.getLongVideoMinDuration());
     }
 
     //wd 判断是否为长视频
@@ -9693,6 +9693,10 @@ public class MessageObject {
                 FileLog.e(e);
                 AlertUtil.showToast(e);
             }
+        }
+        //wd 过滤小于设定的短时长视频
+        if (Config.getLongVideoMinDuration() > 0 && !isLongVideo(true)){
+            return true;
         }
         return false;
     }

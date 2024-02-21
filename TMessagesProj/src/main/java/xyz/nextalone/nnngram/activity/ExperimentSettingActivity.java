@@ -21,7 +21,12 @@ package xyz.nextalone.nnngram.activity;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.FrameLayout;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -38,14 +43,17 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.EditTextBoldCursor;
 
 import java.util.ArrayList;
 
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
+import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.Log;
+import xyz.nextalone.nnngram.utils.UtilsKt;
 
 @SuppressLint("NotifyDataSetChanged")
 public class ExperimentSettingActivity extends BaseActivity {
@@ -84,6 +92,9 @@ public class ExperimentSettingActivity extends BaseActivity {
 
 
     private int experiment2Row;
+
+    //wd 自定义视频最小时长
+    private int longVideoMinDurationRow;
 
     private boolean sensitiveEnabled;
     private final boolean sensitiveCanChange;
@@ -220,7 +231,11 @@ public class ExperimentSettingActivity extends BaseActivity {
                 ((TextCheckCell) view).setChecked(Config.ignoreChatStrict);
             }
         }
-
+        //wd 自定义视频最小时长
+        else if (position == longVideoMinDurationRow) {
+            setLongVideoMinDuration(view, position);
+            listAdapter.notifyItemChanged(position, PARTIAL);
+        }
     }
 
     @Override
@@ -244,6 +259,10 @@ public class ExperimentSettingActivity extends BaseActivity {
         keepFormattingRow = addRow("keepFormatting");
         enchantAudioRow = addRow("enchantAudio");
         linkedUserRow = addRow("linkedUser");
+
+        //wd 自定义视频最小时长
+        longVideoMinDurationRow = addRow();
+
         alwaysSendWithoutSoundRow = addRow();
         if (Config.linkedUser && Config.labelChannelUser) {
             overrideChannelAliasRow = addRow("overrideChannelAlias");
@@ -333,11 +352,17 @@ public class ExperimentSettingActivity extends BaseActivity {
                         textCell.setTextAndValue(LocaleController.getString("keepOnlineStatusAs", R.string.keepOnlineStatusAs),
                             value, payload, false);
                     }
+
+                    //wd 自定义长视频最小时长
+                    else if (position == longVideoMinDurationRow){
+                        textCell.setTextAndValue(LocaleController.getString("longVideoMinDuration", R.string.longVideoMinDuration), String.valueOf(Config.getLongVideoMinDuration()), payload, true);
+                    }
                     break;
                 }
                 case TYPE_CHECK: {
                     TextCheckCell textCell = (TextCheckCell) holder.itemView;
                     textCell.setEnabled(true, null);
+
                     if (position == blockSponsorAdsRow) {
                         textCell.setTextAndCheck(LocaleController.getString("blockSponsorAds", R.string.blockSponsorAds), Config.blockSponsorAds,
                             true);
@@ -434,7 +459,72 @@ public class ExperimentSettingActivity extends BaseActivity {
             } else if (position == pangu3Row) {
                 return TYPE_INFO_PRIVACY;
             }
+            //wd 返回自定义视频最小时长类型
+            else if (position == longVideoMinDurationRow) {
+                return TYPE_SETTINGS;
+            }
             return TYPE_CHECK;
         }
+    }
+
+    //wd 设置自定义长视频最小时长
+    @SuppressLint("SetTextI18n")
+    private void setLongVideoMinDuration(View view, int pos) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle(LocaleController.getString("longVideoMinDuration", R.string.longVideoMinDuration));
+
+        final EditTextBoldCursor editText = new EditTextBoldCursor(getParentActivity()) {
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(64), MeasureSpec.EXACTLY));
+            }
+        };
+        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+        editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
+        editText.setHintText(LocaleController.getString("Number", R.string.Number));
+        editText.setText(Config.getLongVideoMinDuration() + "");
+        editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
+        editText.setSingleLine(true);
+        editText.setFocusable(true);
+        editText.setTransformHintToHeader(true);
+        editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_text_RedRegular));
+        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        editText.setBackgroundDrawable(null);
+        editText.requestFocus();
+        editText.setPadding(0, 0, 0, 0);
+        builder.setView(editText);
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            if (editText.getText().toString().trim().equals("")) {
+                Config.setLongVideoMinDuration(0);
+            } else {
+                if (!UtilsKt.isNumber(editText.getText().toString())) {
+                    AndroidUtilities.shakeView(view);
+                    AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
+                } else {
+                    final int targetNum = Integer.parseInt(editText.getText().toString().trim());
+                    if (targetNum < 0)
+                        Config.setLongVideoMinDuration(0);
+                    else
+                        Config.setLongVideoMinDuration(Integer.parseInt(editText.getText().toString()));
+                }
+            }
+            listAdapter.notifyItemChanged(pos, PARTIAL);
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.show().setOnShowListener(dialog -> {
+            editText.requestFocus();
+            AndroidUtilities.showKeyboard(editText);
+        });
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) editText.getLayoutParams();
+        if (layoutParams != null) {
+            if (layoutParams instanceof FrameLayout.LayoutParams) {
+                ((FrameLayout.LayoutParams) layoutParams).gravity = Gravity.CENTER_HORIZONTAL;
+            }
+            layoutParams.rightMargin = layoutParams.leftMargin = AndroidUtilities.dp(24);
+            layoutParams.height = AndroidUtilities.dp(36);
+            editText.setLayoutParams(layoutParams);
+        }
+        editText.setSelection(0, editText.getText().length());
     }
 }

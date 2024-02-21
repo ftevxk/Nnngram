@@ -104,6 +104,9 @@ object Defines {
     @BooleanConfig const val showHideTitle = "showHideTitle"
     @StringConfig("") const val messageFilter = "messageFilter1"
 
+    //wd 长视频最小时长
+    @IntConfig(0) const val longVideoMinDuration = "LongVideoMinDuration"
+
     /**
      * 0 default 1 online 2 offline
      */

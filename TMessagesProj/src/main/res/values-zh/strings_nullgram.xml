@@ -413,6 +413,8 @@
     <string name="ChannelColorApplied">你的频道颜色已更新！</string>
 
     <!-- //wd 补充翻译 -->
+    <string name="longVideoMinDuration">长视频最小时长(秒)</string>
+
     <string name="HideTitle">隐藏标题</string>
     <string name="showHideTitle">显示隐藏标题</string>
     <string name="MessageFilter">消息过滤</string>
