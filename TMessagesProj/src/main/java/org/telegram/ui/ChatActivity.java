@@ -8904,6 +8904,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 actionModeViews.add(actionMode.addItemWithWidth(merge_message, R.drawable.msg_replace, AndroidUtilities.dp(54), LocaleController.getString("MergeMessage", R.string.MergeMessage)));
             actionModeViews.add(actionMode.addItemWithWidth(copy, R.drawable.msg_copy, AndroidUtilities.dp(54), LocaleController.getString(R.string.Copy)));
             actionModeViews.add(actionMode.addItemWithWidth(forward, R.drawable.msg_forward, AndroidUtilities.dp(54), LocaleController.getString(R.string.Forward)));
+            if (Config.showNoQuoteForward)
+                actionModeViews.add(actionMode.addItemWithWidth(OPTION_NOQUOTE_FORWARD, R.drawable.msg_noquote_forward, AndroidUtilities.dp(54), LocaleController.getString(R.string.NoQuoteForward)));
             actionModeViews.add(actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString(R.string.Delete)));
         } else {
             actionModeViews.add(actionMode.addItemWithWidth(edit, R.drawable.msg_edit, AndroidUtilities.dp(54), LocaleController.getString(R.string.Edit)));
@@ -8911,6 +8913,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (Config.mergeMessage)
                 actionModeViews.add(actionMode.addItemWithWidth(merge_message, R.drawable.msg_replace, AndroidUtilities.dp(54), LocaleController.getString("MergeMessage", R.string.MergeMessage)));
             actionModeViews.add(actionMode.addItemWithWidth(copy, R.drawable.msg_copy, AndroidUtilities.dp(54), LocaleController.getString(R.string.Copy)));
+            if (Config.showNoQuoteForward)
+                actionModeViews.add(actionMode.addItemWithWidth(OPTION_NOQUOTE_FORWARD, R.drawable.msg_noquote_forward, AndroidUtilities.dp(54), LocaleController.getString(R.string.NoQuoteForward)));
             actionModeViews.add(actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString(R.string.Delete)));
         }
         actionMode.setItemVisibility(edit, canEditMessagesCount == 1 && selectedMessagesIds[0].size() + selectedMessagesIds[1].size() == 1 ? View.VISIBLE : View.GONE);
