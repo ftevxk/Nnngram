@@ -47,7 +47,13 @@ public class MessagesSearchAdapter extends RecyclerListView.SelectionAdapter {
         ArrayList<MessageObject> searchResults = MediaDataController.getInstance(currentAccount).getFoundMessageObjects();
         for (int i = 0; i < searchResults.size(); ++i) {
             MessageObject m = searchResults.get(i);
-            if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId())) {
+//            if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId())) {
+//                searchResultMessages.add(m);
+//                messageIds.add(m.getId());
+//            }
+            //wd 全局搜索结果去除重复数据并过滤较短时长视频
+            if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId()) &&
+                !searchResultMessages.contains(m) && m.isLongVideo(true)) {
                 searchResultMessages.add(m);
                 messageIds.add(m.getId());
             }
