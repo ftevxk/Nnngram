@@ -208,7 +208,6 @@ import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.AnalyticsUtils;
 import xyz.nextalone.nnngram.utils.TypefaceUtils;
-import xyz.nextalone.nnngram.utils.TypefaceUtils;
 import xyz.nextalone.nnngram.utils.FileUtils;
 
 public class AndroidUtilities {

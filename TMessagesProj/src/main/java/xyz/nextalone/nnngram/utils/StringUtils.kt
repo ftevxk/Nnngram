@@ -18,12 +18,10 @@
  */
 package xyz.nextalone.nnngram.utils
 
-import android.text.TextUtils
+import kotlin.math.ceil
 import org.telegram.tgnet.TLRPC
 import ws.vinta.pangu.Pangu
 import xyz.nextalone.gen.Config
-import java.lang.StringBuilder
-import kotlin.math.ceil
 
 object StringUtils {
     private val pangu = Pangu()
