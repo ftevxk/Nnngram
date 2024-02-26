@@ -51,7 +51,7 @@ public class MessagesSearchAdapter extends RecyclerListView.SelectionAdapter {
 //                searchResultMessages.add(m);
 //                messageIds.add(m.getId());
 //            }
-            //wd 全局搜索结果去除重复数据并过滤较短时长视频
+            //wd 页面搜索结果去除重复数据并过滤较短时长视频
             if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId()) &&
                 !searchResultMessages.contains(m) && m.isLongVideo(true)) {
                 searchResultMessages.add(m);
