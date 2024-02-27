@@ -20,12 +20,14 @@
 package xyz.nextalone.nnngram.activity;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,6 +38,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.NotificationsCheckCell;
@@ -46,7 +49,9 @@ import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.EditTextBoldCursor;
 
 import java.util.ArrayList;
+import java.util.function.Function;
 
+import kotlin.Result;
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
@@ -469,24 +474,34 @@ public class ExperimentSettingActivity extends BaseActivity {
     //wd 设置自定义长视频最小时长
     @SuppressLint("SetTextI18n")
     private void setLongVideoMinDuration(View view, int pos) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        showLongVideoMinDurationDialog(this, (editText -> {
+            listAdapter.notifyItemChanged(pos, PARTIAL);
+            return null;
+        }), view);
+    }
+
+    //wd 显示设置自定义长视频最小时长弹框
+    public static void showLongVideoMinDurationDialog(BaseFragment fragment, Function<EditText, View> positiveButton, View itemClickView){
+        AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
         builder.setTitle(LocaleController.getString("longVideoMinDuration", R.string.longVideoMinDuration));
 
-        final EditTextBoldCursor editText = new EditTextBoldCursor(getParentActivity()) {
+        final EditTextBoldCursor editText = new EditTextBoldCursor(fragment.getParentActivity()) {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(64), MeasureSpec.EXACTLY));
             }
         };
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
+        editText.setTextColor(fragment.getThemedColor(Theme.key_dialogTextBlack));
         editText.setHintText(LocaleController.getString("Number", R.string.Number));
         editText.setText(Config.getLongVideoMinDuration() + "");
-        editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
+        editText.setHeaderHintColor(fragment.getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
         editText.setSingleLine(true);
         editText.setFocusable(true);
         editText.setTransformHintToHeader(true);
-        editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_text_RedRegular));
+        editText.setLineColors(fragment.getThemedColor(Theme.key_windowBackgroundWhiteInputField),
+            fragment.getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated),
+            fragment.getThemedColor(Theme.key_text_RedRegular));
         editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
         editText.setBackgroundDrawable(null);
         editText.requestFocus();
@@ -498,7 +513,9 @@ public class ExperimentSettingActivity extends BaseActivity {
                 Config.setLongVideoMinDuration(0);
             } else {
                 if (!UtilsKt.isNumber(editText.getText().toString())) {
-                    AndroidUtilities.shakeView(view);
+                    if (itemClickView != null) {
+                        AndroidUtilities.shakeView(itemClickView);
+                    }
                     AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
                 } else {
                     final int targetNum = Integer.parseInt(editText.getText().toString().trim());
@@ -508,7 +525,9 @@ public class ExperimentSettingActivity extends BaseActivity {
                         Config.setLongVideoMinDuration(Integer.parseInt(editText.getText().toString()));
                 }
             }
-            listAdapter.notifyItemChanged(pos, PARTIAL);
+            if (positiveButton != null) {
+                positiveButton.apply(editText);
+            }
         });
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
         builder.show().setOnShowListener(dialog -> {

@@ -225,6 +225,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.activity.ExperimentSettingActivity;
 import xyz.nextalone.nnngram.config.ForwardContext;
 import xyz.nextalone.nnngram.helpers.PasscodeHelper;
 import xyz.nextalone.nnngram.helpers.QrHelper;
@@ -4486,8 +4487,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         floatingButtonContainer.setVisibility(onlySelect && initialDialogsType != 10 || folderId != 0 ? View.GONE : View.VISIBLE);
         contentView.addView(floatingButtonContainer, LayoutHelper.createFrame((Build.VERSION.SDK_INT >= 21 ? 56 : 60), (Build.VERSION.SDK_INT >= 21 ? 56 : 60), (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 14 : 0, 0, LocaleController.isRTL ? 0 : 14, 14));
         floatingButtonContainer.setOnClickListener(v -> {
-            //wd 修改浮动按钮跳转为缓存管理页面
-            presentFragment(new CacheControlActivity());
+            //wd 修改浮动按钮跳转为显示设置自定义长视频最小时长弹框
+            ExperimentSettingActivity.showLongVideoMinDurationDialog(this, null, null);
 //            if (parentLayout != null && parentLayout.isInPreviewMode()) {
 //                finishPreviewFragment();
 //                return;
@@ -8539,9 +8540,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else {
 //            floatingButton.setAnimation(R.raw.write_contacts_fab_icon, 52, 52);
 //            floatingButtonContainer.setContentDescription(LocaleController.getString("NewMessageTitle", R.string.NewMessageTitle));
-            //wd 修改浮动按钮图标为清理图标
-            floatingButton.setImageResource(R.drawable.msg_clear);
-            floatingButtonContainer.setContentDescription(LocaleController.getString("Clear", R.string.Clear));
+            //wd 修改浮动按钮图标为配置图标
+            floatingButton.setImageResource(R.drawable.msg_customize);
+            floatingButtonContainer.setContentDescription(LocaleController.getString("ArchiveSettings"));
         }
     }
 
