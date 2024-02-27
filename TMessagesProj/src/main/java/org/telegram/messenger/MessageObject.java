@@ -8659,7 +8659,7 @@ public class MessageObject {
 
     //wd 判断是否为长视频
     public boolean isLongVideo(boolean allowOther) {
-        return isLongVideo(allowOther, Config.getLongVideoMinDuration());
+        return isLongVideo(allowOther, Config.getSearchVideoMinDuration());
     }
 
     //wd 判断是否为长视频
