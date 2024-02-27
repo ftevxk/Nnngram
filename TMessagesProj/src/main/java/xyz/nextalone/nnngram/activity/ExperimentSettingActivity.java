@@ -20,7 +20,6 @@
 package xyz.nextalone.nnngram.activity;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -51,7 +50,6 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import java.util.ArrayList;
 import java.util.function.Function;
 
-import kotlin.Result;
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
@@ -98,8 +96,8 @@ public class ExperimentSettingActivity extends BaseActivity {
 
     private int experiment2Row;
 
-    //wd 自定义视频最小时长
-    private int longVideoMinDurationRow;
+    //wd 自定义搜索视频最小时长
+    private int searchVideoMinDurationRow;
 
     private boolean sensitiveEnabled;
     private final boolean sensitiveCanChange;
@@ -238,8 +236,8 @@ public class ExperimentSettingActivity extends BaseActivity {
         }
 
         //wd 自定义视频最小时长
-        else if (position == longVideoMinDurationRow) {
-            setLongVideoMinDuration(view, position);
+        else if (position == searchVideoMinDurationRow) {
+            setSearchVideoMinDuration(view, position);
             listAdapter.notifyItemChanged(position, PARTIAL);
         }
     }
@@ -267,7 +265,7 @@ public class ExperimentSettingActivity extends BaseActivity {
         linkedUserRow = addRow("linkedUser");
         alwaysSendWithoutSoundRow = addRow();
         //wd 自定义视频最小时长
-        longVideoMinDurationRow = addRow();
+        searchVideoMinDurationRow = addRow();
 
         if (Config.linkedUser && Config.labelChannelUser) {
             overrideChannelAliasRow = addRow("overrideChannelAlias");
@@ -358,9 +356,9 @@ public class ExperimentSettingActivity extends BaseActivity {
                             value, payload, false);
                     }
 
-                    //wd 自定义长视频最小时长
-                    else if (position == longVideoMinDurationRow){
-                        textCell.setTextAndValue(LocaleController.getString("longVideoMinDuration", R.string.longVideoMinDuration), String.valueOf(Config.getLongVideoMinDuration()), payload, true);
+                    //wd 自定义搜索视频最小时长
+                    else if (position == searchVideoMinDurationRow){
+                        textCell.setTextAndValue(LocaleController.getString("searchVideoMinDuration", R.string.searchVideoMinDuration), String.valueOf(Config.getSearchVideoMinDuration()), payload, true);
                     }
                     break;
                 }
@@ -464,26 +462,26 @@ public class ExperimentSettingActivity extends BaseActivity {
                 return TYPE_INFO_PRIVACY;
             }
             //wd 返回自定义视频最小时长类型
-            else if (position == longVideoMinDurationRow) {
+            else if (position == searchVideoMinDurationRow) {
                 return TYPE_SETTINGS;
             }
             return TYPE_CHECK;
         }
     }
 
-    //wd 设置自定义长视频最小时长
-    @SuppressLint("SetTextI18n")
-    private void setLongVideoMinDuration(View view, int pos) {
-        showLongVideoMinDurationDialog(this, (editText -> {
+    //wd 设置自定义搜索视频最小时长
+    private void setSearchVideoMinDuration(View view, int pos) {
+        showSearchVideoMinDurationDialog(this, (editText -> {
             listAdapter.notifyItemChanged(pos, PARTIAL);
             return null;
         }), view);
     }
 
-    //wd 显示设置自定义长视频最小时长弹框
-    public static void showLongVideoMinDurationDialog(BaseFragment fragment, Function<EditText, View> positiveButton, View itemClickView){
+    //wd 显示设置自定义搜索视频最小时长弹框
+    @SuppressLint("SetTextI18n")
+    public static void showSearchVideoMinDurationDialog(BaseFragment fragment, Function<EditText, View> positiveButton, View itemClickView){
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
-        builder.setTitle(LocaleController.getString("longVideoMinDuration", R.string.longVideoMinDuration));
+        builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.searchVideoMinDuration));
 
         final EditTextBoldCursor editText = new EditTextBoldCursor(fragment.getParentActivity()) {
             @Override
@@ -494,7 +492,7 @@ public class ExperimentSettingActivity extends BaseActivity {
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         editText.setTextColor(fragment.getThemedColor(Theme.key_dialogTextBlack));
         editText.setHintText(LocaleController.getString("Number", R.string.Number));
-        editText.setText(Config.getLongVideoMinDuration() + "");
+        editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
         editText.setHeaderHintColor(fragment.getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
         editText.setSingleLine(true);
         editText.setFocusable(true);
@@ -510,7 +508,7 @@ public class ExperimentSettingActivity extends BaseActivity {
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
             if (editText.getText().toString().trim().equals("")) {
-                Config.setLongVideoMinDuration(0);
+                Config.setSearchVideoMinDuration(0);
             } else {
                 if (!UtilsKt.isNumber(editText.getText().toString())) {
                     if (itemClickView != null) {
@@ -520,9 +518,9 @@ public class ExperimentSettingActivity extends BaseActivity {
                 } else {
                     final int targetNum = Integer.parseInt(editText.getText().toString().trim());
                     if (targetNum < 0)
-                        Config.setLongVideoMinDuration(0);
+                        Config.setSearchVideoMinDuration(0);
                     else
-                        Config.setLongVideoMinDuration(Integer.parseInt(editText.getText().toString()));
+                        Config.setSearchVideoMinDuration(Integer.parseInt(editText.getText().toString()));
                 }
             }
             if (positiveButton != null) {

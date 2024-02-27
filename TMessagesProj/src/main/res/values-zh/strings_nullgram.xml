@@ -421,5 +421,5 @@
     <string name="ChannelColorApplied">你的频道颜色已更新！</string>
 
     <!-- //wd 补充翻译 -->
-    <string name="longVideoMinDuration">长视频最小时长(秒)</string>
+    <string name="searchVideoMinDuration">搜索视频最小时长(秒)</string>
 </resources>

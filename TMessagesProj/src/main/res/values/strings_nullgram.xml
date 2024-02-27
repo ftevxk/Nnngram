@@ -350,5 +350,5 @@
     <string name="searchInPlace">Search in place</string>
 
     <!-- //wd 自定义 -->
-    <string name="longVideoMinDuration">Long Video Min Duration(Second)</string>
+    <string name="searchVideoMinDuration">Search Video Min Duration(Second)</string>
 </resources>
