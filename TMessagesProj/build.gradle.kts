@@ -89,7 +89,7 @@ dependencies {
     implementation(libs.firebase.appindexing)
     implementation(libs.play.services.vision)
     implementation(libs.play.services.location)
-    implementation(libs.play.services.wallet)
+    // implementation(libs.play.services.wallet)
     implementation(libs.play.services.mlkit.vision)
 //    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
     implementation(libs.isoparser)
