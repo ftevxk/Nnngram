@@ -373,6 +373,7 @@
     <string name="hideFilterMuteAll">Hide filter mute all</string>
     <string name="hideKeyboardWhenScrolling">Hide keyboard when scrolling</string>
     <string name="searchInPlace">Search in place</string>
+    <string name="gifSize">GIF size</string>
 
     <!-- //wd 自定义 -->
     <string name="searchVideoMinDuration">Search Video Min Duration(Second)</string>
