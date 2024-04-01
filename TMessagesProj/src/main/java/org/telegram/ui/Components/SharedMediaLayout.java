@@ -921,12 +921,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         if (type == -1) {
                             continue;
                         }
-//                        if (type == 0 && sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY && !obj.isVideo()) {
-//                            continue;
-//                        }
-                        //wd 仅视频类型过滤较短时长视频
-                        if (type == 0 && sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY &&
-                            (!obj.isVideo() || !obj.isLongVideo(false))) {
+                        if (type == 0 && sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY && !obj.isVideo()) {
                             continue;
                         }
                         if (type == 0 && sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY && obj.isVideo()) {

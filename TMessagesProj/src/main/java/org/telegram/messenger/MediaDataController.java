@@ -4186,30 +4186,12 @@ public class MediaDataController extends BaseController {
                     TLRPC.User u = res.users.get(a);
                     usersDict.put(u.id, u);
                 }
-//                ArrayList<MessageObject> objects = new ArrayList<>();
-//                for (int a = 0; a < res.messages.size(); a++) {
-//                    TLRPC.Message message = res.messages.get(a);
-//                    MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, true, false);
-//                    messageObject.createStrippedThumb();
-//                    objects.add(messageObject);
-//                }
-                //wd 媒体页面仅视频类型过滤较短时长视频
-                ArrayList<TLRPC.Message> tempArr = new ArrayList<>();
                 ArrayList<MessageObject> objects = new ArrayList<>();
                 for (int a = 0; a < res.messages.size(); a++) {
                     TLRPC.Message message = res.messages.get(a);
                     MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, true, false);
-                    if (type == MEDIA_VIDEOS_ONLY && !messageObject.isLongVideo(false)) {
-                        res.count -= 1;
-                    } else {
-                        tempArr.add(message);
-                        messageObject.createStrippedThumb();
-                        objects.add(messageObject);
-                    }
-                }
-                if (type == MEDIA_VIDEOS_ONLY) {
-                    res.messages.clear();
-                    res.messages.addAll(tempArr);
+                    messageObject.createStrippedThumb();
+                    objects.add(messageObject);
                 }
                 getFileLoader().checkMediaExistance(objects);
 
