@@ -247,6 +247,7 @@ import xyz.nextalone.nnngram.helpers.QrHelper;
 import xyz.nextalone.nnngram.ui.AppLinkVerifyBottomSheet;
 import xyz.nextalone.nnngram.ui.SendOptionsMenuLayout;
 import xyz.nextalone.nnngram.utils.APKUtils;
+import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.PrivacyUtils;
 import xyz.nextalone.nnngram.utils.UpdateUtils;
 
