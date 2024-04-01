@@ -2106,8 +2106,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             tagsRight = getMeasuredWidth() - dp(messagePaddingStart);
             tagsLeft = dp(64);
         } else {
-//            tagsLeft = messageLeft;
-//            tagsRight = getMeasuredWidth() - dp(64);
+//          tagsLeft = messageLeft;
+//          tagsRight = getMeasuredWidth() - dp(64);
             //wd 标题向右偏移位置
             int thumbsWidth = thumbsCount <= 0 ? 0 :AndroidUtilities.dp(thumbSize + 2) * thumbsCount;
             tagsLeft = messageLeft + thumbsWidth;
@@ -4996,7 +4996,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 int size = message.type == MessageObject.TYPE_PHOTO && selectedThumb != null ? selectedThumb.size : 0;
 //                String filter = message.hasMediaSpoilers() ? "5_5_b" : "20_20";
 //                thumbImage[index].setImage(ImageLocation.getForObject(selectedThumb, photoThumbsObject), filter, ImageLocation.getForObject(smallThumb, photoThumbsObject), filter, size, null, message, 0);
-                //wd 图片/视频显示缩略图
+                                //wd 图片/视频显示缩略图
                 String filter = message.hasMediaSpoilers() ? "5_5_b" : "20_20";
                 thumbImage[index].setImage(message.createMediaThumbs(), filter, ImageLocation.getForObject(smallThumb, photoThumbsObject), filter, size, null, message, 0);
                 thumbImage[index].setRoundRadius(message.isRoundVideo() ? dp(18) : dp(2));
