@@ -58,11 +58,13 @@ import org.telegram.ui.ActionBar.FloatingToolbar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
+import org.telegram.ui.Components.CornerPath;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 
+import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
 
 public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.SelectableView> {
@@ -88,7 +90,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
     protected float cornerRadius;
     protected Paint selectionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     protected Paint selectionHandlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    protected Path selectionPath = new Path();
+    protected CornerPath selectionPath = new CornerPath();
     protected Path selectionHandlePath = new Path();
     protected PathCopyTo selectionPathMirror = new PathCopyTo(selectionPath);
 
@@ -307,6 +309,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
         longpressDelay = ViewConfiguration.getLongPressTimeout();
         touchSlop = ViewConfiguration.get(ApplicationLoader.applicationContext).getScaledTouchSlop();
         selectionPaint.setPathEffect(new CornerPathEffect(cornerRadius = dp(6)));
+        selectionPath.setRectsUnionDiffDelta(1f);
     }
 
     public void setInvalidateParent() {
@@ -1409,6 +1412,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
     }
 
     private static final int TRANSLATE = 3;
+    private static final int BLOCK = 4;
     private ActionMode.Callback createActionCallback() {
         final ActionMode.Callback callback = new ActionMode.Callback() {
             @Override
@@ -1417,6 +1421,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 menu.add(Menu.NONE, R.id.menu_quote, 1, LocaleController.getString(R.string.Quote));
                 menu.add(Menu.NONE, android.R.id.selectAll, 2, android.R.string.selectAll);
                 menu.add(Menu.NONE, TRANSLATE, 3, LocaleController.getString("TranslateMessage", R.string.TranslateMessage));
+                menu.add(menu.NONE, BLOCK, 4, LocaleController.getString("block", R.string.block));
                 return true;
             }
 
@@ -1490,6 +1495,17 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 } else if (itemId == R.id.menu_quote) {
                     quoteText();
                     hideActions();
+                    return true;
+                } else if (itemId == BLOCK) {
+                    CharSequence str = getSelectedText();
+                    if (str == null) {
+                        return true;
+                    }
+                    String currentFilteredMessages = Config.getMessageFilter();
+                    currentFilteredMessages = currentFilteredMessages + "|" + str.toString();
+                    Config.setMessageFilter(currentFilteredMessages);
+                    hideActions();
+                    clear(true);
                     return true;
                 } else {
                     clear();
@@ -1719,7 +1735,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 }
             }
         }
-
+        selectionPath.closeRects();
         canvas.drawPath(selectionPath, selectionPaint);
         if (restore) {
             canvas.restore();

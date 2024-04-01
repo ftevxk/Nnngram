@@ -65,7 +65,7 @@ import xyz.nextalone.nnngram.utils.VibrationUtils;
 
 public abstract class BaseFragment {
 
-    private boolean isFinished;
+    protected boolean isFinished;
     protected boolean finishing;
     protected Dialog visibleDialog;
     protected int currentAccount = UserConfig.selectedAccount;
