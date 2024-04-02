@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "v2sign.h"
 #include "log.h"
 #include <errno.h>
 
@@ -26,10 +25,6 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	if ((*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
 		return -1;
 	}
-
-    if (!checkSignature(verify_signature(vm))) {
-        return JNI_ERR;
-    }
 
     if (imageOnJNILoad(vm, env) != JNI_TRUE) {
         return -1;
@@ -56,7 +51,7 @@ JNIEXPORT void Java_org_telegram_messenger_Utilities_aesIgeEncryption(JNIEnv *en
     jbyte *what = (*env)->GetDirectBufferAddress(env, buffer) + offset;
     unsigned char *keyBuff = (unsigned char *)(*env)->GetByteArrayElements(env, key, NULL);
     unsigned char *ivBuff = (unsigned char *)(*env)->GetByteArrayElements(env, iv, NULL);
-    
+
     AES_KEY akey;
     if (!encrypt) {
         AES_set_decrypt_key(keyBuff, 32 * 8, &akey);

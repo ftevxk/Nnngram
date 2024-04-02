@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.exifinterface)
     implementation(libs.dynamicanimation)
     implementation(libs.interpolator)
+    implementation(libs.biometric)
     implementation(libs.fragment)
     implementation(libs.sharetarget)
 
