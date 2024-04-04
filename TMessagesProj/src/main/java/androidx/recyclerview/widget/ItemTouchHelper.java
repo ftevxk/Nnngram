@@ -695,8 +695,12 @@ public class ItemTouchHelper extends RecyclerView.ItemDecoration
             mSelected = selected;
 
             if (actionState == ACTION_STATE_DRAG) {
-                if (Config.disableVibration)
-                    mSelected.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                try {
+                    if (Config.disableVibration)
+                        mSelected.itemView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                } catch (Exception ignore) {
+
+                }
             }
         }
         final ViewParent rvParent = mRecyclerView.getParent();

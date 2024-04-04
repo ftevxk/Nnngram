@@ -210,14 +210,13 @@ target_compile_definitions(sqlite PUBLIC
 #voip
 include(${CMAKE_HOME_DIRECTORY}/voip/CMakeLists.txt)
 
-# include(${CMAKE_HOME_DIRECTORY}/integrity/CMakeLists.txt)
-
-set(NATIVE_LIB "tmessages.48")
+set(NATIVE_LIB "tmessages.49")
 
 #tmessages
 add_library(${NATIVE_LIB} SHARED
         jni.c
         audio.c
+        webm_encoder.c
         image.cpp
         video.c
         intro/IntroRenderer.c

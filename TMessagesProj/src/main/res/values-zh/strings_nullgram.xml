@@ -445,7 +445,6 @@
     <string name="ChannelColorUnsavedMessage">你已更改你的颜色或图标设置。应用更改？</string>
     <string name="UserColorApplied">你的名字颜色已更新！</string>
     <string name="ChannelColorApplied">你的频道颜色已更新！</string>
-
     <!-- //wd 补充翻译 -->
     <string name="searchVideoMinDuration">搜索视频最小时长(秒)</string>
 </resources>
