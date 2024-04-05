@@ -2111,7 +2111,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 //            tagsRight = getMeasuredWidth() - dp(64);
             //wd 标题向右偏移位置
             int thumbsWidth = thumbsCount <= 0 ? 0 : AndroidUtilities.dp(thumbSize + 2) * thumbsCount;
-            messageLeft += thumbsWidth;
             nameLeft += thumbsWidth;
             messageNameLeft += thumbsWidth;
             tagsLeft = messageLeft;
