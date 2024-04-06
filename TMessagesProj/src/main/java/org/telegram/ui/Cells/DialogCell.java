@@ -1730,7 +1730,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         }
                                     }
                                 }
-                                if (message.isForwarded() && message.needDrawForwarded()) {
+//                                if (message.isForwarded() && message.needDrawForwarded()) {
+                                //wd 图片/视频类型不显示转发按钮
+                                if (message.isForwarded() && message.needDrawForwarded() && thumbsCount <= 0) {
                                     drawForwardIcon = true;
                                     SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
                                     builder.insert(0, "d ");
