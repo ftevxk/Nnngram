@@ -8340,6 +8340,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     updateSearchUpDownButtonVisibility(true);
                     updatePagedownButtonVisibility(true);
                     searchingQuery = searchItem.getSearchField().getText().toString();
+                    lastSearchedMessageId = 0;
                     getMediaDataController().searchMessagesInChat(searchingQuery, dialog_id, mergeDialogId, classGuid, 0, threadMessageId, false, searchingUserMessages, searchingChatMessages, !TextUtils.isEmpty(searchingQuery) || searchingReaction != null, searchingReaction, true, searchingType);
                     AndroidUtilities.hideKeyboard(searchItem.getSearchField());
                     return true;
@@ -9644,6 +9645,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     updateSearchUpDownButtonVisibility(true);
                     updatePagedownButtonVisibility(true);
                     searchingQuery = searchItem.getSearchField().getText().toString();
+                    lastSearchedMessageId = 0;
                     getMediaDataController().searchMessagesInChat(searchingQuery, dialog_id, mergeDialogId, classGuid, 0, threadMessageId, searchingUserMessages, searchingChatMessages, searchingReaction, true, searchingType);
                 });
                 if (searchingType == filter.second) {
@@ -21254,10 +21256,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 foundMessageIds.add(message.getId());
                             }
                             Collections.sort(foundMessageIds);
-                            int firstFoundMessageId = foundMessageIds.get(0);
-                            int lastFoundMessageId = foundMessageIds.get(foundMessageIds.size() -1);
-                            if (firstFoundMessageId > currentMessageId && lastSearchedMessageId != lastFoundMessageId) {
-                                lastSearchedMessageId = lastFoundMessageId;
+                            int minFoundMessageId = Collections.min(foundMessageIds);
+                            if (minFoundMessageId > currentMessageId && lastSearchedMessageId != minFoundMessageId) {
+                                lastSearchedMessageId = minFoundMessageId;
                                 Runnable loop = () -> {
                                     getMediaDataController().setCurrentMaxMessage();
                                     getMediaDataController().searchMessagesInChat(null, dialog_id, mergeDialogId, classGuid, 1, threadMessageId, searchingUserMessages, searchingChatMessages, searchingReaction, firstSearch, searchFilter);
@@ -21269,8 +21270,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                                 return;
                             }
-
-                            if (currentMessageId < lastFoundMessageId) {
+                            int maxFoundMessageId = Collections.max(foundMessageIds);
+                            if (currentMessageId < maxFoundMessageId) {
                                 int insertionPoint = Collections.binarySearch(foundMessageIds, currentMessageId);
                                 int nextLargerIndex = (insertionPoint < 0) ? Math.max(-(insertionPoint + 1) - 1, 0) : insertionPoint;
                                 if (nextLargerIndex < foundMessageIds.size()) {
@@ -21285,7 +21286,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 }
                             }
                         }
-                    } else {
                     }
                     long did = (Long) args[3];
                     if (searchingReaction != null && searchingFiltered) {
