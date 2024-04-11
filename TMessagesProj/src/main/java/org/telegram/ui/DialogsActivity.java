@@ -7197,6 +7197,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         updateVisibleRows(0, false);
         updateProxyButton(false, true);
         updateStoriesVisibility(false);
+        if (Config.hideDialogsFloatingButton) {
+            hideFloatingButton(true);
+        }
         checkSuggestClearDatabase();
     }
 
@@ -11276,6 +11279,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void hideFloatingButton(boolean hide) {
+        if (Config.hideDialogsFloatingButton) {
+            hide = true;
+        }
         if (rightSlidingDialogContainer.hasFragment()) {
             hide = true;
         }
