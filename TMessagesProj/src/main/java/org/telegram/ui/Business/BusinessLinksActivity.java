@@ -70,7 +70,6 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PrivacyControlActivity;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class BusinessLinksActivity extends UniversalFragment implements NotificationCenter.NotificationCenterDelegate {
 

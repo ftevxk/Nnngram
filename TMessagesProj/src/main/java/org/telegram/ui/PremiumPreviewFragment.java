@@ -169,7 +169,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     public final static int PREMIUM_FEATURE_ANIMATED_AVATARS = 7;
     public final static int PREMIUM_FEATURE_VOICE_TO_TEXT = 8;
     public final static int PREMIUM_FEATURE_ADVANCED_CHAT_MANAGEMENT = 9;
-    public final static int PREMIUM_FEATURE_APPLICATION_ICONS = 10;
+    // public final static int PREMIUM_FEATURE_APPLICATION_ICONS = 10;
     public final static int PREMIUM_FEATURE_ANIMATED_EMOJI = 11;
     public final static int PREMIUM_FEATURE_EMOJI_STATUS = 12;
     public final static int PREMIUM_FEATURE_TRANSLATIONS = 13;
@@ -243,8 +243,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 return PREMIUM_FEATURE_PROFILE_BADGE;
             case "animated_userpics":
                 return PREMIUM_FEATURE_ANIMATED_AVATARS;
-            case "app_icons":
-                return PREMIUM_FEATURE_APPLICATION_ICONS;
+            // case "app_icons":
+            // return PREMIUM_FEATURE_APPLICATION_ICONS;
             case "animated_emoji":
                 return PREMIUM_FEATURE_ANIMATED_EMOJI;
             case "emoji_status":
@@ -330,8 +330,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 return "profile_badge";
             case PREMIUM_FEATURE_ANIMATED_AVATARS:
                 return "animated_userpics";
-            case PREMIUM_FEATURE_APPLICATION_ICONS:
-                return "app_icons";
             case PREMIUM_FEATURE_EMOJI_STATUS:
                 return "emoji_status";
             case PREMIUM_FEATURE_TRANSLATIONS:
@@ -827,7 +825,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_PROFILE_BADGE, R.drawable.msg_premium_badge, LocaleController.getString(R.string.PremiumPreviewProfileBadge), LocaleController.getString(R.string.PremiumPreviewProfileBadgeDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_ANIMATED_AVATARS, R.drawable.msg_premium_avatar, LocaleController.getString(R.string.PremiumPreviewAnimatedProfiles), LocaleController.getString(R.string.PremiumPreviewAnimatedProfilesDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_SAVED_TAGS, R.drawable.premium_tags, LocaleController.getString(R.string.PremiumPreviewTags2), LocaleController.getString(R.string.PremiumPreviewTagsDescription2)));
-        premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_APPLICATION_ICONS, R.drawable.msg_premium_icons, LocaleController.getString(R.string.PremiumPreviewAppIcon), LocaleController.getString(R.string.PremiumPreviewAppIconDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_EMOJI_STATUS, R.drawable.premium_status, LocaleController.getString(R.string.PremiumPreviewEmojiStatus), LocaleController.getString(R.string.PremiumPreviewEmojiStatusDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_TRANSLATIONS, R.drawable.msg_premium_translate, LocaleController.getString(R.string.PremiumPreviewTranslations), LocaleController.getString(R.string.PremiumPreviewTranslationsDescription)));
         premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_WALLPAPER, R.drawable.premium_wallpaper, LocaleController.getString(R.string.PremiumPreviewWallpaper), LocaleController.getString(R.string.PremiumPreviewWallpaperDescription)));

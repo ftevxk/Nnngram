@@ -7,12 +7,8 @@ import android.content.pm.PackageInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.SystemClock;
-import android.text.SpannableString;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.LongSparseArray;
-import android.util.SparseIntArray;
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
@@ -34,19 +30,11 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.PushListenerController;
-import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.StatsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.tl.TL_stories;
-import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.BulletinFactory;
-import org.telegram.ui.Components.TypefaceSpan;
-import org.telegram.ui.DialogsActivity;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -764,7 +752,6 @@ public class ConnectionsManager extends BaseController {
             buff.reused = true;
             int constructor = buff.readInt32(true);
             final TLObject message = TLClassStore.Instance().TLdeserialize(buff, constructor, true);
-            FileLog.dumpUnparsedMessage(message, messageId, currentAccount);
             if (message instanceof TLRPC.Updates) {
                 if (false) {
                     // FileLog.d("java received " + message);

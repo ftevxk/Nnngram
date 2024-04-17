@@ -8,8 +8,6 @@
 
 package org.telegram.messenger;
 
-import android.util.Log;
-
 import org.telegram.messenger.utils.ImmutableByteArrayOutputStream;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.NativeByteBuffer;

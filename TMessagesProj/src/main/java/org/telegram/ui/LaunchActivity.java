@@ -598,7 +598,13 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 } else if (id == 8) {
                     openSettings(false);
                 } else if (id == 9) {
-                    Browser.openUrl(LaunchActivity.this, LocaleController.getString("TelegramFaqUrl", R.string.TelegramFaqUrl));
+                    if (ConnectionsManager.getInstance(UserConfig.selectedAccount).isTestBackend()) {
+                        Bundle args = new Bundle();
+                        args.putLong("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
+                        presentFragment(new ChatActivity(args));
+                    } else {
+                        Browser.openUrl(LaunchActivity.this, LocaleController.getString("TelegramFaqUrl", R.string.TelegramFaqUrl));
+                    }
                     drawerLayoutContainer.closeDrawer(false);
                 } else if (id == 10) {
                     presentFragment(new CallLogActivity());
@@ -635,7 +641,13 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     }
                     drawerLayoutContainer.closeDrawer(false);
                 } else if (id == 13) {
-                    Browser.openUrl(LaunchActivity.this, LocaleController.getString("TelegramFeaturesUrl", R.string.TelegramFeaturesUrl));
+                    if (ConnectionsManager.getInstance(UserConfig.selectedAccount).isTestBackend()) {
+                        Bundle args = new Bundle();
+                        args.putLong("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
+                        presentFragment(new ChatActivity(args));
+                    } else {
+                        Browser.openUrl(LaunchActivity.this, LocaleController.getString("TelegramFeaturesUrl", R.string.TelegramFeaturesUrl));
+                    }
                     drawerLayoutContainer.closeDrawer(false);
                 } else if (id == 15) {
                     showSelectStatusDialog();
@@ -6031,10 +6043,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onDestroy() {
+        isActive = false;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             MonetHelper.unregisterReceiver(this);
         }
-        isActive = false;
         if (PhotoViewer.getPipInstance() != null) {
             PhotoViewer.getPipInstance().destroyPhotoViewer();
         }

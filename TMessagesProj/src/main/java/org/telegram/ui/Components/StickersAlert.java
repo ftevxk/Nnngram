@@ -995,7 +995,6 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         containerView.addView(optionsButton, LayoutHelper.createFrame(40, 40, Gravity.TOP | Gravity.RIGHT, 0, 5, 5, 0));
         optionsButton.addSubItem(1, R.drawable.msg_share, LocaleController.getString("StickersShare", R.string.StickersShare));
         optionsButton.addSubItem(2, R.drawable.msg_link, LocaleController.getString("CopyLink", R.string.CopyLink));
-        optionsButton.addSubItem(6, R.drawable.media_download, LocaleController.getString("Save", R.string.Save));
 
         optionsButton.setOnClickListener(v -> {
             checkOptions();
@@ -1274,8 +1273,6 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 dismiss();
                 MediaDataController.getInstance(currentAccount).toggleStickerSet(getContext(), stickerSet, 1, parentFragment, false, false);
             });
-        } else if (id == 6) {
-            StickerHelper.saveStickerSet(getContext(), inputStickerSet);
         }
     }
 

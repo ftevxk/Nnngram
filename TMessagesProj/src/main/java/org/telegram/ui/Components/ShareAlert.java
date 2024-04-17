@@ -1371,12 +1371,12 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                 float alphaOffset = (frameLayout2.getMeasuredHeight() - dp(48)) * (1f - getAlpha());
                 shadow[1].setTranslationY(-(frameLayout2.getMeasuredHeight() - dp(48)) + captionEditTextTopOffset + currentPanTranslationY + alphaOffset);
 
-//                int newColor = getThemedColor(darkTheme ? Theme.key_voipgroup_inviteMembersBackground : Theme.key_dialogBackground);
-//                if (color != newColor) {
-//                    color = newColor;
-//                    p.setColor(color);
-//                }
-//                canvas.drawRect(0, captionEditTextTopOffset + alphaOffset, getMeasuredWidth(), getMeasuredHeight(), p);
+                //                int newColor = getThemedColor(darkTheme ? Theme.key_voipgroup_inviteMembersBackground : Theme.key_dialogBackground);
+                //                if (color != newColor) {
+                //                    color = newColor;
+                //                    p.setColor(color);
+                //                }
+                //                canvas.drawRect(0, captionEditTextTopOffset + alphaOffset, getMeasuredWidth(), getMeasuredHeight(), p);
             }
 
             @Override
@@ -1717,9 +1717,9 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
                                 int[] loc = new int[2];
                                 topicsAnimation = new SpringAnimation(new FloatValueHolder(0))
-                                        .setSpring(new SpringForce(1000)
-                                                .setStiffness(parentFragment != null && parentFragment.shareAlertDebugTopicsSlowMotion ? 10f : 800f)
-                                                .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY));
+                                    .setSpring(new SpringForce(1000)
+                                        .setStiffness(parentFragment != null && parentFragment.shareAlertDebugTopicsSlowMotion ? 10f : 800f)
+                                        .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY));
                                 topicsAnimation.addUpdateListener((animation, value, velocity) -> {
                                     value /= 1000;
 
@@ -1822,9 +1822,9 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         int[] loc = new int[2];
         View finalCell = cell;
         topicsAnimation = new SpringAnimation(new FloatValueHolder(1000))
-                .setSpring(new SpringForce(0)
-                        .setStiffness(parentFragment != null && parentFragment.shareAlertDebugTopicsSlowMotion ? 10f : 800f)
-                        .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY));
+            .setSpring(new SpringForce(0)
+                .setStiffness(parentFragment != null && parentFragment.shareAlertDebugTopicsSlowMotion ? 10f : 800f)
+                .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY));
         topicsAnimation.addUpdateListener((animation, value, velocity) -> {
             value /= 1000;
 
@@ -1922,7 +1922,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         SharedConfig.removeScheduledOrNoSoundHint();
 
         layout.setSendPopupWindow(sendPopupWindow);
-        layout.measure(View.MeasureSpec.makeMeasureSpec(dp(1000), View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(1000), View.MeasureSpec.AT_MOST));
+        layout.measure(View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(1000), View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(1000), View.MeasureSpec.AT_MOST));
         sendPopupWindow.setFocusable(true);
         int[] location = new int[2];
         view.getLocationInWindow(location);
@@ -3005,7 +3005,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                     };
                     layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
                     horizontalListView.setLayoutManager(layoutManager);
-                    horizontalListView.setAdapter(categoryAdapter = new DialogsSearchAdapter.CategoryAdapterRecycler(context, currentAccount, true, resourcesProvider) {
+                    horizontalListView.setAdapter(categoryAdapter = new DialogsSearchAdapter.CategoryAdapterRecycler(context, currentAccount, true, true, resourcesProvider) {
                         @Override
                         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
                             HintDialogCell cell = (HintDialogCell) holder.itemView;

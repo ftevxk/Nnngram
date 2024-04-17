@@ -145,7 +145,7 @@ object StringUtils {
     }
 
     @JvmStatic
-    fun zalgoFilter(text: String?): String {
+    fun zalgoFilter(text: CharSequence?): CharSequence {
         return if (text == null) {
             ""
         } else if (Config.filterZalgo && text.matches(".*\\p{Mn}{4}.*".toRegex())) {
@@ -156,7 +156,7 @@ object StringUtils {
     }
 
     @JvmStatic
-    fun zalgoFilter(text: CharSequence?): String {
-        return zalgoFilter(text.toString())
+    fun zalgoFilter(text: String): String {
+        return zalgoFilter(text as CharSequence).toString()
     }
 }

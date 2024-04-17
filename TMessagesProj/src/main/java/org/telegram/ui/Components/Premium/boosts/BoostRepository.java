@@ -19,9 +19,9 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PaymentFormActivity;
+import org.telegram.ui.bots.BotWebViewSheet;
 
 import java.text.Collator;
 import java.util.ArrayList;

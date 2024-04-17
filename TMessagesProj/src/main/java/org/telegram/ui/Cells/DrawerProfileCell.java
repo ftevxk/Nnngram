@@ -35,7 +35,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.palette.graphics.Palette;
-import androidx.appcompat.app.AppCompatDelegate;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;

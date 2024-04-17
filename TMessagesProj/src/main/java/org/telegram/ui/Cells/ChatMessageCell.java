@@ -1835,7 +1835,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (currentViaBotUser != null && currentViaBotUser.bot_inline_placeholder == null) {
                             delegate.didPressViaBotNotInline(this, currentViaBotUser != null ? currentViaBotUser.id : 0);
                         } else {
-                            delegate.didPressViaBot(this, currentViaBotUser != null ? currentViaBotUser.username : currentMessageObject.messageOwner.via_bot_name);
+                            delegate.didPressViaBot(this, currentViaBotUser != null ? UserObject.getPublicUsername(currentViaBotUser) : currentMessageObject.messageOwner.via_bot_name);
                         }
                     } else if (currentUser != null) {
                         delegate.didPressUserAvatar(this, currentUser, event.getX(), event.getY());
@@ -3894,7 +3894,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (currentViaBotUser != null && currentViaBotUser.bot_inline_placeholder == null) {
                                 delegate.didPressViaBotNotInline(this, currentViaBotUser != null ? currentViaBotUser.id : 0);
                             } else {
-                                delegate.didPressViaBot(this, currentViaBotUser != null ? currentViaBotUser.username : currentMessageObject.messageOwner.via_bot_name);
+                                delegate.didPressViaBot(this, currentViaBotUser != null ? UserObject.getPublicUsername(currentViaBotUser) : currentMessageObject.messageOwner.via_bot_name);
                             }
                         }
                     } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
@@ -7881,8 +7881,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             }
                             photoImage.setImage(ImageLocation.getForDocument(messageObject.getDocument()), ImageLoader.AUTOPLAY_FILTER,
                                     ImageLocation.getForObject(currentPhotoObjectThumb, photoParentObject), "b1",
-                                messageObject.pathThumb,
-                                messageObject.getDocument().size, isWebpSticker ? "webp" : null, parentObject, 1);
+                                    messageObject.pathThumb,
+                                    messageObject.getDocument().size, isWebpSticker ? "webp" : null, parentObject, 1);
                         } else if (messageObject.pathThumb != null) {
                             photoImage.setImage(ImageLocation.getForDocument(messageObject.getDocument()), filter,
                                 messageObject.pathThumb,
@@ -9088,16 +9088,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             quoteHighlight = null;
         }
-        if (isBlockedUserMessage()) {
-            totalHeight = 0;
-            if (avatarDrawable != null)
-                avatarDrawable.setVisible(false, true);
-            if (avatarImage != null)
-                avatarImage.setVisible(false, false);
-            if (getAvatarImage() != null)
-                getAvatarImage().setVisible(false, false);
-            setVisibility(View.GONE);
-        }
         if (transcribeButton != null) {
             transcribeButton.setOpen(currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionOpen && currentMessageObject.messageOwner.voiceTranscriptionFinal && TranscribeButton.isVideoTranscriptionOpen(currentMessageObject), !messageIdChanged);
             transcribeButton.setLoading(TranscribeButton.isTranscribing(currentMessageObject), !messageIdChanged);
@@ -9121,6 +9111,20 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         highlightCaptionToSetStart = highlightCaptionToSetEnd = -1;
 
         updateFlagSecure();
+
+        if (isBlockedUserMessage()) {
+            totalHeight = 0;
+            keyboardHeight = 0;
+            layoutHeight = 0;
+            if (avatarDrawable != null)
+                avatarDrawable.setVisible(false, true);
+            if (avatarImage != null)
+                avatarImage.setVisible(false, false);
+            if (getAvatarImage() != null)
+                getAvatarImage().setVisible(false, false);
+            setVisibility(View.GONE);
+        }
+
     }
 
     private boolean loopStickers() {
@@ -14845,8 +14849,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         CharSequence viaString = null;
         if (messageObject.messageOwner.via_bot_id != 0) {
             User botUser = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.via_bot_id);
-            if (botUser != null && !TextUtils.isEmpty(botUser.username)) {
-                viaUsername = "@" + botUser.username;
+            // na: fix via bot usernames
+            if (botUser != null && UserObject.getPublicUsername(botUser) != null) {
+                viaUsername = "@" + UserObject.getPublicUsername(botUser);
                 viaString = AndroidUtilities.replaceTags(String.format(" %s <b>%s</b>", LocaleController.getString("ViaBot", R.string.ViaBot), viaUsername));
                 viaWidth = (int) Math.ceil(Theme.chat_replyNamePaint.measureText(viaString, 0, viaString.length()));
                 currentViaBotUser = botUser;

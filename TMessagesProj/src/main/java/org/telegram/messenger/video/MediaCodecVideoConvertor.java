@@ -3,7 +3,6 @@ package org.telegram.messenger.video;
 import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
-import android.media.MediaCodecList;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
@@ -26,7 +25,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

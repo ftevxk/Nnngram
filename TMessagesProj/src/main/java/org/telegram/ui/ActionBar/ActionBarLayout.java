@@ -55,7 +55,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.ui.Components.BackButtonMenu;
-import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.ChatAttachAlert;
 import org.telegram.ui.Components.CubicBezierInterpolator;
@@ -65,6 +64,7 @@ import org.telegram.ui.Components.GroupCallPip;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stories.StoryViewer;
+import org.telegram.ui.bots.BotWebViewSheet;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -375,7 +375,8 @@
     <string name="searchInPlace">Search in place</string>
     <string name="gifSize">GIF size</string>
     <string name="block">Block</string>
-
+    <string name="hideDialogsFloatingButton">Hide dialogs floating button</string>
+    <string name="disableChannelMuteButton">Disable channel mute button</string>
     <!-- //wd 自定义 -->
     <string name="searchVideoMinDuration">Search Video Min Duration(Second)</string>
 </resources>

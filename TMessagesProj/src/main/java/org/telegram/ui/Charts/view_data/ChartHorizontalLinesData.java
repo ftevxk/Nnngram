@@ -9,10 +9,8 @@ import android.text.TextPaint;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
-import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChannelMonetizationLayout;
 import org.telegram.ui.Charts.data.ChartData;
-import org.telegram.ui.Components.AnimatedEmojiSpan;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;

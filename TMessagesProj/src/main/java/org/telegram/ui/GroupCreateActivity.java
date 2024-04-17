@@ -93,7 +93,6 @@ import org.telegram.ui.Components.VerticalPositionAutoAnimator;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 public class GroupCreateActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, View.OnClickListener {
 

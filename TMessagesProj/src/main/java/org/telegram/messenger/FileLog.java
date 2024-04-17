@@ -8,25 +8,14 @@
 
 package org.telegram.messenger;
 
-import android.content.Context;
-import android.content.res.ColorStateList;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
 import org.telegram.messenger.time.FastDateFormat;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.Components.AnimatedFileDrawable;
 
 import java.io.File;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import java.util.HashSet;
 
 import xyz.nextalone.nnngram.utils.Log;
 
@@ -68,9 +57,6 @@ public class FileLog {
     }
 
     public FileLog() {
-    }
-
-    public static void dumpResponseAndRequest(int account, TLObject request, TLObject response, TLRPC.TL_error error, long requestMsgId, long startRequestTimeInMillis, int requestToken) {
         return;
     }
 
@@ -79,7 +65,7 @@ public class FileLog {
         return;
     }
 
-    public static void dumpUnparsedMessage(TLObject message, long messageId, int account) {
+    public static void dumpUnparsedMessage(TLObject message, long messageId) {
         return;
     }
 
@@ -88,7 +74,6 @@ public class FileLog {
         gsonDisabled = disable;
     }
 
-    private static HashSet<String> privateFields;
     private static void checkGson() {
     }
 

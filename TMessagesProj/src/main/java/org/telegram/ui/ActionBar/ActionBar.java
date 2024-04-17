@@ -1925,7 +1925,7 @@ public class ActionBar extends FrameLayout {
 
     private StaticLayout countLayout;
 
-    private class UnreadImageView extends androidx.appcompat.widget.AppCompatImageView {
+    public class UnreadImageView extends androidx.appcompat.widget.AppCompatImageView {
         public UnreadImageView(Context context) {
             super(context);
         }

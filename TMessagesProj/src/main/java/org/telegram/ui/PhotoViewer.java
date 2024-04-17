@@ -6656,20 +6656,20 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
             Runnable onEnd = () -> {
                 cropTransform.setViewTransform(previousHasTransform, previousCropPx, previousCropPy, previousCropRotation, previousCropOrientation, previousCropScale, scale1(), scale1(), previousCropPw, previousCropPh, 0, 0, previousCropMirrored);
-                //                if (previousHasTransform) {
-                //                    editState.cropState = new MediaController.CropState();
-                //                    editState.cropState.cropPx = previousCropPx;
-                //                    editState.cropState.cropPy = previousCropPy;
-                //                    editState.cropState.cropRotate = previousCropRotation;
-                //                    editState.cropState.transformRotation = previousCropOrientation;
-                //                    editState.cropState.cropScale = previousCropScale;
-                //                    editState.cropState.cropPw = previousCropPw;
-                //                    editState.cropState.cropPh = previousCropPh;
-                //                    editState.cropState.mirrored = previousCropMirrored;
-                //                    editState.cropState.freeform = sendPhotoType != SELECT_TYPE_AVATAR;
-                //                } else {
-                //                    editState.cropState = null;
-                //                }
+//                if (previousHasTransform) {
+//                    editState.cropState = new MediaController.CropState();
+//                    editState.cropState.cropPx = previousCropPx;
+//                    editState.cropState.cropPy = previousCropPy;
+//                    editState.cropState.cropRotate = previousCropRotation;
+//                    editState.cropState.transformRotation = previousCropOrientation;
+//                    editState.cropState.cropScale = previousCropScale;
+//                    editState.cropState.cropPw = previousCropPw;
+//                    editState.cropState.cropPh = previousCropPh;
+//                    editState.cropState.mirrored = previousCropMirrored;
+//                    editState.cropState.freeform = sendPhotoType != SELECT_TYPE_AVATAR;
+//                } else {
+//                    editState.cropState = null;
+//                }
                 switchToEditMode(EDIT_MODE_NONE);
             };
             if (!previousHasTransform) {
@@ -16207,9 +16207,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             paintViewTouched = 0;
             if (zooming) {
                 invalidCoords = true;
-                if (scale < 1.0f) {
-                    updateMinMax(1.0f);
-                    animateTo(1.0f, 0, 0, true);
+                float maxScale = sendPhotoType == SELECT_TYPE_STICKER ? 0.33f : 1f;
+                if (scale < maxScale) {
+                    updateMinMax(maxScale);
+                    animateTo(maxScale, 0, 0, true);
                 } else if (scale > 3.0f) {
                     float atx = (pinchCenterX - getContainerViewWidth() / 2) - ((pinchCenterX - getContainerViewWidth() / 2) - pinchStartX) * (3.0f / pinchStartScale);
                     float aty = (pinchCenterY - getContainerViewHeight() / 2) - ((pinchCenterY - getContainerViewHeight() / 2) - pinchStartY) * (3.0f / pinchStartScale);
@@ -16273,7 +16274,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     velocity = velocityTracker.getXVelocity();
                 }
 
-                if (currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR) {
+                if (currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR && sendPhotoType != SELECT_TYPE_STICKER) {
                     if ((translationX < minX - getContainerViewWidth() / 3 || velocity < -dp(650)) && rightImage.hasImageSet()) {
                         goToNext();
                         return true;

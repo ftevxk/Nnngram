@@ -127,9 +127,9 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BirthdayController;
-import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ChatThemeController;
@@ -322,7 +322,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int PHONE_OPTION_CALL = 0,
         PHONE_OPTION_COPY = 1,
         PHONE_OPTION_TELEGRAM_CALL = 2,
-        PHONE_OPTION_TELEGRAM_VIDEO_CALL = 3;
+        PHONE_OPTION_TELEGRAM_VIDEO_CALL = 3,
+        PHONE_OPTION_HIDE = 1001;
+
+    private boolean mOverrideHidePhoneNumber = false;
 
     private RecyclerListView listView;
     private RecyclerListView searchListView;
@@ -3894,6 +3897,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 //                    }
                 }
             } else if (position == channelRow) {
+                if (chatInfo != null) {
+                    openDiscussion();
+                    return;
+                }
                 if (userInfo == null) return;
                 Bundle args = new Bundle();
                 args.putLong("chat_id", userInfo.personal_channel_id);
@@ -6034,6 +6041,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             items.add(LocaleController.getString("Copy", R.string.Copy));
             actions.add(PHONE_OPTION_COPY);
 
+            icons.add(R.drawable.msg_archive_hide);
+            items.add(LocaleController.getString("Hide", R.string.Hide));
+            actions.add(PHONE_OPTION_HIDE);
+
             AtomicReference<ActionBarPopupWindow> popupWindowRef = new AtomicReference<>();
             ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getContext(), R.drawable.popup_fixed_alert, resourcesProvider) {
                 Path path = new Path();
@@ -6085,6 +6096,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             }
                             VoIPHelper.startCall(user, action == PHONE_OPTION_TELEGRAM_VIDEO_CALL, userInfo != null && userInfo.video_calls_available, getParentActivity(), userInfo, getAccountInstance());
                             break;
+                        case PHONE_OPTION_HIDE: {
+                            mOverrideHidePhoneNumber = true;
+                            updateRowsIds();
+                            if (listAdapter != null) {
+                                listAdapter.notifyDataSetChanged();
+                            }
+                            break;
+                        }
                     }
                 });
             }
@@ -7677,6 +7696,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (sharedMediaLayout != null) {
                     sharedMediaLayout.setChatInfo(chatInfo);
                 }
+                if (profileChannelMessageFetcher == null && !isSettings()) {
+                    profileChannelMessageFetcher = new ProfileChannelCell.ChannelMessageFetcher(currentAccount);
+                    profileChannelMessageFetcher.subscribe(() -> updateListAnimated(false));
+                    profileChannelMessageFetcher.fetchChannelMsg(chatInfo);
+                }
             }
         } else if (id == NotificationCenter.closeChats) {
             removeSelfFromStack(true);
@@ -8460,6 +8484,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    public void setChatInfoChannelMsg(ProfileChannelCell.ChannelMessageFetcher channelMessageFetcher) {
+        if (profileChannelMessageFetcher == null) {
+            profileChannelMessageFetcher = channelMessageFetcher;
+        }
+        if (profileChannelMessageFetcher == null) {
+            profileChannelMessageFetcher = new ProfileChannelCell.ChannelMessageFetcher(currentAccount);
+        }
+        profileChannelMessageFetcher.subscribe(() -> updateListAnimated(false));
+        profileChannelMessageFetcher.fetchChannelMsg(chatInfo);
+    }
+
     public void setChatInfo(TLRPC.ChatFull value) {
         chatInfo = value;
         if (chatInfo != null && chatInfo.migrated_from_chat_id != 0 && mergeDialogId == 0) {
@@ -8587,6 +8622,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         settingsSectionRow2 = -1;
         notificationRow = -1;
         nullRow = -1;
+        nullSectionRow = -1;
         languageRow = -1;
         premiumRow = -1;
         businessRow = -1;
@@ -8695,7 +8731,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     setAvatarSectionRow = rowCount++;
                 }
                 numberSectionRow = rowCount++;
-                numberRow = hidePhone ? -1 : rowCount++;
+                if (!mOverrideHidePhoneNumber) {
+                    numberRow = hidePhone ? -1 : rowCount++;
+                }
                 setUsernameRow = rowCount++;
                 bioRow = rowCount++;
 
@@ -8770,7 +8808,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 infoStartRow = rowCount;
                 infoHeaderRow = rowCount++;
-                if (!isBot && (hasPhone || !hasInfo)) {
+                if (!isBot && (hasPhone || !hasInfo) && !mOverrideHidePhoneNumber) {
                     phoneRow = rowCount++;
                 }
                 if (userInfo != null && !TextUtils.isEmpty(userInfo.about)) {
@@ -8793,7 +8831,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         bizLocationRow = rowCount++;
                     }
                 }
-//                if (phoneRow != -1 || userInfoRow != -1 || usernameRow != -1 || restrictionReasonRow != -1 || bizHoursRow != -1 || bizLocationRow != -1) {
+//                if (phoneRow != -1 || userInfoRow != -1 || usernameRow != -1 || bizHoursRow != -1 || bizLocationRow != -1) {
 //                    notificationsDividerRow = rowCount++;
 //                }
                 if (userId != getUserConfig().getClientUserId()) {
@@ -8850,6 +8888,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 sharedMediaRow = rowCount++;
             }
         } else if (chatId != 0) {
+            if (chatInfo != null && chatInfo.linked_chat_id != 0 && (profileChannelMessageFetcher == null || !profileChannelMessageFetcher.loaded || profileChannelMessageFetcher.messageObject != null)) {
+                TLRPC.Chat channel = getMessagesController().getChat(chatInfo.linked_chat_id);
+                if (channel != null && (ChatObject.isPublic(channel) || !ChatObject.isNotInChat(channel)) && ChatObject.isChannelAndNotMegaGroup(channel)) {
+                    channelRow = rowCount++;
+                    channelDividerRow = rowCount++;
+                }
+            }
+
             if (chatInfo != null && (!TextUtils.isEmpty(chatInfo.about) || chatInfo.location instanceof TLRPC.TL_channelLocation) || ChatObject.isPublic(currentChat) || !currentChat.restriction_reason.isEmpty()) {
                 if (LocaleController.isRTL && ChatObject.isChannel(currentChat) && chatInfo != null && !currentChat.megagroup && chatInfo.linked_chat_id != 0) {
                     emptyRow = rowCount++;
@@ -11521,10 +11567,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     hoursCell.set(userInfo != null ? userInfo.business_work_hours : null, hoursExpanded, hoursShownMine, notificationsDividerRow < 0 || bizLocationRow >= 0);
                     break;
                 case VIEW_TYPE_CHANNEL:
-                    ((ProfileChannelCell) holder.itemView).set(
-                        getMessagesController().getChat(userInfo.personal_channel_id),
-                        profileChannelMessageFetcher != null ? profileChannelMessageFetcher.messageObject : null
-                    );
+                    if (userInfo != null) {
+                        ((ProfileChannelCell) holder.itemView).set(
+                                getMessagesController().getChat(userInfo.personal_channel_id),
+                                profileChannelMessageFetcher != null ? profileChannelMessageFetcher.messageObject : null
+                        );
+                    } else if (chatInfo != null) {
+                        ((ProfileChannelCell) holder.itemView).set(
+                                getMessagesController().getChat(chatInfo.linked_chat_id),
+                                profileChannelMessageFetcher != null ? profileChannelMessageFetcher.messageObject : null
+                        );
+                    }
                     break;
             }
         }
@@ -11665,7 +11718,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (position == infoHeaderRow || position == membersHeaderRow || position == settingsSectionRow2 ||
                 position == numberSectionRow || position == helpHeaderRow) {
                 return VIEW_TYPE_HEADER;
-            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow || position == restrictionReasonRow || position == linkedUserRow) {
+            } else if (position == phoneRow || position == locationRow || position == numberRow || position == restrictionReasonRow || position == linkedUserRow ||
+             position == birthdayRow) {
                 return VIEW_TYPE_TEXT_DETAIL;
             } else if (position == usernameRow || position == setUsernameRow) {
                 return VIEW_TYPE_TEXT_DETAIL_MULTILINE;
@@ -11690,7 +11744,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == infoSectionRow || position == lastSectionRow || position == membersSectionRow ||
                     position == secretSettingsSectionRow || position == settingsSectionRow || position == devicesSectionRow ||
                     position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow ||
-                    position == phoneSuggestionSectionRow || position == premiumSectionsRow || position == reportDividerRow || position == channelDividerRow || position == nullSectionRow) {
+                    position == phoneSuggestionSectionRow || position == premiumSectionsRow || position == reportDividerRow || position == nullSectionRow || position == channelDividerRow) {
                 return VIEW_TYPE_SHADOW;
             } else if (position >= membersStartRow && position < membersEndRow) {
                 return VIEW_TYPE_USER;

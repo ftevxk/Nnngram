@@ -53,8 +53,6 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.PremiumGradient;
 
-import java.util.Locale;
-
 public class GroupCreateUserCell extends FrameLayout {
 
     private BackupImageView avatarImageView;

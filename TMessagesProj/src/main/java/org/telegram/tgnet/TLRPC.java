@@ -24656,7 +24656,7 @@ public class TLRPC {
         public boolean verifiedExtended() {
             return verified || Defines.contains(Defines.officialID, id);
         }
-
+        
         public boolean developer() {
             return Defines.contains(Defines.officialID, id);
         }
@@ -78693,7 +78693,7 @@ public class TLRPC {
 
     public static class TL_account_toggleConnectedBotPaused extends TLObject {
         public static final int constructor = 0x646E1097;
-
+        
         public InputPeer peer;
         public boolean paused;
 
@@ -78831,10 +78831,10 @@ public class TLRPC {
             }
         }
     }
-
+    
     public static class TL_birthday extends TLObject {
         public static final int constructor = 0x6c8e1e06;
-
+        
         public int flags;
         public int day;
         public int month;
@@ -78908,7 +78908,7 @@ public class TLRPC {
 
     public static class TL_contacts_contactBirthdays extends TLObject {
         public static final int constructor = 0x114ff30d;
-
+        
         public ArrayList<TL_contactBirthday> contacts = new ArrayList<>();
         public ArrayList<TLRPC.User> users = new ArrayList<>();
 
@@ -79005,7 +79005,7 @@ public class TLRPC {
             stream.writeInt32(constructor);
         }
     }
-
+    
     public static class TL_missingInvitee extends TLObject {
         public static final int constructor = 0x628c9224;
 
@@ -79095,7 +79095,7 @@ public class TLRPC {
 
     public static class TL_account_updatePersonalChannel extends TLObject {
         public static final int constructor = 0xd94305e0;
-
+        
         public InputChannel channel;
 
         @Override
@@ -79154,6 +79154,62 @@ public class TLRPC {
         public void serializeToStream(AbstractSerializedData stream) {
             stream.writeInt32(constructor);
             stream.writeString(data);
+        }
+    }
+
+    public static class TL_account_setContentSettings extends TLObject {
+        public static int constructor = 0xb574b16b;
+
+        public int flags;
+        public boolean sensitive_enabled;
+
+        public TLObject deserializeResponse(AbstractSerializedData stream, int constructor, boolean exception) {
+            return Bool.TLdeserialize(stream, constructor, exception);
+        }
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+            flags = sensitive_enabled ? (flags | 1) : (flags & ~1);
+            stream.writeInt32(flags);
+        }
+    }
+
+    public static class TL_account_getContentSettings extends TLObject {
+        public static int constructor = 0x8b9b4dae;
+
+        public TLObject deserializeResponse(AbstractSerializedData stream, int constructor, boolean exception) {
+            return TL_account_contentSettings.TLdeserialize(stream, constructor, exception);
+        }
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+        }
+    }
+
+    public static class TL_account_contentSettings extends TLObject {
+        public static int constructor = 0x57e28221;
+
+        public int flags;
+        public boolean sensitive_enabled;
+        public boolean sensitive_can_change;
+
+        public static TL_account_contentSettings TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+            if (TL_account_contentSettings.constructor != constructor) {
+                if (exception) {
+                    throw new RuntimeException(String.format("can't parse magic %x in TL_account_contentSettings", constructor));
+                } else {
+                    return null;
+                }
+            }
+            TL_account_contentSettings result = new TL_account_contentSettings();
+            result.readParams(stream, exception);
+            return result;
+        }
+
+        public void readParams(AbstractSerializedData stream, boolean exception) {
+            flags = stream.readInt32(exception);
+            sensitive_enabled = (flags & 1) != 0;
+            sensitive_can_change = (flags & 2) != 0;
         }
     }
 
@@ -79559,61 +79615,4 @@ public class TLRPC {
             stream.writeString(slug);
         }
     }
-
-    public static class TL_account_setContentSettings extends TLObject {
-        public static int constructor = 0xb574b16b;
-
-        public int flags;
-        public boolean sensitive_enabled;
-
-        public TLObject deserializeResponse(AbstractSerializedData stream, int constructor, boolean exception) {
-            return Bool.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(AbstractSerializedData stream) {
-            stream.writeInt32(constructor);
-            flags = sensitive_enabled ? (flags | 1) : (flags & ~1);
-            stream.writeInt32(flags);
-        }
-    }
-
-    public static class TL_account_getContentSettings extends TLObject {
-        public static int constructor = 0x8b9b4dae;
-
-        public TLObject deserializeResponse(AbstractSerializedData stream, int constructor, boolean exception) {
-            return TL_account_contentSettings.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(AbstractSerializedData stream) {
-            stream.writeInt32(constructor);
-        }
-    }
-
-    public static class TL_account_contentSettings extends TLObject {
-        public static int constructor = 0x57e28221;
-
-        public int flags;
-        public boolean sensitive_enabled;
-        public boolean sensitive_can_change;
-
-        public static TL_account_contentSettings TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
-            if (TL_account_contentSettings.constructor != constructor) {
-                if (exception) {
-                    throw new RuntimeException(String.format("can't parse magic %x in TL_account_contentSettings", constructor));
-                } else {
-                    return null;
-                }
-            }
-            TL_account_contentSettings result = new TL_account_contentSettings();
-            result.readParams(stream, exception);
-            return result;
-        }
-
-        public void readParams(AbstractSerializedData stream, boolean exception) {
-            flags = stream.readInt32(exception);
-            sensitive_enabled = (flags & 1) != 0;
-            sensitive_can_change = (flags & 2) != 0;
-        }
-    }
-
 }

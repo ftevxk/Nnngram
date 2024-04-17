@@ -394,12 +394,10 @@ public class WebmEncoder {
                         ByteBuffer buffer = file.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, filePath.length());
                         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
                         bmOptions.inJustDecodeBounds = true;
-                        Utilities.loadWebpImage(null, buffer, buffer.limit(), bmOptions, true);
                         if (entity.type == VideoEditedInfo.MediaEntity.TYPE_PHOTO) {
                             bmOptions.inMutable = true;
                         }
                         entity.bitmap = Bitmaps.createBitmap(bmOptions.outWidth, bmOptions.outHeight, Bitmap.Config.ARGB_8888);
-                        Utilities.loadWebpImage(entity.bitmap, buffer, buffer.limit(), null, true);
                         file.close();
                     } catch (Throwable e) {
                         FileLog.e(e);

@@ -38,7 +38,6 @@ import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
@@ -257,10 +256,10 @@ public class MessagesController extends BaseController implements NotificationCe
     public ArrayList<TLRPC.TL_dialogFilterSuggested> suggestedFilters = new ArrayList<>();
 
     private final LongSparseArray<ArrayList<TLRPC.Updates>> updatesQueueChannels = new LongSparseArray<>();
-    private final LongSparseLongArray updatesStartWaitTimeChannels = new LongSparseLongArray();
-    private final LongSparseIntArray channelsPts = new LongSparseIntArray();
-    private final LongSparseArray<Boolean> gettingDifferenceChannels = new LongSparseArray<>();
-    private final LongSparseArray<Boolean> gettingChatInviters = new LongSparseArray<>();
+    private LongSparseLongArray updatesStartWaitTimeChannels = new LongSparseLongArray();
+    private LongSparseIntArray channelsPts = new LongSparseIntArray();
+    private LongSparseArray<Boolean> gettingDifferenceChannels = new LongSparseArray<>();
+    private LongSparseArray<Boolean> gettingChatInviters = new LongSparseArray<>();
 
     private final LongSparseArray<Boolean> gettingUnknownChannels = new LongSparseArray<>();
     private final LongSparseArray<Boolean> gettingUnknownDialogs = new LongSparseArray<>();
@@ -6522,7 +6521,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
 
                 ArrayList<MessageObject> objects = new ArrayList<>();
-//                objects.removeIf(MessageObject::isBlockedMessage);
                 for (int a = 0; a < messagesRes.messages.size(); a++) {
                     TLRPC.Message message = messagesRes.messages.get(a);
                     message.dialog_id = dialogId;
@@ -12146,7 +12144,6 @@ public class MessagesController extends BaseController implements NotificationCe
             }
 
             ArrayList<MessageObject> newMessages = new ArrayList<>();
-//            newMessages.removeIf(MessageObject::isBlockedMessage);
             for (int a = 0; a < dialogsRes.messages.size(); a++) {
                 TLRPC.Message message = dialogsRes.messages.get(a);
                 if (promoDialogId == 0 || promoDialogId != message.dialog_id) {

@@ -1,7 +1,6 @@
 package org.telegram.messenger;
 
 import android.content.SharedPreferences;
-import android.os.Build;
 
 import org.telegram.tgnet.AbstractSerializedData;
 import org.telegram.tgnet.ConnectionsManager;
@@ -11,7 +10,6 @@ import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 

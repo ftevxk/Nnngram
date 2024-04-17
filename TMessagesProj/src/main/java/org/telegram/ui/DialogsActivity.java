@@ -182,7 +182,6 @@ import org.telegram.ui.Components.ArchiveHelp;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BlurredRecyclerView;
-import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatActivityEnterView;
@@ -235,6 +234,7 @@ import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.UserListPoller;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
+import org.telegram.ui.bots.BotWebViewSheet;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7110,6 +7110,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         updateVisibleRows(0, false);
         updateProxyButton(false, true);
         updateStoriesVisibility(false);
+        if (Config.hideDialogsFloatingButton) {
+            hideFloatingButton(true);
+        }
         checkSuggestClearDatabase();
     }
 
@@ -11200,6 +11203,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void hideFloatingButton(boolean hide) {
+        if (Config.hideDialogsFloatingButton) {
+            hide = true;
+        }
         if (rightSlidingDialogContainer.hasFragment()) {
             hide = true;
         }

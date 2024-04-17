@@ -382,13 +382,13 @@ public class MusicPlayerService extends Service implements NotificationCenter.No
             }
             Notification.Builder bldr = new Notification.Builder(this);
             bldr.setSmallIcon(R.drawable.player)
-                .setOngoing(isPlaying)
+                    .setOngoing(isPlaying)
                     .setContentTitle(contentTitle)
                     .setContentText(contentText)
                     .setSubText(audioInfo != null && messageObject.isMusic() ? audioInfo.getAlbum() : null)
-                .setContentIntent(contentIntent)
-                .setDeleteIntent(pendingStop)
-                .setShowWhen(false)
+                    .setContentIntent(contentIntent)
+                    .setDeleteIntent(pendingStop)
+                    .setShowWhen(false)
                     .setCategory(Notification.CATEGORY_TRANSPORT)
                     .setPriority(Notification.PRIORITY_MAX)
                     .setStyle(mediaStyle);

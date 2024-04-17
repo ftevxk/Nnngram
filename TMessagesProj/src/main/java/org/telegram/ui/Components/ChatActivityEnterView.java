@@ -163,7 +163,6 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.BasePermissionsActivity;
 import org.telegram.ui.Business.BusinessLinksController;
 import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.ChatActivity;
@@ -8956,10 +8955,7 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                         stringBuilder.setSpan(new URLSpanUserMention("" + ((TLRPC.TL_messageEntityMentionName) entity).user_id, 3), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     } else if (entity instanceof TLRPC.TL_messageEntityCode) {
                         TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
-                        run.start = entity.offset;
-                        run.end = entity.offset + entity.length;
                         run.flags |= TextStyleSpan.FLAG_STYLE_MONO;
-                        run.urlEntity = entity;
                         MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
                     } else if (entity instanceof TLRPC.TL_messageEntityPre) {
                         continue;
@@ -9277,47 +9273,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
     }
 
     public void updateGiftButton(boolean animated) {
-// fixme: merged 10.10.1, should remove this function
-
-        boolean visible =
-                !MessagesController.getInstance(currentAccount).premiumPurchaseBlocked() &&
-                getParentFragment() != null && getParentFragment().getCurrentUser() != null &&
-                !BuildVars.IS_BILLING_UNAVAILABLE && !getParentFragment().getCurrentUser().self &&
-                getParentFragment().getCurrentUserInfo() != null &&
-                (
-                    (
-                        !getParentFragment().getCurrentUserInfo().premium_gifts.isEmpty() &&
-                        !getParentFragment().getCurrentUser().premium &&
-                        MessagesController.getInstance(currentAccount).giftAttachMenuIcon &&
-                        MessagesController.getInstance(currentAccount).giftTextFieldIcon &&
-                        MessagesController.getInstance(currentAccount).getMainSettings().getBoolean("show_gift_for_" + parentFragment.getDialogId(), true)
-                    ) || (
-                        BirthdayController.isToday(getParentFragment().getCurrentUserInfo().birthday) &&
-                        MessagesController.getInstance(currentAccount).getMainSettings().getBoolean(Calendar.getInstance().get(Calendar.YEAR) + "show_gift_for_" + parentFragment.getDialogId(), true)
-                    )
-                ) &&
-                parentFragment != null && parentFragment.getChatMode() == 0;
-
-        if (!visible && birthdayHint != null) {
-            birthdayHint.hide();
-        }
-        if (!visible && giftButton == null) {
-            return;
-        }
-        createGiftButton();
-
-        AndroidUtilities.updateViewVisibilityAnimated(giftButton, visible, 1f, animated);
-        if (scheduledButton != null && scheduledButton.getVisibility() == View.VISIBLE) {
-            float tX = (visible ? -dp(48) : 0) + dp(botButton != null && botButton.getVisibility() == VISIBLE ? 48 : 0);
-            if (animated) {
-                scheduledButton.animate().translationX(tX).setDuration(150).start();
-            } else {
-                scheduledButton.setTranslationX(tX);
-            }
-        }
-        if (visible) {
-            checkBirthdayHint();
-        }
     }
 
     private void checkBirthdayHint() {
