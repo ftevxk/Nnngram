@@ -13679,8 +13679,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                     nameText = AndroidUtilities.replaceCharSequence("%s", LocaleController.getString(R.string.ReplyTo), name == null ? "" : name);
                 }
+                nameText = StringUtils.zalgoFilter(nameText);
                 nameText = Emoji.replaceEmoji(nameText, replyNameTextView.getPaint().getFontMetricsInt(), false);
-                replyNameTextView.setText(StringUtils.zalgoFilter(name));
+                replyNameTextView.setText(nameText);
                 replyIconImageView.setContentDescription(LocaleController.getString("AccDescrReplying", R.string.AccDescrReplying));
                 replyCloseImageView.setContentDescription(LocaleController.getString("AccDescrCancelReply", R.string.AccDescrCancelReply));
 
@@ -22439,7 +22440,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (inlineReturn == 0 || button.same_peer || parentLayout == null) {
             return false;
         }
-        String query = "@" + currentUser.username + " " + button.query;
+        String query = "@" + UserObject.getPublicUsername(currentUser) + " " + button.query;
         if (inlineReturn == dialog_id) {
             inlineReturn = 0;
             chatActivityEnterView.setFieldText(query);
@@ -24674,6 +24675,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     } else {
                         bottomOverlayChatText.setText(LocaleController.getString("ChannelUnmute", R.string.ChannelUnmute), true);
                         bottomOverlayChatText.setEnabled(true);
+                    }
+                    if (Config.disableChannelMuteButton) {
+                        bottomOverlayChatText.setText("", false);
+                        bottomOverlayChatText.setEnabled(false);
                     }
                     showBottomOverlayProgress(false, bottomOverlayProgress.getTag() != null);
                 } else if (forumTopic != null && forumTopic.closed) {
