@@ -1490,7 +1490,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                         return true;
                     }
                     String currentFilteredMessages = Config.getMessageFilter();
-                    currentFilteredMessages = currentFilteredMessages + "|" + str.toString();
+                    currentFilteredMessages = currentFilteredMessages + currentFilteredMessages.isEmpty() ? "" : "|" + str.toString();
                     Config.setMessageFilter(currentFilteredMessages);
                     hideActions();
                     clear(true);
