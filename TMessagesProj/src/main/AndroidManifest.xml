@@ -484,9 +484,9 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name="top.qwq2333.nullgram.SaveToDownloadReceiver" android:exported="false">
+        <receiver android:name="xyz.nextalone.nnngram.SaveToDownloadReceiver" android:exported="false">
             <intent-filter>
-                <action android:name="top.qwq2333.nullgram.SAVE_TO_DOWNLOAD_CANCEL" />
+                <action android:name="xyz.nextalone.nnngram.SAVE_TO_DOWNLOAD_CANCEL" />
             </intent-filter>
         </receiver>
 

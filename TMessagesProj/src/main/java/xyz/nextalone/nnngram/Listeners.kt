@@ -55,8 +55,8 @@ class NnngramPushService : NotificationListenerService() {
 class SaveToDownloadReceiver : BroadcastReceiver() {
     companion object {
         const val TAG = "MediaController"
-        private const val ACTION_CANCEL = "top.qwq2333.nullgram.SAVE_TO_DOWNLOAD_CANCEL"
-        private const val EXTRA_ID = "top.qwq2333.nullgram.NOTIFICATION_ID"
+        private const val ACTION_CANCEL = "xyz.nextalone.nnngram.SAVE_TO_DOWNLOAD_CANCEL"
+        private const val EXTRA_ID = "xyz.nextalone.nnngram.NOTIFICATION_ID"
 
         val notifications = hashMapOf<Int, Pair<NotificationCompat.Builder, () -> Unit>>()
         private val notificationManager by lazy {

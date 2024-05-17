@@ -1,9 +1,20 @@
 /*
- * This is the source code of Telegram for Android v. 5.x.x.
- * It is licensed under GNU GPL v. 2 or later.
- * You should have received a copy of the license in this archive (see LICENSE).
+ * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
+ * https://github.com/qwq233/Nullgram
  *
- * Copyright Nikolai Kudashov, 2013-2018.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this software.
+ *  If not, see
+ * <https://www.gnu.org/licenses/>
  */
 
 package org.telegram.ui.Adapters;
@@ -315,6 +326,10 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
         }
         UserConfig me = UserConfig.getInstance(UserConfig.selectedAccount);
         boolean showDivider = false;
+        if (Config.showProfileMyStories) {
+            items.add(new Item(16, LocaleController.getString(R.string.MyProfile), R.drawable.left_status_profile));
+            showDivider = true;
+        }
         if (Config.showChangeEmojiStatus) {
             if (me != null && me.isPremium()) {
                 if (me.getEmojiStatus() != null) {
@@ -322,12 +337,6 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
                 } else {
                     items.add(new Item(15, LocaleController.getString("SetEmojiStatus", R.string.SetEmojiStatus), R.drawable.msg_status_set));
                 }
-                showDivider = true;
-            }
-        }
-        if (MessagesController.getInstance(UserConfig.selectedAccount).storiesEnabled()) {
-            if (Config.showProfileMyStories) {
-                items.add(new Item(16, LocaleController.getString("ProfileMyStories", R.string.ProfileMyStories), R.drawable.msg_menu_stories));
                 showDivider = true;
             }
         }
@@ -367,7 +376,7 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             items.add(new Item(11, LocaleController.getString("SavedMessages", R.string.SavedMessages), savedIcon));
         }
         if (Config.showArchivedChats) {
-            items.add(new Item(17, LocaleController.getString("ArchivedChats", R.string.ArchivedChats), R.drawable.msg_archive));
+            items.add(new Item(18, LocaleController.getString("ArchivedChats", R.string.ArchivedChats), R.drawable.msg_archive));
         }
         items.add(new Item(8, LocaleController.getString("Settings", R.string.Settings), settingsIcon));
 //        items.add(null); // divider

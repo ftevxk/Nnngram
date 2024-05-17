@@ -869,7 +869,7 @@ public class GeneralSettingActivity extends BaseActivity {
                 case 4 -> textCell.setTextAndCheck(LocaleController.getString("SavedMessages", R.string.SavedMessages), Config.showSavedMessages,  false);
                 case 5 -> textCell.setTextAndCheck(LocaleController.getString("ArchivedChats", R.string.ArchivedChats), Config.showArchivedChats, false);
                 case 6 -> textCell.setTextAndCheck(LocaleController.getString("ChangeEmojiStatus", R.string.ChangeEmojiStatus), Config.showChangeEmojiStatus,  false);
-                case 7 -> textCell.setTextAndCheck(LocaleController.getString("ProfileMyStories", R.string.ProfileMyStories), Config.showProfileMyStories,  false);
+                case 7 -> textCell.setTextAndCheck(LocaleController.getString("MyProfile", R.string.MyProfile), Config.showProfileMyStories,  false);
             }
             textCell.setTag(a);
             textCell.setBackground(Theme.getSelectorDrawable(false));
