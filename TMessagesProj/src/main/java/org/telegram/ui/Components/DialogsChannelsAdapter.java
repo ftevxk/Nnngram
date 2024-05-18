@@ -237,7 +237,11 @@ public class DialogsChannelsAdapter extends UniversalAdapter {
                     for (TLRPC.Message message : response.messages) {
                         MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
                         messageObject.setQuery(query);
-                        messages.add(messageObject);
+//                        messages.add(messageObject);
+                        //wd 全局频道搜索过滤重复数据
+                        if (!messages.contains(messageObject)) {
+                            messages.add(messageObject);
+                        }
                     }
 
                     hasMore = response instanceof TLRPC.TL_messages_messagesSlice;
