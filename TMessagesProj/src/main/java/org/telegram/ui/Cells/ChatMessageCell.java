@@ -15189,12 +15189,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         includeAvatar = false;
                     }
 
+                    currentForwardNameString = Utils.showForwardDate(messageObject, currentForwardNameString);
                     forwardedNameWidth = getMaxNameWidth();
                     forwardedString = getForwardedMessageText(messageObject);
                     if (hasPsaHint) {
                         forwardedNameWidth -= dp(36);
                     }
-
                     CharSequence name = TextUtils.ellipsize((includeAvatar ? "A " : "") + currentForwardNameString.replace('\n', ' '), Theme.chat_replyNamePaint, forwardedNameWidth - viaWidth - dp(includeAvatar ? 17.33f : 0), TextUtils.TruncateAt.END);
                     String fromString = name.toString();
 
