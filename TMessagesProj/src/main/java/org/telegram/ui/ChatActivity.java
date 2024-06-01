@@ -18799,6 +18799,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 }
                 firstLoading = false;
+                //wd 直接打开媒体对话
+                if (Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
+                    Bundle args1 = new Bundle();
+                    args1.putLong("dialog_id", dialog_id);
+                    MediaActivity mediaActivity = new MediaActivity(args1, null);
+                    mediaActivity.setChatInfo(getCurrentChatInfo());
+                    presentFragment(mediaActivity);
+                }
             }
 
             if (isThreadChat() && !isTopic && (load_type == 2 || load_type == 3) && !isCache) {
@@ -20378,14 +20386,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     pendingRequestsDelegate.setChatInfo(chatInfo, true);
                 }
                 checkLeaveChannelButton();
-            }
-            //wd 直接打开媒体对话
-            if (Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
-                Bundle args1 = new Bundle();
-                args1.putLong("dialog_id", dialog_id);
-                MediaActivity mediaActivity = new MediaActivity(args1, null);
-                mediaActivity.setChatInfo(getCurrentChatInfo());
-                presentFragment(mediaActivity);
             }
         } else if (id == NotificationCenter.chatInfoCantLoad) {
             long chatId = (Long) args[0];
