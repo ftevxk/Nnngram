@@ -8383,16 +8383,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             actionBarSearchTags.attach();
             contentView.addView(actionBarSearchTags, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 40, Gravity.FILL_HORIZONTAL | Gravity.TOP));
         }
-
-        //wd 直接打开媒体对话
-        if (Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
-            Bundle args = new Bundle();
-            args.putLong("dialog_id", dialog_id);
-            MediaActivity mediaActivity = new MediaActivity(args, null);
-            mediaActivity.setChatInfo(getCurrentChatInfo());
-            presentFragment(mediaActivity);
-        }
-
         return fragmentView;
     }
 
@@ -20388,6 +20378,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     pendingRequestsDelegate.setChatInfo(chatInfo, true);
                 }
                 checkLeaveChannelButton();
+            }
+            //wd 直接打开媒体对话
+            if (Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
+                Bundle args1 = new Bundle();
+                args1.putLong("dialog_id", dialog_id);
+                MediaActivity mediaActivity = new MediaActivity(args1, null);
+                mediaActivity.setChatInfo(getCurrentChatInfo());
+                presentFragment(mediaActivity);
             }
         } else if (id == NotificationCenter.chatInfoCantLoad) {
             long chatId = (Long) args[0];
