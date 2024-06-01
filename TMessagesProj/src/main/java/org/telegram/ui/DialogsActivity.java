@@ -4559,7 +4559,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         contentView.addView(floatingButtonContainer, LayoutHelper.createFrame((Build.VERSION.SDK_INT >= 21 ? 56 : 60), (Build.VERSION.SDK_INT >= 21 ? 56 : 60), (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 14 : 0, 0, LocaleController.isRTL ? 0 : 14, 14));
         floatingButtonContainer.setOnClickListener(v -> {
             //wd 修改浮动按钮跳转为显示设置搜索视频最小时长弹框
-            ExperimentSettingActivity.showSearchVideoMinDurationDialog(this, null, null);
+            ExperimentSettingActivity.showSearchVideoMinDurationDialog(this, null, null, 0);
 //            if (parentLayout != null && parentLayout.isInPreviewMode()) {
 //                finishPreviewFragment();
 //                return;

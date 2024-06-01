@@ -491,7 +491,11 @@ public class ExperimentSettingActivity extends BaseActivity {
 
     //wd 设置自定义搜索视频最小时长
     private void setSearchVideoMinDuration(View view, int pos) {
-        showCustomInputDialog(this, (builder, editText) -> {
+        showSearchVideoMinDurationDialog(this, view, listAdapter, pos);
+    }
+
+    public static void showSearchVideoMinDurationDialog(BaseFragment fragment, View view, BaseListAdapter listAdapter, int pos) {
+        showCustomInputDialog(fragment, (builder, editText) -> {
             builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration));
             editText.setSingleLine(true);
             editText.setHintText(LocaleController.getString("Number", R.string.Number));
@@ -515,7 +519,9 @@ public class ExperimentSettingActivity extends BaseActivity {
                         Config.setSearchVideoMinDuration(Integer.parseInt(str));
                 }
             }
-            listAdapter.notifyItemChanged(pos, PARTIAL);
+            if (listAdapter != null) {
+                listAdapter.notifyItemChanged(pos, PARTIAL);
+            }
             return null;
         }));
     }
