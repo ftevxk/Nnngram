@@ -8384,6 +8384,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             contentView.addView(actionBarSearchTags, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 40, Gravity.FILL_HORIZONTAL | Gravity.TOP));
         }
 
+        //wd 直接打开媒体对话
+        if (Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
+            Bundle args = new Bundle();
+            args.putLong("dialog_id", dialog_id);
+            MediaActivity mediaActivity = new MediaActivity(args, null);
+            mediaActivity.setChatInfo(getCurrentChatInfo());
+            presentFragment(mediaActivity);
+        }
+
         return fragmentView;
     }
 

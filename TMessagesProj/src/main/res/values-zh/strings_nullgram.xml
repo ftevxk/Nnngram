@@ -129,7 +129,7 @@
     <string name="skipOpenLinkConfirm">跳过链接确认</string>
     <string name="maxRecentSticker">最近贴纸数量上限</string>
     <string name="setMaxRecentSticker">设置最大最近贴纸数</string>
-    <string name="Number">Number</string>
+    <string name="Number">数值</string>
     <string name="autoProxySwitch">代理自动切换</string>
     <string name="ignoreReactionMention">忽略反应提示</string>
     <string name="ignoreReactionMentionInfo">它将自动将未读反应提及设置为已读。\n它还将同步到其他设备。\n通知仍将被显示，因为它由 TELEOFFICIAL 服务器控制。</string>
@@ -448,5 +448,6 @@
     <string name="ChannelColorApplied">你的频道颜色已更新！</string>
     <string name="disableAutoPip">禁用自动画中画</string>
     <!-- //wd 补充翻译 -->
-    <string name="searchVideoMinDuration">搜索视频最小时长(秒)</string>
+    <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
+    <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
 </resources>

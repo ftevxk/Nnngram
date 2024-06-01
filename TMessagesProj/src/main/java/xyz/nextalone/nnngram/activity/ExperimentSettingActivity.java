@@ -50,6 +50,7 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import java.util.ArrayList;
 import java.util.function.Function;
 
+import kotlin.jvm.functions.Function2;
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
@@ -98,6 +99,8 @@ public class ExperimentSettingActivity extends BaseActivity {
 
     //wd 自定义搜索视频最小时长
     private int searchVideoMinDurationRow;
+    //wd 直接打开媒体对话
+    private int openTheMediaConversationDirectlyRow;
 
     private boolean sensitiveEnabled;
     private final boolean sensitiveCanChange;
@@ -240,6 +243,12 @@ public class ExperimentSettingActivity extends BaseActivity {
             setSearchVideoMinDuration(view, position);
             listAdapter.notifyItemChanged(position, PARTIAL);
         }
+
+        //wd 直接打开媒体对话
+        else if (position == openTheMediaConversationDirectlyRow) {
+            setOpenTheMediaConversationDirectly(view, position);
+            listAdapter.notifyItemChanged(position, PARTIAL);
+        }
     }
 
     @Override
@@ -266,6 +275,8 @@ public class ExperimentSettingActivity extends BaseActivity {
         alwaysSendWithoutSoundRow = addRow();
         //wd 自定义视频最小时长
         searchVideoMinDurationRow = addRow();
+        //wd 直接打开媒体对话
+        openTheMediaConversationDirectlyRow = addRow();
 
         if (Config.linkedUser && Config.labelChannelUser) {
             overrideChannelAliasRow = addRow("overrideChannelAlias");
@@ -358,7 +369,12 @@ public class ExperimentSettingActivity extends BaseActivity {
 
                     //wd 自定义搜索视频最小时长
                     else if (position == searchVideoMinDurationRow){
-                        textCell.setTextAndValue(LocaleController.getString("searchVideoMinDuration", R.string.searchVideoMinDuration), String.valueOf(Config.getSearchVideoMinDuration()), payload, true);
+                        textCell.setTextAndValue(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration), String.valueOf(Config.getSearchVideoMinDuration()), payload, true);
+                    }
+
+                    //wd 直接打开媒体对话
+                    else if (position == openTheMediaConversationDirectlyRow){
+                        textCell.setTextAndValue(LocaleController.getString("openTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), String.valueOf(Config.getOpenTheMediaConversationDirectly()), payload, true);
                     }
                     break;
                 }
@@ -465,23 +481,77 @@ public class ExperimentSettingActivity extends BaseActivity {
             else if (position == searchVideoMinDurationRow) {
                 return TYPE_SETTINGS;
             }
+            //wd 直接打开媒体对话
+            else if (position == openTheMediaConversationDirectlyRow) {
+                return TYPE_SETTINGS;
+            }
             return TYPE_CHECK;
         }
     }
 
     //wd 设置自定义搜索视频最小时长
     private void setSearchVideoMinDuration(View view, int pos) {
-        showSearchVideoMinDurationDialog(this, (editText -> {
+        showCustomInputDialog(this, (builder, editText) -> {
+            builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration));
+            editText.setSingleLine(true);
+            editText.setHintText(LocaleController.getString("Number", R.string.Number));
+            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+            return null;
+        }, (editText -> {
+            String str = editText.getText().toString().trim();
+            if (str.isEmpty()) {
+                Config.setSearchVideoMinDuration(0);
+            } else {
+                if (!UtilsKt.isNumber(str)) {
+                    if (view != null) {
+                        AndroidUtilities.shakeView(view);
+                    }
+                    AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
+                } else {
+                    final int targetNum = Integer.parseInt(str);
+                    if (targetNum < 0)
+                        Config.setSearchVideoMinDuration(0);
+                    else
+                        Config.setSearchVideoMinDuration(Integer.parseInt(str));
+                }
+            }
             listAdapter.notifyItemChanged(pos, PARTIAL);
             return null;
-        }), view);
+        }));
     }
 
-    //wd 显示设置自定义搜索视频最小时长弹框
+    //wd 设置直接打开媒体对话
+    private void setOpenTheMediaConversationDirectly(View view, int pos) {
+        showCustomInputDialog(this, (builder, editText) -> {
+            builder.setTitle(LocaleController.getString("openTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly));
+            editText.setSingleLine(true);
+            editText.setText(String.valueOf(Config.getOpenTheMediaConversationDirectly()));
+            return null;
+        }, (editText -> {
+            String str = editText.getText().toString().trim();
+            if (str.isEmpty()) {
+                Config.setOpenTheMediaConversationDirectly("");
+            } else {
+                if (str.contains("，")) {
+                    str = str.replaceAll("，", ",");
+                }
+                if (str.charAt(str.length() - 1) != ',') {
+                    Config.setOpenTheMediaConversationDirectly(str + ',');
+                } else {
+                    Config.setOpenTheMediaConversationDirectly(str);
+                }
+            }
+            listAdapter.notifyItemChanged(pos, PARTIAL);
+            return null;
+        }));
+    }
+
+    //wd 显示设置自定义输入弹框
     @SuppressLint("SetTextI18n")
-    public static void showSearchVideoMinDurationDialog(BaseFragment fragment, Function<EditText, View> positiveButton, View itemClickView){
+    public static void showCustomInputDialog(BaseFragment fragment,
+                                             Function2<AlertDialog.Builder, EditTextBoldCursor, Object> customBuilder,
+                                             Function<EditText, View> positiveButton){
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
-        builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.searchVideoMinDuration));
 
         final EditTextBoldCursor editText = new EditTextBoldCursor(fragment.getParentActivity()) {
             @Override
@@ -491,10 +561,7 @@ public class ExperimentSettingActivity extends BaseActivity {
         };
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         editText.setTextColor(fragment.getThemedColor(Theme.key_dialogTextBlack));
-        editText.setHintText(LocaleController.getString("Number", R.string.Number));
-        editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
         editText.setHeaderHintColor(fragment.getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
-        editText.setSingleLine(true);
         editText.setFocusable(true);
         editText.setTransformHintToHeader(true);
         editText.setLineColors(fragment.getThemedColor(Theme.key_windowBackgroundWhiteInputField),
@@ -504,25 +571,10 @@ public class ExperimentSettingActivity extends BaseActivity {
         editText.setBackgroundDrawable(null);
         editText.requestFocus();
         editText.setPadding(0, 0, 0, 0);
+        customBuilder.invoke(builder, editText);
         builder.setView(editText);
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
-            if (editText.getText().toString().trim().equals("")) {
-                Config.setSearchVideoMinDuration(0);
-            } else {
-                if (!UtilsKt.isNumber(editText.getText().toString())) {
-                    if (itemClickView != null) {
-                        AndroidUtilities.shakeView(itemClickView);
-                    }
-                    AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
-                } else {
-                    final int targetNum = Integer.parseInt(editText.getText().toString().trim());
-                    if (targetNum < 0)
-                        Config.setSearchVideoMinDuration(0);
-                    else
-                        Config.setSearchVideoMinDuration(Integer.parseInt(editText.getText().toString()));
-                }
-            }
             if (positiveButton != null) {
                 positiveButton.apply(editText);
             }

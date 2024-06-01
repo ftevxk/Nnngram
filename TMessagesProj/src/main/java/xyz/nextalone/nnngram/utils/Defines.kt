@@ -107,6 +107,9 @@ object Defines {
     //wd 搜索视频最小时长
     @IntConfig(0) const val searchVideoMinDuration = "searchVideoMinDuration"
 
+    //wd 直接打开媒体对话
+    @StringConfig("") const val openTheMediaConversationDirectly = "openTheMediaConversationDirectly"
+
     /**
      * 0 default 1 online 2 offline
      */
