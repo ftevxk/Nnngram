@@ -18799,14 +18799,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 }
                 firstLoading = false;
-                //wd 直接打开媒体对话
-                if (Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
-                    Bundle args1 = new Bundle();
-                    args1.putLong("dialog_id", dialog_id);
-                    MediaActivity mediaActivity = new MediaActivity(args1, null);
-                    mediaActivity.setChatInfo(getCurrentChatInfo());
-                    presentFragment(mediaActivity);
-                }
             }
 
             if (isThreadChat() && !isTopic && (load_type == 2 || load_type == 3) && !isCache) {
@@ -24419,6 +24411,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             attachMenuBotToOpen = null;
         }
         checkGroupEmojiPackHint();
+
+        //wd 直接打开媒体对话
+        if (isOpen && !backward &&
+            Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
+            Bundle args1 = new Bundle();
+            args1.putLong("dialog_id", dialog_id);
+            MediaActivity mediaActivity = new MediaActivity(args1, null);
+            mediaActivity.setChatInfo(getCurrentChatInfo());
+            presentFragment(mediaActivity);
+        }
     }
 
     private void checkGroupEmojiPackHint() {
