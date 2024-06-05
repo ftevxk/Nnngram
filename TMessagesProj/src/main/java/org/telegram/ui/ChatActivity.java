@@ -24415,11 +24415,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         //wd 直接打开媒体对话
         if (isOpen && !backward &&
             Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
-            Bundle args1 = new Bundle();
-            args1.putLong("dialog_id", dialog_id);
-            MediaActivity mediaActivity = new MediaActivity(args1, null);
-            mediaActivity.setChatInfo(getCurrentChatInfo());
-            presentFragment(mediaActivity);
+            AndroidUtilities.runOnUIThread(() -> {
+                Bundle args1 = new Bundle();
+                args1.putLong("dialog_id", dialog_id);
+                MediaActivity mediaActivity = new MediaActivity(args1, null);
+                mediaActivity.setChatInfo(getCurrentChatInfo());
+                presentFragment(mediaActivity);
+            }, 300);
         }
     }
 
