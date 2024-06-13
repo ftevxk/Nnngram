@@ -233,6 +233,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.utils.Defines;
+import xyz.nextalone.nnngram.utils.NeteaseEmbed;
 import xyz.nextalone.nnngram.utils.StringUtils;
 import xyz.nextalone.nnngram.utils.Utils;
 
@@ -5615,6 +5616,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                 drawInstantView = hasLinkPreview && webpage.cached_page != null;
                 String siteName = hasLinkPreview ? webpage.site_name : null;
+                NeteaseEmbed.fixWebPage(webpage);
                 hasEmbed = hasLinkPreview && !TextUtils.isEmpty(webpage.embed_url) && !messageObject.isGif() && !"instagram".equalsIgnoreCase(siteName);
                 boolean slideshow = false;
                 String webpageType = webpage != null ? webpage.type : null;
