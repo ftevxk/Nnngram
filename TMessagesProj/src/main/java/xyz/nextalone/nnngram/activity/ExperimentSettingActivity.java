@@ -52,12 +52,12 @@ import java.util.function.Function;
 
 import kotlin.jvm.functions.Function2;
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.InlinesKt;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
 import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.Log;
-import xyz.nextalone.nnngram.utils.UtilsKt;
 
 @SuppressLint("NotifyDataSetChanged")
 public class ExperimentSettingActivity extends BaseActivity {
@@ -506,7 +506,7 @@ public class ExperimentSettingActivity extends BaseActivity {
             if (str.isEmpty()) {
                 Config.setSearchVideoMinDuration(0);
             } else {
-                if (!UtilsKt.isNumber(str)) {
+                if (!InlinesKt.isNumber(str)) {
                     if (view != null) {
                         AndroidUtilities.shakeView(view);
                     }
