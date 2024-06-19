@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2023 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -32,9 +32,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
+import xyz.nextalone.nnngram.encodeUrl
 import xyz.nextalone.nnngram.translate.BaseTranslator
 import xyz.nextalone.nnngram.utils.Log
-import xyz.nextalone.nnngram.utils.encodeUrl
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar

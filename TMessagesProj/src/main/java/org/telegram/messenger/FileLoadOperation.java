@@ -892,6 +892,9 @@ public class FileLoadOperation {
             return wasPaused;
         }
         if (location == null && webLocation == null) {
+            if (BuildVars.DEBUG_VERSION) {
+                FileLog.d("loadOperation: no location, failing");
+            }
             onFail(true, 0);
             return false;
         }
@@ -1794,9 +1797,6 @@ public class FileLoadOperation {
 
     protected boolean processRequestResult(RequestInfo requestInfo, TLRPC.TL_error error) {
         if (state != stateDownloading && state != stateCancelling) {
-            if (BuildVars.DEBUG_VERSION && state == stateFinished) {
-                FileLog.e(new FileLog.IgnoreSentException("trying to write to finished file " + fileName + " offset " + requestInfo.offset + " " + totalBytesCount + " reqToken="+requestInfo.requestToken+" (state=" + state + ")"));
-            }
             return false;
         }
         requestInfos.remove(requestInfo);

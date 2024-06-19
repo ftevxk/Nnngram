@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2023 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -74,6 +74,7 @@ import org.telegram.ui.LaunchActivity;
 import java.util.ArrayList;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.InlinesKt;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.helpers.EntitiesHelper;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
@@ -84,7 +85,6 @@ import xyz.nextalone.nnngram.ui.sortList.TextStyleListAdapter;
 import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.StringUtils;
-import xyz.nextalone.nnngram.utils.UtilsKt;
 
 @SuppressLint("NotifyDataSetChanged")
 public class ChatSettingActivity extends BaseActivity {
@@ -994,7 +994,7 @@ public class ChatSettingActivity extends BaseActivity {
             if (editText.getText().toString().trim().equals("")) {
                 Config.setMaxRecentSticker(20);
             } else {
-                if (!UtilsKt.isNumber(editText.getText().toString())) {
+                if (!InlinesKt.isNumber(editText.getText().toString())) {
                     AndroidUtilities.shakeView(view);
                     AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
                 } else {

@@ -32,6 +32,7 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.google.services)
     alias(libs.plugins.triplet.play)
+    alias(libs.plugins.aboutlibraries)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.rust)
@@ -80,7 +81,6 @@ dependencies {
     implementation(libs.exifinterface)
     implementation(libs.dynamicanimation)
     implementation(libs.interpolator)
-    implementation(libs.biometric)
     implementation(libs.fragment)
     implementation(libs.sharetarget)
     implementation(libs.biometric)
@@ -102,9 +102,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.gson)
     implementation(libs.process.phoenix)
-    implementation(libs.licensesdialog)
-    implementation(libs.markwon.core)
     implementation(libs.hiddenapibypass)
+    implementation(libs.lottie)
 
     implementation(libs.kotlin.stdlib.common)
     implementation(libs.kotlin.stdlib)
@@ -157,6 +156,7 @@ android {
     }
 
     signingConfigs {
+        //wd 改用Android默认Debug的签名文件
         create("androiddebug") {
             storeFile = File(projectDir, "config/debug.keystore")
             storePassword = ("android")
@@ -196,6 +196,10 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         externalNativeBuild {
             cmake {
@@ -218,7 +222,7 @@ android {
 
 //    androidComponents {
 //        onVariants { variant ->
-//
+//            variant.buildConfigFields.put("isPlay", BuildConfigField("boolean", variant.name.lowercase() == "play", null))
 //        }
 //    }
 

@@ -100,6 +100,7 @@ import org.telegram.ui.Components.LayoutHelper
 import org.telegram.ui.Components.TranscribeButton
 import xyz.nextalone.nnngram.helpers.QrHelper
 import xyz.nextalone.nnngram.helpers.QrHelper.readQr
+import xyz.nextalone.nnngram.tryOrLog
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
