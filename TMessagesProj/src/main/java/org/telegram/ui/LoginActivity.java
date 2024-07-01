@@ -1919,7 +1919,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 final String phone = params.getString("phoneFormated");
                 if (r.play_integrity_nonce != null) {
                     IntegrityManager integrityManager = IntegrityManagerFactory.create(getContext());
-                    Task<IntegrityTokenResponse> integrityTokenResponse = integrityManager.requestIntegrityToken(IntegrityTokenRequest.builder().setNonce(Utilities.bytesToHex(r.play_integrity_nonce)).setCloudProjectNumber(760348033671L).build());
+                    final String nonce = new String(Base64.encode(r.play_integrity_nonce, Base64.URL_SAFE));
+                    FileLog.d("getting classic integrity with nonce = " + nonce);
+                    Task<IntegrityTokenResponse> integrityTokenResponse = integrityManager.requestIntegrityToken(IntegrityTokenRequest.builder().setNonce(nonce).setCloudProjectNumber(r.play_integrity_project_id).build());
                     integrityTokenResponse
                         .addOnSuccessListener(result -> {
                             final String token = result.token();
@@ -9530,7 +9532,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
             final int a = currentType == AUTH_TYPE_WORD ? 0 : 1;
             final String formattedPhone = "+" + PhoneFormat.getInstance().format(PhoneFormat.stripExceptNumbers(phone));
-            if (beginning == null) {
+            if (beginning == null || getConnectionsManager().isTestBackend()) {
                 confirmTextView.setText(AndroidUtilities.replaceTags(formatString(a == 0 ? R.string.SMSWordText : R.string.SMSPhraseText, formattedPhone)));
             } else {
                 confirmTextView.setText(AndroidUtilities.replaceTags(formatString(a == 0 ? R.string.SMSWordBeginningText : R.string.SMSPhraseBeginningText, formattedPhone, beginning)));
@@ -9951,7 +9953,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         }
 
         private boolean beginsOk(String text) {
-            if (beginning == null) {
+            if (beginning == null || getConnectionsManager().isTestBackend()) {
                 return true;
             }
             String lt = trimLeft(text).toLowerCase();
@@ -10012,7 +10014,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
             actionBar = null;
         }
-        clearStoryViewers();
+        clearSheets();
         parentLayout = null;
     }
 }

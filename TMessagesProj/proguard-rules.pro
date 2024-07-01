@@ -34,7 +34,6 @@
 -keep class com.google.android.exoplayer2.ext.** { *; }
 -keep class com.google.android.exoplayer2.extractor.FlacStreamMetadata { *; }
 -keep class com.google.android.exoplayer2.metadata.flac.PictureFrame { *; }
--keep class com.google.android.exoplayer2.decoder.SimpleOutputBuffer { *; }
 -keep class com.google.android.exoplayer2.decoder.SimpleDecoderOutputBuffer { *; }
 -keep class org.telegram.ui.Stories.recorder.FfmpegAudioWaveformLoader { *; }
 
@@ -193,8 +192,7 @@
 -keepclassmembernames class xyz.nextalone.nnngram.activity.DatacenterActivity$DatacenterCell { <fields>; }
 -keepclassmembernames class xyz.nextalone.nnngram.activity.DatacenterActivity$DatacenterHeaderCell { <fields>; }
 -keepclassmembernames class xyz.nextalone.nnngram.activity.MessageDetailsActivity$TextDetailSimpleCell { <fields>; }
--keepclassmembernames class xyz.nextalone.nnngram.activity.PasscodeSettingActivity$AccountCell {
-<fields>; }
+-keepclassmembernames class xyz.nextalone.nnngram.activity.PasscodeSettingActivity$AccountCell { <fields>; }
 -keepclassmembernames class xyz.nextalone.nnngram.activityChatSettingsActivity$StickerSizeCell { <fields>; }
 
 -keepclassmembernames class androidx.core.widget.NestedScrollView {
@@ -211,6 +209,10 @@
 
 -assumenosideeffects class android.util.Log {
     public static *** v(...);
+    public static *** d(...);
+}
+
+-assumenosideeffects class xyz.nextalone.nnngram.utils.Log {
     public static *** d(...);
 }
 

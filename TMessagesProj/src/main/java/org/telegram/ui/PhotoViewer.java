@@ -1449,7 +1449,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             lastSaveTime = SystemClock.elapsedRealtime();
                             Utilities.globalQueue.postRunnable(() -> {
                                 SharedPreferences.Editor editor = ApplicationLoader.applicationContext.getSharedPreferences("media_saved_pos", Activity.MODE_PRIVATE).edit();
-                                editor.putFloat(saveFor, value).commit();
+                                editor.putFloat(shouldSavePositionForCurrentVideo, value).commit();
                             });
                         }
                     }
@@ -2792,6 +2792,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             return true;
         }
         default void onReleasePlayerBeforeClose(int currentIndex) {};
+
+        default boolean forceAllInGroup() {
+            return false;
+        }
     }
 
     private class FrameLayoutDrawer extends SizeNotifierFrameLayoutPhoto {
@@ -5439,8 +5443,35 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 } else if (id == gallery_menu_qr) {
                     QrHelper.showQrDialog(parentFragment, resourcesProvider, qrResults, true);
                 } else if (id == gallery_menu_save_messages) {
-                    var accountInstance = AccountInstance.getInstance(currentAccount);
-                    accountInstance.getSendMessagesHelper().sendMessage(new ArrayList<>(Collections.singletonList(currentMessageObject)),accountInstance.getUserConfig().getClientUserId(),false, false, true, 0);
+                    boolean noforwards = currentMessageObject != null && (MessagesController.getInstance(currentAccount).isChatNoForwards(currentMessageObject.getChatId()) || (currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.noforwards) || currentMessageObject.hasRevealedExtendedMedia());
+                    if (noforwards){
+                        String path = currentMessageObject.messageOwner.attachPath;
+                        if (path != null && !path.isEmpty()) {
+                            File temp = new File(path);
+                            if (!temp.exists()) {
+                                path = null;
+                            }
+                        }
+                        if (path == null || path.isEmpty()) {
+                            path = parentChatActivity.getFileLoader().getPathToMessage(currentMessageObject.messageOwner).toString();
+                        }
+                        ArrayList<SendMessagesHelper.SendingMediaInfo> media = new ArrayList<>();
+                        SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();
+                        info.path = path;
+                        info.thumbPath = null;
+                        info.videoEditedInfo = null;
+                        info.isVideo = path.endsWith(".mp4");
+                        info.caption = null;
+                        info.entities = null;
+                        info.masks = null;
+                        info.ttl = 0;
+                        media.add(info);
+                        SendMessagesHelper.prepareSendingMedia(parentChatActivity.getAccountInstance(), media, parentChatActivity.getUserConfig().getClientUserId(), null, null, null, null, true, true, null, false, 0, 0, false, null, parentChatActivity.quickReplyShortcut, parentChatActivity.getQuickReplyId(), 0, false);
+                        BulletinFactory.of(fragment).showForwardedBulletinWithTag(parentChatActivity.getUserConfig().getClientUserId(), 1);
+                    } else {
+                        var accountInstance = AccountInstance.getInstance(currentAccount);
+                        accountInstance.getSendMessagesHelper().sendMessage(new ArrayList<>(Collections.singletonList(currentMessageObject)), accountInstance.getUserConfig().getClientUserId(), false, false, true, 0);
+                    }
                 } else if (id == gallery_menu_copy_photo) {
                     MessageUtils.getInstance(currentAccount).addMessageToClipboard(currentMessageObject, () -> {
                         if (BulletinFactory.canShowBulletin(parentFragment)) {
@@ -5649,6 +5680,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     return placeProvider.validateGroupId(groupId);
                 }
                 return true;
+            }
+
+            @Override
+            public boolean forceAll() {
+                return placeProvider != null && placeProvider.forceAllInGroup();
             }
         });
 
@@ -8359,8 +8395,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         } else {
             pipVideoOverlayAnimateFlag = false;
 
-            if (!Config.disableAutoPip)
+            if (!Config.disableAutoPip) {
                 switchToPip(false);
+            } else {
+                videoPlayer.pause();
+            }
         }
     }
 
@@ -12862,7 +12901,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         }
                     }
                     isFirstLoading = false;
-                } else if (MediaDataController.getMediaType(currentMessageObject.messageOwner) == sharedMediaType) {
+                } else if (MediaDataController.getMediaType(currentMessageObject.messageOwner) == sharedMediaType && (placeProvider == null || !placeProvider.forceAllInGroup())) {
                     MediaDataController.getInstance(currentAccount).getMediaCount(currentDialogId, topicId, sharedMediaType, classGuid, true);
                     if (mergeDialogId != 0) {
                         MediaDataController.getInstance(currentAccount).getMediaCount(mergeDialogId, topicId, sharedMediaType, classGuid, true);
@@ -13024,7 +13063,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (masksItemVisible) {
                         setItemVisible(masksItem, false, false);
                     }
-                    if (!pipAvailable) {
+                    if (noforwards) {
+                        setItemVisible(pipItem, false, true);
+                    } else if (!pipAvailable) {
                         pipItem.setEnabled(false);
                         setItemVisible(pipItem, true, !masksItemVisible && editItem.getAlpha() <= 0, 0.5f);
                     } else {

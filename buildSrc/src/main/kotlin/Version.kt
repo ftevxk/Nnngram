@@ -22,16 +22,6 @@ import java.util.Properties
 import org.gradle.api.JavaVersion
 
 object Version {
-
-    @JvmStatic
-    val java = JavaVersion.VERSION_17
-
-    @JvmStatic
-    val officialVersionName = "10.13.1"
-
-    @JvmStatic
-    val isStable = true
-
     fun findBuildToolsVersion(): String {
         val defaultBuildToolsVersion = "33.0.0"
         return File(System.getenv("ANDROID_HOME"), "build-tools").listFiles()?.filter { it.isDirectory }?.maxOfOrNull { it.name }?.also { println("Using build tools version $it") }
@@ -55,4 +45,13 @@ object Version {
         return File(System.getenv("ANDROID_HOME"), "ndk").listFiles()?.filter { it.isDirectory }?.maxOfOrNull { it.name }.also { if (it != null) println("Using ndk version $it") }
             ?: defaultNdkVersion
     }
+
+    @JvmStatic
+    val java = JavaVersion.VERSION_17
+
+    @JvmStatic
+    val officialVersionName = "10.14.2"
+
+    @JvmStatic
+    val isStable = true
 }
