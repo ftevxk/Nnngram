@@ -28942,26 +28942,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 options.add(OPTION_ADD_TO_GIFS);
                                 icons.add(R.drawable.msg_gif);
                             }
-                        } else if (type == 4) {
-                            if (!selectedObject.hasRevealedExtendedMedia()) {
-                                if (ConfigManager.getBooleanOrFalse(Defines.showDeleteDownloadFiles) && selectedObject.getDocument() != null) {
-                                    items.add(LocaleController.getString("DeleteDownloadedFile", R.string.DeleteDownloadedFile));
-                                    options.add(OPTION_DELETE_DOWNLOADED_FILE);
-                                    icons.add(R.drawable.msg_clear);
-                                }
-                                if (selectedObject.isVideo()) {
-                                    if (!selectedObject.needDrawBluredPreview()) {
-                                        items.add(LocaleController.getString("SaveToGallery", R.string.SaveToGallery));
-                                        options.add(OPTION_SAVE_TO_GALLERY);
-                                        icons.add(R.drawable.msg_gallery);
-                                        items.add(LocaleController.getString("ShareFile", R.string.ShareFile));
-                                        options.add(OPTION_SHARE);
-                                        icons.add(R.drawable.msg_shareout);
-                                    }
-                                } else if (selectedObject.isMusic() && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
-                                    items.add(LocaleController.getString("SaveToMusic", R.string.SaveToMusic));
-                                    options.add(OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC);
-                                    icons.add(R.drawable.msg_download);
+                        } else if (type == 4 && !selectedObject.hasRevealedExtendedMedia()) {
+                            if (ConfigManager.getBooleanOrFalse(Defines.showDeleteDownloadFiles) && selectedObject.getDocument() != null) {
+                                items.add(LocaleController.getString("DeleteDownloadedFile", R.string.DeleteDownloadedFile));
+                                options.add(OPTION_DELETE_DOWNLOADED_FILE);
+                                icons.add(R.drawable.msg_clear);
+                            }
+                            if (selectedObject.isVideo()) {
+                                if (!selectedObject.needDrawBluredPreview()) {
+                                    items.add(LocaleController.getString("SaveToGallery", R.string.SaveToGallery));
+                                    options.add(OPTION_SAVE_TO_GALLERY);
+                                    icons.add(R.drawable.msg_gallery);
                                     items.add(LocaleController.getString("ShareFile", R.string.ShareFile));
                                     options.add(OPTION_SHARE);
                                     icons.add(R.drawable.msg_shareout);
