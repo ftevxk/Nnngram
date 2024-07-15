@@ -38,7 +38,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -54,10 +53,6 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.fonts.Font;
-import android.graphics.fonts.FontFamily;
-import android.graphics.fonts.FontStyle;
-import android.graphics.fonts.SystemFonts;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -110,7 +105,6 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
@@ -131,9 +125,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
-import androidx.core.graphics.TypefaceCompatUtil;
 import androidx.core.math.MathUtils;
-import androidx.core.provider.FontRequest;
 import androidx.core.widget.NestedScrollView;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.SpringAnimation;
@@ -1846,7 +1838,7 @@ public class AndroidUtilities {
                             calendar.set(Calendar.YEAR, Utilities.parseInt(date[0]));
                             calendar.set(Calendar.MONTH, Utilities.parseInt(date[1]) - 1);
                             calendar.set(Calendar.DAY_OF_MONTH, Utilities.parseInt(date[2]));
-                            return LocaleController.getInstance().formatterYearMax.format(calendar.getTime());
+                            return LocaleController.getInstance().getFormatterYearMax().format(calendar.getTime());
                         }
                     }
                 }
@@ -3900,7 +3892,7 @@ public class AndroidUtilities {
         }
     }
 
-    public static boolean openForView(File f, String fileName, String mimeType, final Activity activity, Theme.ResourcesProvider resourcesProvider) {
+    public static boolean openForView(File f, String fileName, String mimeType, final Activity activity, Theme.ResourcesProvider resourcesProvider, boolean restrict) {
         if (f != null && f.exists()) {
             String realMimeType = null;
             Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -3909,6 +3901,10 @@ public class AndroidUtilities {
             int idx = fileName.lastIndexOf('.');
             if (idx != -1) {
                 String ext = fileName.substring(idx + 1);
+                int h = ext.toLowerCase().hashCode();
+                if (restrict && (h == 0x17a1c || h == 0x3107ab || h == 0x19a1b || h == 0xe55 || h == 0x18417)) {
+                    return true;
+                }
                 realMimeType = myMime.getMimeTypeFromExtension(ext.toLowerCase());
                 if (realMimeType == null) {
                     realMimeType = mimeType;
@@ -3949,7 +3945,7 @@ public class AndroidUtilities {
         return false;
     }
 
-    public static boolean openForView(MessageObject message, Activity activity, Theme.ResourcesProvider resourcesProvider) {
+    public static boolean openForView(MessageObject message, Activity activity, Theme.ResourcesProvider resourcesProvider, boolean restrict) {
         File f = null;
         if (message.messageOwner.attachPath != null && message.messageOwner.attachPath.length() != 0) {
             f = new File(message.messageOwner.attachPath);
@@ -3958,13 +3954,13 @@ public class AndroidUtilities {
             f = FileLoader.getInstance(message.currentAccount).getPathToMessage(message.messageOwner);
         }
         String mimeType = message.type == MessageObject.TYPE_FILE || message.type == MessageObject.TYPE_TEXT ? message.getMimeType() : null;
-        return openForView(f, message.getFileName(), mimeType, activity, resourcesProvider);
+        return openForView(f, message.getFileName(), mimeType, activity, resourcesProvider, restrict);
     }
 
     public static boolean openForView(TLRPC.Document document, boolean forceCache, Activity activity) {
         String fileName = FileLoader.getAttachFileName(document);
         File f = FileLoader.getInstance(UserConfig.selectedAccount).getPathToAttach(document, true);
-        return openForView(f, fileName, document.mime_type, activity, null);
+        return openForView(f, fileName, document.mime_type, activity, null, false);
     }
 
     public static SpannableStringBuilder formatSpannableSimple(CharSequence format, CharSequence... cs) {
@@ -5960,17 +5956,41 @@ public class AndroidUtilities {
                 case "http":
                 case "https": {
                     if (path.isEmpty()) return false;
-                    ArrayList<String> segments = new ArrayList<>(uri.getPathSegments());
-                    if (segments.size() > 0 && segments.get(0).equals("s")) {
-                        segments.remove(0);
-                    }
-                    if (segments.size() > 0) {
-                        if (segments.size() >= 3 && "s".equals(segments.get(1))) {
-                            return false;
-                        } else if (segments.size() > 1) {
-                            return !TextUtils.isEmpty(segments.get(1));
-                        } else if (segments.size() == 1) {
-                            return !TextUtils.isEmpty(uri.getQueryParameter("startapp"));
+                    String host = uri.getHost().toLowerCase();
+                    Matcher prefixMatcher = LaunchActivity.PREFIX_T_ME_PATTERN.matcher(host);
+                    boolean isPrefix = prefixMatcher.find();
+                    if (host.equals("telegram.me") || host.equals("t.me") || host.equals("telegram.dog") || isPrefix) {
+                        ArrayList<String> segments = new ArrayList<>(uri.getPathSegments());
+                        if (segments.size() > 0 && segments.get(0).equals("s")) {
+                            segments.remove(0);
+                        }
+                        if (segments.size() > 0) {
+                            if (segments.size() >= 3 && "s".equals(segments.get(1))) {
+                                return false;
+                            } else if (segments.size() > 1) {
+                                final String segment = segments.get(1);
+                                if (TextUtils.isEmpty(segment)) return false;
+                                switch (segment) {
+                                    case "joinchat":
+                                    case "login":
+                                    case "addstickers":
+                                    case "addemoji":
+                                    case "msg":
+                                    case "share":
+                                    case "confirmphone":
+                                    case "setlanguage":
+                                    case "addtheme":
+                                    case "boost":
+                                    case "c":
+                                    case "contact":
+                                    case "folder":
+                                    case "addlist":
+                                        return false;
+                                }
+                                return true;
+                            } else if (segments.size() == 1) {
+                                return !TextUtils.isEmpty(uri.getQueryParameter("startapp"));
+                            }
                         }
                     }
                     break;

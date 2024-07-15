@@ -4494,8 +4494,8 @@ public class MessageObject {
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionLoginUnknownLocation) {
                     String date;
                     long time = ((long) messageOwner.date) * 1000;
-                    if (LocaleController.getInstance().formatterDay != null && LocaleController.getInstance().formatterYear != null) {
-                        date = LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().formatterYear.format(time), LocaleController.getInstance().formatterDay.format(time));
+                    if (LocaleController.getInstance().getFormatterDay() != null && LocaleController.getInstance().getFormatterYear() != null) {
+                        date = LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, LocaleController.getInstance().getFormatterYear().format(time), LocaleController.getInstance().getFormatterDay().format(time));
                     } else {
                         date = "" + messageOwner.date;
                     }
@@ -6670,10 +6670,13 @@ public class MessageObject {
         } else if (messageOwner.fwd_from != null && messageOwner.fwd_from.from_id instanceof TLRPC.TL_peerChannel && !isOutOwner()) {
             return true;
         } else if (isFromUser()) {
+            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(messageOwner.from_id.user_id);
+            if (user != null && user.bot && ("reviews_bot".equals(UserObject.getPublicUsername(user)) || "ReviewInsightsBot".equals(UserObject.getPublicUsername(user)))) {
+                return true;
+            }
             if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaEmpty || getMedia(messageOwner) == null || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage && !(getMedia(messageOwner).webpage instanceof TLRPC.TL_webPage)) {
                 return false;
             }
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(messageOwner.from_id.user_id);
             if (user != null && user.bot && !hasExtendedMedia()) {
                 return true;
             }
@@ -8082,6 +8085,9 @@ public class MessageObject {
         if (message != null && message.media != null && (isVoiceDocument(getDocument(message)) || isRoundVideoMessage(message)) && message.media.ttl_seconds == 0x7FFFFFFF) {
             return true;
         }
+        if (getMedia(message) instanceof TLRPC.TL_messageMediaPaidMedia) {
+            return true;
+        }
 //        if (MessagesController.getInstance(currentAccount).isChatNoForwards(getChatId(message)) || message != null && message.noforwards) {
 //            return true;
 //        }
@@ -8463,6 +8469,7 @@ public class MessageObject {
         }
         boolean isAnimated = false;
         boolean isVideo = false;
+        String filename = null;
         int width = 0;
         int height = 0;
         for (int a = 0; a < document.attributes.size(); a++) {
@@ -8476,6 +8483,20 @@ public class MessageObject {
                 height = attribute.h;
             } else if (attribute instanceof TLRPC.TL_documentAttributeAnimated) {
                 isAnimated = true;
+            } else if (attribute instanceof TLRPC.TL_documentAttributeFilename) {
+                filename = attribute.file_name;
+            }
+        }
+        if (filename != null) {
+            int index = filename.lastIndexOf(".");
+            if (index >= 0) {
+                String ext = filename.substring(index + 1);
+                switch (ext.toLowerCase().hashCode()) {
+                    case 0x17a1c: case 0x3107ab: case 0x19a1b:
+                    case 0xe55:   case 0x18417:  case 0x184fe:
+                    case 0x18181:
+                        return false;
+                }
             }
         }
         if (isAnimated && (width > 1280 || height > 1280)) {

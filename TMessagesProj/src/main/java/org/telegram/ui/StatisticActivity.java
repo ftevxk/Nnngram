@@ -572,7 +572,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         TLRPC.Chat currentChat = MessagesController.getInstance(currentAccount).getChat(chatId);
         TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(chatId);
         boolean isBoostSupported = ChatObject.isBoostSupported(currentChat);
-        final boolean hasMonetization = ChatObject.isChannelAndNotMegaGroup(currentChat) && chatFull != null && chatFull.can_view_revenue;
+        final boolean hasMonetization = ChatObject.isChannelAndNotMegaGroup(currentChat) && chatFull != null && (chatFull.can_view_revenue || chatFull.can_view_stars_revenue);
         BottomPagerTabs storiesTabsView = new BottomPagerTabs(context, getResourceProvider()) {
             @Override
             public Tab[] createTabs() {
@@ -608,7 +608,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             boostLayout = new ChannelBoostLayout(StatisticActivity.this, -chatId, getResourceProvider());
         }
         if (hasMonetization) {
-            monetizationLayout = new ChannelMonetizationLayout(getContext(), StatisticActivity.this, currentAccount, -chatId, getResourceProvider());
+            monetizationLayout = new ChannelMonetizationLayout(getContext(), StatisticActivity.this, currentAccount, -chatId, getResourceProvider(), chatFull.can_view_revenue, chatFull.can_view_stars_revenue);
             monetizationLayout.setActionBar(actionBar);
         }
         boolean showTabs = isBoostSupported && !onlyBoostsStat;
@@ -1636,7 +1636,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                         }
                         currentW += getChildAt(i).getMeasuredWidth();
                     }
-                    setMeasuredDimension(getMeasuredWidth(), firstH + currentH + dp(16));
+                    setMeasuredDimension(getMeasuredWidth(), getChildCount() == 0 ? 0 : firstH + currentH + dp(16));
                 }
 
                 @Override
@@ -1999,7 +1999,11 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 progressView.setVisibility(View.GONE);
             }
 
-            chartView.setData(viewData.chartData);
+            if (chartView.setData(viewData.chartData)) {
+                if (viewData.showAll) {
+                    chartView.pickerDelegate.set(0f, 1f);
+                }
+            }
             chartHeaderView.setUseWeekInterval(viewData.useWeekFormat);
             chartView.legendSignatureView.setUseWeek(viewData.useWeekFormat);
 
@@ -2191,6 +2195,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         ChartData childChartData;
         String token;
         String zoomToken;
+        public boolean showAll;
 
         final int graphType;
         final String title;

@@ -38,17 +38,13 @@ tasks.register<Delete>("clean").configure {
 val apiCode by extra(93)
 val verCode = Common.getBuildVersionCode(rootProject)
 
-val verName = if (Version.isStable) {
-    "v" + Version.officialVersionName + "-" + (Common.getGitHeadRefsSuffix(rootProject))
-} else {
-    "v" + Version.officialVersionName + "-preview-" + (Common.getGitHeadRefsSuffix(rootProject))
-}
+val verName = "v" + Version.officialVersionName + "-" + (Common.getGitHeadRefsSuffix(rootProject))
 
 val androidTargetSdkVersion by extra(34)
 val androidMinSdkVersion by extra(27)
 val androidCompileSdkVersion by extra(34)
 val androidBuildToolsVersion = Version.findBuildToolsVersion()
-val androidCompileNdkVersion = "23.2.8568313"
+val androidCompileNdkVersion = "26.3.11579264"
 
 fun Project.configureBaseExtension() {
     extensions.findByType(com.android.build.gradle.BaseExtension::class)?.run {
