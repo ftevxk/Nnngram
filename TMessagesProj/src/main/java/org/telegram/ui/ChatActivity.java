@@ -1960,12 +1960,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     case Defines.doubleTabReverse:
                         processSelectedOption(OPTION_REVERSE);
                         break;
-                    case Defines.doubleTabRepeatAsCopy:
-                        processSelectedOption(OPTION_REPEAT_AS_COPY);
-                        break;
-                    case Defines.doubleTabReverse:
-                        processSelectedOption(OPTION_REVERSE);
-                        break;
                     case Defines.doubleTabEdit:
                         processSelectedOption(OPTION_EDIT);
                         break;
@@ -31377,37 +31371,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 Intent intent = new Intent(Intent.ACTION_SEND);
                 intent.setType(selectedObject.getDocument().mime_type);
-                File f = new File(path);
-                if (Build.VERSION.SDK_INT >= 24) {
-                    try {
-                        intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", f));
-                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (Exception ignore) {
-                        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
-                    }
-                } else {
-                    intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
-                }
-                try {
-                    getParentActivity().startActivityForResult(Intent.createChooser(intent, LocaleController.getString("ShareFile", R.string.ShareFile)), 500);
-                } catch (Throwable ignore) {
-
-                }
-                break;
-            }
-            case OPTION_SHARE_PHOTO: {
-                String path = selectedObject.messageOwner.attachPath;
-                if (path != null && path.length() > 0) {
-                    File temp = new File(path);
-                    if (!temp.exists()) {
-                        path = null;
-                    }
-                }
-                if (path == null || path.length() == 0) {
-                    path = getFileLoader().getPathToMessage(selectedObject.messageOwner).toString();
-                }
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.setType(selectedObject.isVideo() ? "video/mp4" : "image/jpeg");
                 File f = new File(path);
                 if (Build.VERSION.SDK_INT >= 24) {
                     try {
