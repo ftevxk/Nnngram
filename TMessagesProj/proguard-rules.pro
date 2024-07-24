@@ -193,15 +193,7 @@
  -keep,allowshrinking,allowobfuscation class org.telegram.ui.Components.Premium.GLIcon.ObjLoader {
      public <init>();
   }
--keep class org.telegram.ui.Stars.StarsIntroActivity$* {
-    <init>();
-}
--keep class org.telegram.ui.Stars.StarsIntroActivity$*$* {
-    <init>();
-}
--keep class org.telegram.ui.Stories.recorder.StoryLinkSheet$WebpagePreviewView {
-    <init>();
-}
+-keep class * extends org.telegram.ui.Components.UItem$UItemFactory { public <init>(...); }
 -keepclassmembernames class xyz.nextalone.nnngram.activity.DatacenterActivity$DatacenterCell { <fields>; }
 -keepclassmembernames class xyz.nextalone.nnngram.activity.DatacenterActivity$DatacenterHeaderCell { <fields>; }
 -keepclassmembernames class xyz.nextalone.nnngram.activity.MessageDetailActivity$TextDetailSimpleCell { <fields>; }
