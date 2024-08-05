@@ -379,6 +379,7 @@
     <string name="disableChannelMuteButton">Disable channel mute button</string>
     <string name="disableAutoPip">Disable auto PIP</string>
     <string name="sendMp4DocumentAsVideo">Send MP4 document as video</string>
+    <string name="disableGravityDetectionInVideo">Disable gravity detection in video</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
     <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>
