@@ -45,23 +45,7 @@ configurations {
     }
 }
 
-var serviceAccountCredentialsFile = File(rootProject.projectDir, "service_account_credentials.json")
 val abiName = mapOf("arm64-v8a" to "arm64")
-
-if (serviceAccountCredentialsFile.isFile) {
-    setupPlay(Version.isStable)
-    play.serviceAccountCredentials.set(serviceAccountCredentialsFile)
-} else if (System.getenv().containsKey("ANDROID_PUBLISHER_CREDENTIALS")) {
-    setupPlay(Version.isStable)
-}
-
-fun setupPlay(stable: Boolean) {
-    val targetTrace = if (stable) "production" else "beta"
-    play {
-        track.set(targetTrace)
-        defaultToAppBundles.set(true)
-    }
-}
 
 cargo {
     module  = "../libs/rust"
@@ -101,7 +85,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.process.phoenix)
     implementation(libs.hiddenapibypass)
-    implementation(libs.lottie)
 
     implementation(libs.kotlin.stdlib.common)
     implementation(libs.kotlin.stdlib)
@@ -203,7 +186,12 @@ android {
             cmake {
                 version = "3.22.1"
                 arguments += listOf(
-                    "-DANDROID_STL=c++_static", "-DANDROID_PLATFORM=android-24", "-DCMAKE_C_COMPILER_LAUNCHER=ccache", "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache", "-DNDK_CCACHE=ccache"
+                    "-DANDROID_STL=c++_static",
+                    "-DANDROID_PLATFORM=android-27",
+                    "-DCMAKE_C_COMPILER_LAUNCHER=ccache",
+                    "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache",
+                    "-DNDK_CCACHE=ccache",
+                    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
                 )
             }
         }
@@ -214,6 +202,7 @@ android {
         abi {
             isEnable = true
             reset()
+            //noinspection ChromeOsAbiSupport
             include("arm64-v8a")
         }
     }

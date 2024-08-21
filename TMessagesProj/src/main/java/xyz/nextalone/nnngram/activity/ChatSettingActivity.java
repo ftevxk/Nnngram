@@ -129,6 +129,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
     private int messageFiltersRow;
+    private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
     private int hideMessageSeenTooltipRow;
@@ -402,6 +403,11 @@ public class ChatSettingActivity extends BaseActivity {
             }
         } else if (position == messageFiltersRow) {
             createMessageFilterSetter(this, getContext(), resourcesProvider);
+        } else if (position == sendLargePhotoRow) {
+            Config.toggleSendLargePhoto();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.sendLargePhoto);
+            }
         } else if (position == doNotUnarchiveBySwipeRow) {
             Config.toggleDoNotUnarchiveBySwipe();
             if (view instanceof TextCheckCell) {
@@ -527,6 +533,7 @@ public class ChatSettingActivity extends BaseActivity {
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
         messageFiltersRow = addRow("messageFilters");
+        sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
         hideMessageSeenTooltipRow = addRow("hideMessageSeenTooltip");
@@ -542,6 +549,7 @@ public class ChatSettingActivity extends BaseActivity {
         sendMp4DocumentAsVideoRow = addRow("sendMp4DocumentAsVideo");
         disableGravityDetectionInVideoRow = addRow("disableGravityDetectionInVideo");
         chat2Row = addRow();
+
         markdownRow = addRow();
         markdownDisableRow = addRow("markdownDisabled");
         markdownParserRow = addRow("markdownParser");
@@ -693,6 +701,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString("MarkdownDisableByDefault", R.string.MarkdownDisableByDefault), Config.markdownDisabled, true);
                     } else if (position == hideTitleRow) {
                         textCell.setTextAndCheck(LocaleController.getString("showHideTitle", R.string.showHideTitle), Config.showHideTitle, true);
+                    } else if (position == sendLargePhotoRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("sendLargePhoto", R.string.sendLargePhoto), Config.sendLargePhoto, true);
                     } else if (position == doNotUnarchiveBySwipeRow) {
                         textCell.setTextAndCheck(LocaleController.getString("doNotUnarchiveBySwipe", R.string.doNotUnarchiveBySwipe), Config.doNotUnarchiveBySwipe, true);
                     } else if (position == hideInputFieldBotButtonRow) {
