@@ -64,6 +64,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
+import xyz.nextalone.nnngram.CrashListener;
 import xyz.nextalone.nnngram.utils.AnalyticsUtils;
 
 public class ApplicationLoader extends Application {
@@ -264,6 +265,7 @@ public class ApplicationLoader extends Application {
         BillingController.getInstance().startConnection();
 
         AnalyticsUtils.start(applicationLoaderInstance);
+        CrashListener.INSTANCE.init();
 
     }
 
