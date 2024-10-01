@@ -1975,12 +1975,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     case Defines.doubleTabReverse:
                         processSelectedOption(OPTION_REVERSE);
                         break;
-                    case Defines.doubleTabRepeatAsCopy:
-                        processSelectedOption(OPTION_REPEAT_AS_COPY);
-                        break;
-                    case Defines.doubleTabReverse:
-                        processSelectedOption(OPTION_REVERSE);
-                        break;
                     case Defines.doubleTabEdit:
                         processSelectedOption(OPTION_EDIT);
                         break;
@@ -10379,72 +10373,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
 
         ActionBarMenuItem item = editTextItem.createView();
-        SpannableStringBuilder stringBuilder;
-        TextStyleSpan.TextStyleRun run;
-        List<Integer> enabledOrder = TextStyleItems.INSTANCE.getEnabledOrder();
-        for (int i : enabledOrder) {
-            switch (i) {
-                case 0:
-                    if (chatMode == 0) {
-                        item.addSubItem(text_quote, LocaleController.getString("Quote", R.string.Quote));
-                    }
-                    break;
-                case 1:
-                    item.addSubItem(text_spoiler, LocaleController.getString("Spoiler", R.string.Spoiler));
-                    break;
-                case 2:
-                    stringBuilder = new SpannableStringBuilder(LocaleController.getString("Bold", R.string.Bold));
-                    run = new TextStyleSpan.TextStyleRun();
-                    run.flags |= TextStyleSpan.FLAG_STYLE_BOLD;
-                    stringBuilder.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    item.addSubItem(text_bold, stringBuilder);
-                    break;
-                case 3:
-                    stringBuilder = new SpannableStringBuilder(LocaleController.getString("Italic", R.string.Italic));
-                    run = new TextStyleSpan.TextStyleRun();
-                    run.flags |= TextStyleSpan.FLAG_STYLE_ITALIC;
-                    stringBuilder.setSpan(new TextStyleSpan(run), 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    item.addSubItem(text_italic, stringBuilder);
-                    break;
-                case 4:
-                    stringBuilder = new SpannableStringBuilder(LocaleController.getString("MonoCode", R.string.MonoCode));
-                    stringBuilder.setSpan(new TypefaceSpan(Typeface.MONOSPACE), 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    item.addSubItem(text_code, stringBuilder);
-                    break;
-                case 5:
-                    stringBuilder = new SpannableStringBuilder(LocaleController.getString("Mono", R.string.Mono));
-                    stringBuilder.setSpan(new TypefaceSpan(Typeface.MONOSPACE), 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    item.addSubItem(text_mono, stringBuilder);
-                    break;
-                case 6:
-                    if (currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(currentEncryptedChat.layer) >= 101) {
-                        stringBuilder = new SpannableStringBuilder(LocaleController.getString("Strike", R.string.Strike));
-                        run = new TextStyleSpan.TextStyleRun();
-                        run.flags |= TextStyleSpan.FLAG_STYLE_STRIKE;
-                        stringBuilder.setSpan(new TextStyleSpan(run), 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        item.addSubItem(text_strike, stringBuilder);
-                    }
-                    break;
-                case 7:
-                    if (currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(currentEncryptedChat.layer) >= 101) {
-                        stringBuilder = new SpannableStringBuilder(LocaleController.getString("Underline", R.string.Underline));
-                        run = new TextStyleSpan.TextStyleRun();
-                        run.flags |= TextStyleSpan.FLAG_STYLE_UNDERLINE;
-                        stringBuilder.setSpan(new TextStyleSpan(run), 0, stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        item.addSubItem(text_underline, stringBuilder);
-                    }
-                    break;
-                case 8:
-                    item.addSubItem(text_link, LocaleController.getString("CreateLink", R.string.CreateLink));
-                    break;
-                case 9:
-                    item.addSubItem(text_mention, LocaleController.getString("CreateMention", R.string.CreateMention));
-                    break;
-                case 10:
-                    item.addSubItem(text_regular, LocaleController.getString("Regular", R.string.Regular));
-                    break;
-            }
-        }
         SpannableStringBuilder stringBuilder;
         TextStyleSpan.TextStyleRun run;
         List<Integer> enabledOrder = TextStyleItems.INSTANCE.getEnabledOrder();
@@ -40700,43 +40628,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 messages.add(selectedObject);
             }
             forwardMessages(messages, false, false, true, 0);
-        }
-        return false;
-    }
-
-    public boolean processReverseMessage(boolean longClick) {
-        var messageObject = getMessageUtils().getMessageForRepeat(selectedObject, selectedObjectGroup);
-        if (messageObject != null) {
-            var replyToMsg = longClick ? messageObject : threadMessageObject;
-            if (!messageObject.isAnyKindOfSticker() || messageObject.isAnimatedEmojiStickers() || messageObject.isAnimatedEmoji() || messageObject.isDice()) {
-                var message = messageObject.messageOwner.message;
-                if (!TextUtils.isEmpty(message)) {
-                    message = WordUtils.INSTANCE.replaceAntonyms(message);
-                    ArrayList<TLRPC.MessageEntity> entities;
-                    if (messageObject.messageOwner.entities != null && !messageObject.messageOwner.entities.isEmpty()) {
-                        entities = new ArrayList<>();
-                        for (TLRPC.MessageEntity entity : messageObject.messageOwner.entities) {
-                            if (entity instanceof TLRPC.TL_messageEntityMentionName) {
-                                TLRPC.TL_inputMessageEntityMentionName mention = new TLRPC.TL_inputMessageEntityMentionName();
-                                mention.length = entity.length;
-                                mention.offset = entity.offset;
-                                mention.user_id = getMessagesController().getInputUser(((TLRPC.TL_messageEntityMentionName) entity).user_id);
-                                entities.add(mention);
-                            } else {
-                                entities.add(entity);
-                            }
-                        }
-                    } else {
-                        entities = null;
-                    }
-                    getSendMessagesHelper().sendMessage(SendMessageParams.of(
-                        message, dialog_id, replyToMsg,
-                        threadMessageObject, null, false, entities,
-                        null, null, true, 0, null, false));
-                    return true;
-                }
-                return false;
-            }
         }
         return false;
     }
