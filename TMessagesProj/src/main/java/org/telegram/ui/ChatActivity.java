@@ -31637,37 +31637,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 break;
             }
-            case OPTION_SHARE_PHOTO: {
-                String path = selectedObject.messageOwner.attachPath;
-                if (path != null && path.length() > 0) {
-                    File temp = new File(path);
-                    if (!temp.exists()) {
-                        path = null;
-                    }
-                }
-                if (path == null || path.length() == 0) {
-                    path = getFileLoader().getPathToMessage(selectedObject.messageOwner).toString();
-                }
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.setType(selectedObject.isVideo() ? "video/mp4" : "image/jpeg");
-                File f = new File(path);
-                if (Build.VERSION.SDK_INT >= 24) {
-                    try {
-                        intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", f));
-                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (Exception ignore) {
-                        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
-                    }
-                } else {
-                    intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
-                }
-                try {
-                    getParentActivity().startActivityForResult(Intent.createChooser(intent, LocaleController.getString("ShareFile", R.string.ShareFile)), 500);
-                } catch (Throwable ignore) {
-
-                }
-                break;
-            }
             case OPTION_SAVE_TO_GALLERY2: {
                 String path = selectedObject.messageOwner.attachPath;
                 if (path != null && path.length() > 0) {
@@ -40632,43 +40601,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 messages.add(selectedObject);
             }
             forwardMessages(messages, false, false, true, 0);
-        }
-        return false;
-    }
-
-    public boolean processReverseMessage(boolean longClick) {
-        var messageObject = getMessageUtils().getMessageForRepeat(selectedObject, selectedObjectGroup);
-        if (messageObject != null) {
-            var replyToMsg = longClick ? messageObject : threadMessageObject;
-            if (!messageObject.isAnyKindOfSticker() || messageObject.isAnimatedEmojiStickers() || messageObject.isAnimatedEmoji() || messageObject.isDice()) {
-                var message = messageObject.messageOwner.message;
-                if (!TextUtils.isEmpty(message)) {
-                    message = WordUtils.INSTANCE.replaceAntonyms(message);
-                    ArrayList<TLRPC.MessageEntity> entities;
-                    if (messageObject.messageOwner.entities != null && !messageObject.messageOwner.entities.isEmpty()) {
-                        entities = new ArrayList<>();
-                        for (TLRPC.MessageEntity entity : messageObject.messageOwner.entities) {
-                            if (entity instanceof TLRPC.TL_messageEntityMentionName) {
-                                TLRPC.TL_inputMessageEntityMentionName mention = new TLRPC.TL_inputMessageEntityMentionName();
-                                mention.length = entity.length;
-                                mention.offset = entity.offset;
-                                mention.user_id = getMessagesController().getInputUser(((TLRPC.TL_messageEntityMentionName) entity).user_id);
-                                entities.add(mention);
-                            } else {
-                                entities.add(entity);
-                            }
-                        }
-                    } else {
-                        entities = null;
-                    }
-                    getSendMessagesHelper().sendMessage(SendMessageParams.of(
-                        message, dialog_id, replyToMsg,
-                        threadMessageObject, null, false, entities,
-                        null, null, true, 0, null, false));
-                    return true;
-                }
-                return false;
-            }
         }
         return false;
     }
