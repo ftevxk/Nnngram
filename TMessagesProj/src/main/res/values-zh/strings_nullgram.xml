@@ -376,6 +376,8 @@
     <string name="disableAutoPip">禁用自动画中画</string>
     <string name="sendMp4DocumentAsVideo">以视频格式发送 MP4 文件</string>
     <string name="disableGravityDetectionInVideo">禁用视频重力检测</string>
+    <string name="hideProxyEntryInTitle">隐藏标题代理入口</string>
+    <string name="autoMuteAfterJoiningChannel">加入频道后自动静音</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
