@@ -186,6 +186,8 @@ object Defines {
     @BooleanConfig const val showOriginal = "showOriginal"
     const val translatorProvider = "translatorProvider"
     const val deepLFormality = "deepLFormality"
+    @StringConfig("") const val deepLxApi = "deepLxApi"
+    const val deepLxPreserveFormatting = "deepLxPreserveFormatting"
     const val translatorStatus = "translatorStatus"
     const val targetLanguage = "targetLanguage"
     const val restrictedLanguages = "restrictedLanguagesFix"
@@ -252,6 +254,7 @@ object Defines {
     @BooleanConfig(true) const val showTextRegular = "showTextRegular"
     @BooleanConfig(true) const val showTextQuote = "showTextQuote"
     @BooleanConfig(true) const val showTextMonoCode = "showTextMonoCode"
+    @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
     /**
      * 数组中元素未找到的下标，值为-1

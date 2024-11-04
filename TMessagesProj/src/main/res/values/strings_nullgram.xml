@@ -391,7 +391,7 @@
     <string name="disableGravityDetectionInVideo">Disable gravity detection in video</string>
     <string name="hideProxyEntryInTitle">Hide proxy entry in title</string>
     <string name="autoMuteAfterJoiningChannel">Auto mute after joining channel</string>
-    <!-- //wd 自定义 -->
-    <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
-    <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>
+    <string name="enableXiaomiHyperAi">Enable Xiaomi HyperAI in editor</string>
+    <string name="ProviderDeepLXTranslate">DeepLX Translate</string>
+    <string name="DeepLxApi">DeepLX API</string>
 </resources>

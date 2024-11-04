@@ -378,6 +378,8 @@
     <string name="disableGravityDetectionInVideo">禁用视频重力检测</string>
     <string name="hideProxyEntryInTitle">隐藏标题代理入口</string>
     <string name="autoMuteAfterJoiningChannel">加入频道后自动静音</string>
+    <string name="enableXiaomiHyperAi">在输入框中显示小米澎湃AI</string>
+    <string name="ProviderDeepLXTranslate">DeepLX 翻译</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
