@@ -4291,7 +4291,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
 
             //wd 更多菜单增加代理设置页面跳转
-            headerItem.lazilyAddSubItem(proxy, R.drawable.msg2_proxy_on, LocaleController.getString(R.string.ProxySettings));
+            headerItem.lazilyAddSubItem(proxy, R.drawable.msg2_proxy_off, LocaleController.getString(R.string.ProxySettings));
 
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
