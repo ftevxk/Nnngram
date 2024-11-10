@@ -393,6 +393,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1631,6 +1632,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private final static int share = 69;
 
     private final static int id_chat_compose_panel = 1000;
+
+    //wd 更多菜单增加代理设置页面跳转
+    private final static int proxy = UUID.randomUUID().hashCode();
 
     RecyclerListView.OnItemLongClickListenerExtended onItemLongClickListener = new RecyclerListView.OnItemLongClickListenerExtended() {
         @Override
@@ -4000,6 +4004,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         }
                     }
                 }
+                //wd 更多菜单增加代理设置页面跳转
+                else if (id == proxy) {
+                    presentFragment(new ProxyListActivity());
+                }
             }
         });
         View backButton = actionBar.getBackButton();
@@ -4281,6 +4289,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     headerItem.hideSubItem(video_call);
                 }
             }
+
+            //wd 更多菜单增加代理设置页面跳转
+            headerItem.lazilyAddSubItem(proxy, R.drawable.msg2_proxy_on, LocaleController.getString(R.string.ProxySettings));
 
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
