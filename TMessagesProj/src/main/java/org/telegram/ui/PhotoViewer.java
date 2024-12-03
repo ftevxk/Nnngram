@@ -17635,9 +17635,12 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
     //wd 视频原左右滑动切换
     private boolean rawMoveEvent(MotionEvent ev) {
+        if (Math.abs(longPressX - lastX) > AndroidUtilities.touchSlop) {
+            AndroidUtilities.cancelRunOnUIThread(longPressRunnable);
+        }
         if (canZoom && ev.getPointerCount() == 2 && !draggingDown && zooming && !changingPage) {
             discardTap = true;
-            if (currentEditMode == EDIT_MODE_PAINT) {
+            if (currentEditMode == EDIT_MODE_PAINT || sendPhotoType == SELECT_TYPE_STICKER) {
                 float newPinchCenterX = (ev.getX(0) + ev.getX(1)) / 2.0f;
                 float newPinchCenterY = (ev.getY(0) + ev.getY(1)) / 2.0f;
                 float moveDx = moveStartX - newPinchCenterX;
@@ -17655,6 +17658,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 pinchCenterX = newPinchCenterX;
                 pinchCenterY = newPinchCenterY;
             }
+            if (sendPhotoType == SELECT_TYPE_STICKER && currentEditMode == EDIT_MODE_NONE) {
+                rotate = (float) ((Math.atan2(ev.getY(1) - ev.getY(0), ev.getX(1) - ev.getX(0)) - pinchStartAngle) / Math.PI * 180 + pinchStartRotate);
+            }
             scale = (float) Math.hypot(ev.getX(1) - ev.getX(0), ev.getY(1) - ev.getY(0)) / pinchStartDistance * pinchStartScale;
             translationX = (pinchCenterX - getContainerViewWidth() / 2) - ((pinchCenterX - getContainerViewWidth() / 2) - pinchStartX) * (scale / pinchStartScale);
             translationY = (pinchCenterY - getContainerViewHeight() / 2) - ((pinchCenterY - getContainerViewHeight() / 2) - pinchStartY) * (scale / pinchStartScale);
@@ -17667,6 +17673,13 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 MotionEvent event = MotionEvent.obtain(ev);
                 event.offsetLocation(-v.getX(), -v.getY());
                 photoPaintView.onTouch(event);
+                event.recycle();
+                return true;
+            } else if (maskPaintViewTouched == 1 && maskPaintView != null) {
+                View v = maskPaintView;
+                MotionEvent event = MotionEvent.obtain(ev);
+                event.offsetLocation(-v.getX(), -v.getY());
+                maskPaintView.onTouch(event);
                 event.recycle();
                 return true;
             }
@@ -17683,7 +17696,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     return true;
                 }
             }
-            if (placeProvider.canScrollAway() && currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR && canDragDown && !draggingDown && scale == 1 && dy >= dp(30) && dy / 2 > dx) {
+            if (placeProvider.canScrollAway() && currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR && sendPhotoType != SELECT_TYPE_STICKER && canDragDown && !draggingDown && scale == 1 && dy >= dp(30) && dy / 2 > dx) {
                 draggingDown = true;
                 hidePressedDrawables();
                 moving = false;
@@ -17702,7 +17715,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else if (!invalidCoords && animationStartTime == 0) {
                 float moveDx = moveStartX - ev.getX();
                 float moveDy = moveStartY - ev.getY();
-                if (moving || currentEditMode != EDIT_MODE_NONE || scale == 1 && Math.abs(moveDy) + dp(12) < Math.abs(moveDx) || scale != 1) {
+                if (moving || currentEditMode != EDIT_MODE_NONE || sendPhotoType == SELECT_TYPE_STICKER || scale == 1 && Math.abs(moveDy) + dp(12) < Math.abs(moveDx) || scale != 1) {
                     if (!moving) {
                         moveDx = 0;
                         moveDy = 0;
@@ -17717,7 +17730,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (translationX < minX && (currentEditMode != EDIT_MODE_NONE || !rightImage.hasImageSet()) || translationX > maxX && (currentEditMode != EDIT_MODE_NONE || !leftImage.hasImageSet())) {
                         moveDx /= 3.0f;
                     }
-                    if (maxY == 0 && minY == 0 && currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR) {
+                    if (maxY == 0 && minY == 0 && currentEditMode == EDIT_MODE_NONE && sendPhotoType != SELECT_TYPE_AVATAR && sendPhotoType != SELECT_TYPE_STICKER) {
                         if (translationY - moveDy < minY) {
                             translationY = minY;
                             moveDy = 0;
@@ -17732,7 +17745,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     }
 
                     translationX -= moveDx;
-                    if (scale != 1 || currentEditMode != EDIT_MODE_NONE) {
+                    if (scale != 1 || currentEditMode != EDIT_MODE_NONE || sendPhotoType == SELECT_TYPE_STICKER) {
                         translationY -= moveDy;
                     }
                     invalidateBlur();
