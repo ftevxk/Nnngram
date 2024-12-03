@@ -12677,6 +12677,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
 
             @Override
+            public void didPressedBlockedDialog(View view, long did) {
+                showPremiumBlockedToast(view, did);
+            }
+
+            @Override
             public void didPressedOnSubDialog(long did) {
                 if (onlySelect) {
                     if (!validateSlowModeDialog(did)) {

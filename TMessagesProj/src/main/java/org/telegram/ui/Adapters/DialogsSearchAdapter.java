@@ -171,6 +171,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     public interface DialogsSearchAdapterDelegate {
         void searchStateChanged(boolean searching, boolean animated);
         void didPressedOnSubDialog(long did);
+        void didPressedBlockedDialog(View view, long did);
         void needRemoveHint(long did);
         void needClearList();
         void runResultsEnterAnimation();
@@ -184,12 +185,14 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         private final int currentAccount;
         private boolean drawChecked;
         private boolean forceDarkTheme;
+        private boolean showPremiumBlock;
         private Theme.ResourcesProvider resourcesProvider;
 
-        public CategoryAdapterRecycler(Context context, int account, boolean drawChecked, Theme.ResourcesProvider resourcesProvider) {
+        public CategoryAdapterRecycler(Context context, int account, boolean drawChecked,  boolean showPremiumBlock, Theme.ResourcesProvider resourcesProvider) {
             this.drawChecked = drawChecked;
             mContext = context;
             currentAccount = account;
+            this.showPremiumBlock = showPremiumBlock;
             this.resourcesProvider = resourcesProvider;
         }
 
@@ -1587,7 +1590,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
                 horizontalListView.setLayoutManager(layoutManager);
                 //horizontalListView.setDisallowInterceptTouchEvents(true);
-                horizontalListView.setAdapter(new CategoryAdapterRecycler(mContext, currentAccount, false, resourcesProvider));
+                horizontalListView.setAdapter(new CategoryAdapterRecycler(mContext, currentAccount, false,  dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD, resourcesProvider));
                 horizontalListView.setOnItemClickListener((view1, position) -> {
                     if (delegate != null) {
                         delegate.didPressedOnSubDialog((Long) view1.getTag());
