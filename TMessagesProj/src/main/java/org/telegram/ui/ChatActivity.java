@@ -2991,6 +2991,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             loadInfo = chatInfo == null;
             checkGroupCallJoin(false);
             gotChatInfo();
+
+            //wd 直接打开媒体对话
+            if (chatInfo != null && Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
+                Bundle args = new Bundle();
+                args.putLong("dialog_id", dialog_id);
+                MediaActivity mediaActivity = new MediaActivity(args, null);
+                mediaActivity.setChatInfo(getCurrentChatInfo());
+                presentFragment(mediaActivity);
+            }
         } else if (currentUser != null) {
             if (chatMode != MODE_PINNED) {
                 getMessagesController().loadUserInfo(currentUser, true, classGuid, startLoadFromMessageId);
@@ -25870,18 +25879,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             attachMenuBotToOpen = null;
         }
         checkGroupEmojiPackHint();
-
-        //wd 直接打开媒体对话
-        if (isOpen && !backward &&
-            Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
-            AndroidUtilities.runOnUIThread(() -> {
-                Bundle args1 = new Bundle();
-                args1.putLong("dialog_id", dialog_id);
-                MediaActivity mediaActivity = new MediaActivity(args1, null);
-                mediaActivity.setChatInfo(getCurrentChatInfo());
-                presentFragment(mediaActivity);
-            }, 300);
-        }
     }
 
     private void checkGroupEmojiPackHint() {
