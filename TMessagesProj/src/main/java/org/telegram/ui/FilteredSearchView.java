@@ -669,10 +669,10 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 
             //wd 一次请求获取更多条数据
             if (request instanceof TLRPC.TL_messages_search req) {
-                req.limit = 200;
+                req.limit = 50;
             } else {
                 TLRPC.TL_messages_searchGlobal req = (TLRPC.TL_messages_searchGlobal) request;
-                req.limit = 200;
+                req.limit = 50;
             }
 
             lastMessagesSearchString = query;
@@ -700,7 +700,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     int n = res.messages.size();
                     for (int i = 0; i < n; i++) {
                         TLRPC.Message message = res.messages.get(i);
-                        MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
+                        MessageObject messageObject = new MessageObject(currentAccount, message, false, false);
                         if (!messages.contains(messageObject) && !messageObjects.contains(messageObject)) {
                             newMessages.add(message);
                             messageObject.setQuery(query);
@@ -739,47 +739,25 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         sections.clear();
                         sectionArrays.clear();
                     }
-                    //wd 过滤后需要移除的数量
-                    int removeCount = 0;
                     totalCount = res.count;
                     currentDataQuery = query;
                     int n = messageObjects.size();
                     for (int i = 0; i < n; i++) {
                         MessageObject messageObject = messageObjects.get(i);
-//                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
-//                        if (messageObjectsByDate == null) {
-//                            messageObjectsByDate = new ArrayList<>();
-//                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
-//                            sections.add(messageObject.monthKey);
-//                        }
-//                        messageObjectsByDate.add(messageObject);
-//                        messages.add(messageObject);
-//                        messagesById.put(messageObject.getId(), messageObject);
-//
-//                        if (PhotoViewer.getInstance().isVisible()) {
-//                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
-//                        }
-                        //wd 全局搜索-媒体默认只显示长视频
-                        if (messageObject.isLongVideo(currentSearchFilter == null ||
-                            currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
-                            ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
-                            if (messageObjectsByDate == null) {
-                                messageObjectsByDate = new ArrayList<>();
-                                sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
-                                sections.add(messageObject.monthKey);
-                            }
-                            messageObjectsByDate.add(messageObject);
-                            messages.add(messageObject);
-                            messagesById.put(messageObject.getId(), messageObject);
+                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
+                        if (messageObjectsByDate == null) {
+                            messageObjectsByDate = new ArrayList<>();
+                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
+                            sections.add(messageObject.monthKey);
+                        }
+                        messageObjectsByDate.add(messageObject);
+                        messages.add(messageObject);
+                        messagesById.put(messageObject.getId(), messageObject);
 
-                            if (PhotoViewer.getInstance().isVisible()) {
-                                PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
-                            }
-                        } else {
-                            removeCount++;
+                        if (PhotoViewer.getInstance().isVisible()) {
+                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
                         }
                     }
-                    totalCount -= removeCount;
                     if (messages.size() > totalCount) {
                         totalCount = messages.size();
                     }
