@@ -3487,7 +3487,7 @@ public class TLRPC {
                     return;
                 }
                 //wd 过滤时长较短视频
-                MessageObject messageObject = new MessageObject(0, message, false, false);
+                MessageObject messageObject = new MessageObject(0, object, false, false);
                 if(!messageObject.isVideo() || !messageObject.isLongVideo(false)) {
                     return;
                 }
@@ -3578,7 +3578,7 @@ public class TLRPC {
                     return;
                 }
                 //wd 过滤时长较短视频
-                MessageObject messageObject = new MessageObject(0, message, false, false);
+                MessageObject messageObject = new MessageObject(0, object, false, false);
                 if(!messageObject.isVideo() || !messageObject.isLongVideo(false)) {
                     return;
                 }
@@ -3666,7 +3666,7 @@ public class TLRPC {
                     return;
                 }
                 //wd 过滤时长较短视频
-                MessageObject messageObject = new MessageObject(0, message, false, false);
+                MessageObject messageObject = new MessageObject(0, object, false, false);
                 if(!messageObject.isVideo() || !messageObject.isLongVideo(false)) {
                     return;
                 }
