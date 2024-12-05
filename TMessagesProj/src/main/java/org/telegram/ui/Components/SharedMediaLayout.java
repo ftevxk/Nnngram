@@ -166,6 +166,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
@@ -7522,6 +7523,21 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         @Override
         public void onFastScrollSingleTap() {
             showMediaCalendar(0, true);
+        }
+
+        @Override
+        public void notifyDataSetChanged() {
+            //wd 过滤时长较短视频
+            filteredShortVideoMessageObjects();
+            super.notifyDataSetChanged();
+        }
+
+        //wd 过滤时长较短视频
+        private void filteredShortVideoMessageObjects() {
+            if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                sharedMediaData[0].messages = sharedMediaData[0].messages.stream()
+                    .filter(messageObject -> messageObject.isLongVideo(false)).collect(Collectors.toCollection(ArrayList::new));
+            }
         }
     }
 

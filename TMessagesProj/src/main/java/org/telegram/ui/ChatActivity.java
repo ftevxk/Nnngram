@@ -36460,6 +36460,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         @Override
         public void notifyDataSetChanged() {
+            //wd 过滤时长较短视频
+            filteredShortVideoMessageObjects();
             notifyDataSetChanged(false);
         }
 
@@ -36622,6 +36624,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             return false;
+        }
+
+        //wd 过滤时长较短视频
+        private void filteredShortVideoMessageObjects() {
+            messages = messages.stream().filter(messageObject -> messageObject.isLongVideo(true))
+                .collect(Collectors.toCollection(ArrayList::new));
+            frozenMessages = frozenMessages.stream().filter(messageObject -> messageObject.isLongVideo(true))
+                .collect(Collectors.toCollection(ArrayList::new));
+            filteredMessages = filteredMessages.stream().filter(messageObject -> messageObject.isLongVideo(true))
+                .collect(Collectors.toCollection(ArrayList::new));
         }
     }
 
