@@ -7524,21 +7524,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         public void onFastScrollSingleTap() {
             showMediaCalendar(0, true);
         }
-
-        @Override
-        public void notifyDataSetChanged() {
-            //wd 过滤时长较短视频
-            filteredShortVideoMessageObjects();
-            super.notifyDataSetChanged();
-        }
-
-        //wd 过滤时长较短视频
-        private void filteredShortVideoMessageObjects() {
-            if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
-                sharedMediaData[0].messages = sharedMediaData[0].messages.stream()
-                    .filter(messageObject -> messageObject.isLongVideo(false)).collect(Collectors.toCollection(ArrayList::new));
-            }
-        }
     }
 
     private void findPeriodAndJumpToDate(int type, RecyclerListView listView, boolean scrollToPosition) {

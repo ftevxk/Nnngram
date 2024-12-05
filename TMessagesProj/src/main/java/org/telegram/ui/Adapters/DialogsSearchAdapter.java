@@ -392,7 +392,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         //wd 一次请求获取更多条数据
         req.limit = 50;
         req.q = query;
-        req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+//        req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+        //wd 过滤规则请求视频类型
+        req.filter = new TLRPC.TL_inputMessagesFilterVideo();
         req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
         if (query.equals(lastMessagesSearchString) && !searchForumResultMessages.isEmpty()) {
             req.add_offset = searchForumResultMessages.size();
@@ -538,7 +540,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         //wd 一次请求获取更多条数据
         req.limit = 50;
         req.q = query;
-        req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+//        req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+        //wd 过滤规则请求视频类型
+        req.filter = new TLRPC.TL_inputMessagesFilterVideo();
         req.flags |= 1;
         req.folder_id = folderId;
         if (query.equals(lastMessagesSearchString) && !searchResultMessages.isEmpty() && lastMessagesSearchId == lastSearchId) {
