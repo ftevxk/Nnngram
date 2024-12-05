@@ -3957,7 +3957,9 @@ public class MediaDataController extends BaseController {
         if (filter != null) {
             req.filter = filter;
         } else {
-            req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+//            req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+            //wd 过滤规则默认请求视频类型
+            req.filter = new TLRPC.TL_inputMessagesFilterVideo();
         }
         lastSearchQuery = query;
         long queryWithDialogFinal = queryWithDialog;
