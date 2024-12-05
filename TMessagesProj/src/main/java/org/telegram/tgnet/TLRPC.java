@@ -3428,9 +3428,6 @@ public class TLRPC {
         public int offset_id_offset;
         public ArrayList<Document> animatedEmoji;
 
-        //wd 记录原消息数量
-        public int rawMsgCount = 0;
-
         public static messages_Messages TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
             messages_Messages result = null;
             switch (constructor) {
@@ -3479,16 +3476,9 @@ public class TLRPC {
                 return;
             }
             int count = stream.readInt32(exception);
-            //wd 记录原消息数量
-            rawMsgCount = count;
             for (int a = 0; a < count; a++) {
                 Message object = Message.TLdeserialize(stream, stream.readInt32(exception), exception);
                 if (object == null) {
-                    return;
-                }
-                //wd 过滤时长较短视频
-                MessageObject messageObject = new MessageObject(0, object, false, false);
-                if(messageObject.isVideo() && !messageObject.isLongVideo(true)) {
                     return;
                 }
                 messages.add(object);
@@ -3570,16 +3560,9 @@ public class TLRPC {
                 return;
             }
             int count = stream.readInt32(exception);
-            //wd 记录原消息数量
-            rawMsgCount = count;
             for (int a = 0; a < count; a++) {
                 Message object = Message.TLdeserialize(stream, stream.readInt32(exception), exception);
                 if (object == null) {
-                    return;
-                }
-                //wd 过滤时长较短视频
-                MessageObject messageObject = new MessageObject(0, object, false, false);
-                if(messageObject.isVideo() && !messageObject.isLongVideo(true)) {
                     return;
                 }
                 messages.add(object);
@@ -3658,16 +3641,9 @@ public class TLRPC {
                 return;
             }
             int count = stream.readInt32(exception);
-            //wd 记录原消息数量
-            rawMsgCount = count;
             for (int a = 0; a < count; a++) {
                 Message object = Message.TLdeserialize(stream, stream.readInt32(exception), exception);
                 if (object == null) {
-                    return;
-                }
-                //wd 过滤时长较短视频
-                MessageObject messageObject = new MessageObject(0, object, false, false);
-                if(messageObject.isVideo() && !messageObject.isLongVideo(true)) {
                     return;
                 }
                 messages.add(object);

@@ -419,19 +419,20 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 //                    messageObjects.add(messageObject);
 //                    messageObject.setQuery(query);
 //                }
-                //wd 全局搜索结果去除重复数据
+                //wd 全局搜索结果去除重复数据并过滤较短时长视频
                 ArrayList<TLRPC.Message> newMessages = new ArrayList<>();
                 for (int a = 0; a < res.messages.size(); a++) {
                     TLRPC.Message message = res.messages.get(a);
                     MessageObject messageObject = new MessageObject(currentAccount, message, usersMap, chatsMap, false, true);
-                    if (!searchForumResultMessages.contains(messageObject) && !messageObjects.contains(messageObject)) {
+                    if (!searchForumResultMessages.contains(messageObject) &&
+                        !messageObjects.contains(messageObject) && messageObject.isLongVideo(true)) {
                         newMessages.add(message);
                         messageObjects.add(messageObject);
                         messageObject.setQuery(query);
                     }
                 }
                 //wd 是否可加载更多数据
-                localMessagesSearchEndReached = res.rawMsgCount != req.limit;
+                localMessagesSearchEndReached = res.messages.size() != req.limit;
                 res.messages.clear();
                 res.messages.addAll(newMessages);
             }
@@ -574,19 +575,20 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 //                    messageObjects.add(messageObject);
 //                    messageObject.setQuery(query);
 //                }
-                //wd 全局搜索结果去除重复数据
+                //wd 全局搜索结果去除重复数据并过滤较短时长视频
                 ArrayList<TLRPC.Message> newMessages = new ArrayList<>();
                 for (int a = 0; a < res.messages.size(); a++) {
                     TLRPC.Message message = res.messages.get(a);
                     MessageObject messageObject = new MessageObject(currentAccount, message, usersMap, chatsMap, false, true);
-                    if (!searchResultMessages.contains(messageObject) && !messageObjects.contains(messageObject)) {
+                    if (!searchResultMessages.contains(messageObject) &&
+                        !messageObjects.contains(messageObject) && messageObject.isLongVideo(true)) {
                         newMessages.add(message);
                         messageObjects.add(messageObject);
                         messageObject.setQuery(query);
                     }
                 }
                 //wd 是否可加载更多数据
-                messagesSearchEndReached = res.rawMsgCount != req.limit;
+                messagesSearchEndReached = res.messages.size() != req.limit;
                 res.messages.clear();
                 res.messages.addAll(newMessages);
             }

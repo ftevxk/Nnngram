@@ -528,11 +528,11 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             chatTitle = Emoji.replaceEmoji(chatTitle, textPaint == null ? null : textPaint.getFontMetricsInt(), false);
             SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
             spannableStringBuilder
-                    .append(Emoji.replaceEmoji(UserObject.getFirstName(user), textPaint == null ? null : textPaint.getFontMetricsInt(), false))
-                    .append(' ')
-                    .append(arrowSpan[arrowType])
-                    .append(' ')
-                    .append(chatTitle);
+                .append(Emoji.replaceEmoji(UserObject.getFirstName(user), textPaint == null ? null : textPaint.getFontMetricsInt(), false))
+                .append(' ')
+                .append(arrowSpan[arrowType])
+                .append(' ')
+                .append(chatTitle);
             fromName = spannableStringBuilder;
         } else if (user != null) {
             fromName = Emoji.replaceEmoji(UserObject.getUserName(user), textPaint == null ? null : textPaint.getFontMetricsInt(), false);
@@ -669,10 +669,10 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 
             //wd 一次请求获取更多条数据
             if (request instanceof TLRPC.TL_messages_search req) {
-                req.limit = 50;
+                req.limit = 200;
             } else {
                 TLRPC.TL_messages_searchGlobal req = (TLRPC.TL_messages_searchGlobal) request;
-                req.limit = 50;
+                req.limit = 200;
             }
 
             lastMessagesSearchString = query;
@@ -700,7 +700,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     int n = res.messages.size();
                     for (int i = 0; i < n; i++) {
                         TLRPC.Message message = res.messages.get(i);
-                        MessageObject messageObject = new MessageObject(currentAccount, message, false, false);
+                        MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
                         if (!messages.contains(messageObject) && !messageObjects.contains(messageObject)) {
                             newMessages.add(message);
                             messageObject.setQuery(query);
@@ -739,25 +739,47 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         sections.clear();
                         sectionArrays.clear();
                     }
+                    //wd 过滤后需要移除的数量
+                    int removeCount = 0;
                     totalCount = res.count;
                     currentDataQuery = query;
                     int n = messageObjects.size();
                     for (int i = 0; i < n; i++) {
                         MessageObject messageObject = messageObjects.get(i);
-                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
-                        if (messageObjectsByDate == null) {
-                            messageObjectsByDate = new ArrayList<>();
-                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
-                            sections.add(messageObject.monthKey);
-                        }
-                        messageObjectsByDate.add(messageObject);
-                        messages.add(messageObject);
-                        messagesById.put(messageObject.getId(), messageObject);
+//                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
+//                        if (messageObjectsByDate == null) {
+//                            messageObjectsByDate = new ArrayList<>();
+//                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
+//                            sections.add(messageObject.monthKey);
+//                        }
+//                        messageObjectsByDate.add(messageObject);
+//                        messages.add(messageObject);
+//                        messagesById.put(messageObject.getId(), messageObject);
+//
+//                        if (PhotoViewer.getInstance().isVisible()) {
+//                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+//                        }
+                        //wd 全局搜索-媒体默认只显示长视频
+                        if (messageObject.isLongVideo(currentSearchFilter == null ||
+                            currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
+                            ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
+                            if (messageObjectsByDate == null) {
+                                messageObjectsByDate = new ArrayList<>();
+                                sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
+                                sections.add(messageObject.monthKey);
+                            }
+                            messageObjectsByDate.add(messageObject);
+                            messages.add(messageObject);
+                            messagesById.put(messageObject.getId(), messageObject);
 
-                        if (PhotoViewer.getInstance().isVisible()) {
-                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+                            if (PhotoViewer.getInstance().isVisible()) {
+                                PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+                            }
+                        } else {
+                            removeCount++;
                         }
                     }
+                    totalCount -= removeCount;
                     if (messages.size() > totalCount) {
                         totalCount = messages.size();
                     }
@@ -829,7 +851,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             localTipChats.addAll(finalResultArray);
                         }
                         if (query != null && query.length() >= 3 && (LocaleController.getString(R.string.SavedMessages).toLowerCase().startsWith(query) ||
-                                "saved messages".startsWith(query))) {
+                            "saved messages".startsWith(query))) {
                             boolean found = false;
                             for (int i = 0; i < localTipChats.size(); i++) {
                                 if (localTipChats.get(i) instanceof TLRPC.User)
@@ -846,7 +868,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         localTipDates.addAll(dateData);
                         localTipArchive = false;
                         if (query != null && query.length() >= 3 && (LocaleController.getString(R.string.ArchiveSearchFilter).toLowerCase().startsWith(query) ||
-                                "archive".startsWith(query))) {
+                            "archive".startsWith(query))) {
                             localTipArchive = true;
                         }
                         if (delegate != null) {
@@ -1573,7 +1595,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
     }
 
     int lastAccount;
-    
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -1790,8 +1812,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         floatingDateAnimation = new AnimatorSet();
         floatingDateAnimation.setDuration(180);
         floatingDateAnimation.playTogether(
-                ObjectAnimator.ofFloat(floatingDateView, View.ALPHA, 1.0f),
-                ObjectAnimator.ofFloat(floatingDateView, View.TRANSLATION_Y, 0));
+            ObjectAnimator.ofFloat(floatingDateView, View.ALPHA, 1.0f),
+            ObjectAnimator.ofFloat(floatingDateView, View.TRANSLATION_Y, 0));
         floatingDateAnimation.setInterpolator(CubicBezierInterpolator.EASE_OUT);
         floatingDateAnimation.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -1816,8 +1838,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             floatingDateAnimation = new AnimatorSet();
             floatingDateAnimation.setDuration(180);
             floatingDateAnimation.playTogether(
-                    ObjectAnimator.ofFloat(floatingDateView, View.ALPHA, 0.0f),
-                    ObjectAnimator.ofFloat(floatingDateView, View.TRANSLATION_Y, -AndroidUtilities.dp(48)));
+                ObjectAnimator.ofFloat(floatingDateView, View.ALPHA, 0.0f),
+                ObjectAnimator.ofFloat(floatingDateView, View.TRANSLATION_Y, -AndroidUtilities.dp(48)));
             floatingDateAnimation.setInterpolator(CubicBezierInterpolator.EASE_OUT);
             floatingDateAnimation.addListener(new AnimatorListenerAdapter() {
                 @Override
