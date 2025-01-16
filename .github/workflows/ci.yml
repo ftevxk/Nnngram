@@ -14,84 +14,76 @@ on:
     workflow_dispatch:
 
 jobs:
-    build:
-        name: Gradle Build
-        if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/wd' }}
-        runs-on: ubuntu-latest
-        env:
-            CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
-            CCACHE_NOHASHDIR: "true"
-            CCACHE_MAXSIZE: "10G"
-            CCACHE_HARDLINK: "true"
-        steps:
-            - uses: actions/checkout@v2
-              with:
-                  fetch-depth: 0
-            - name: Check out submodules
-              run: |
-                  git -c submodule."libs/rust".update=none submodule update --init --recursive
-            - name: Setup cmake
-              uses: jwlawson/actions-setup-cmake@v1.12
-              with:
-                  cmake-version: '3.22.1'
+  build:
+    name: Gradle Build
+    if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/wd' }}
+    runs-on: ubuntu-latest
+    env:
+      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+      CCACHE_NOHASHDIR: "true"
+      CCACHE_MAXSIZE: "10G"
+      CCACHE_HARDLINK: "true"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Check out submodules
+        run: |
+          git -c submodule."libs/rust".update=none submodule update --init --recursive
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.22.1'
+      - name: Get short SHA
+        run: |
+          echo "SHA7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: ccache-stable
+          restore-keys: ccache-stable
+      - name: Setup Android SDK Tools
+        uses: android-actions/setup-android@v3
+      - name: Prepare Environment
+        run: |
+            echo "Removing large packages"
+            sudo apt-get remove -y '^dotnet-.*' 'aspnetcore-targeting-pack-*'
+            sudo apt-get remove -y '^llvm-.*'
+            sudo apt-get remove -y 'php.*'
+            sudo apt-get remove -y '^mongodb-.*'
+            sudo apt-get remove -y '^mysql-.*'
+            sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+            sudo apt-get autoremove -y
+            sudo apt-get clean
+            echo "Removing large directories"
+            sudo rm -rf /usr/share/dotnet/
+            sudo rm -rf /usr/local/graalvm/
+            sudo rm -rf /usr/local/.ghcup/
+            sudo rm -rf /usr/local/share/powershell
+            sudo rm -rf /usr/local/share/chromium
+            sudo rm -rf /usr/local/lib/node_modules
+            df -h
+            sudo apt-get install bison gcc make curl ninja-build -y
+            echo "y" | sdkmanager --install "ndk;27.2.12479018" --sdk_root=${ANDROID_SDK_ROOT} &> /dev/null
+            echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+      - name: Artifact Build
+        run: |
+            cat > service_account_credentials.json << EOF
+            ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}"
+            EOF
+            ./gradlew TMessagesProj:assembleDebug
+            echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
 
-            - name: Get short SHA
-              run: |
-                  echo "SHA7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
-
-            - name: Setup Java
-              uses: actions/setup-java@v3
-              with:
-                  distribution: 'temurin'
-                  java-version: '17'
-                  cache: 'gradle'
-
-            - name: Setup Gradle
-              uses: gradle/gradle-build-action@v2.4.2
-
-            - name: Set up ccache
-              uses: hendrikmuhs/ccache-action@v1.2
-              with:
-                  key: ccache-stable
-                  restore-keys: ccache-stable
-
-            - name: Setup Android SDK Tools
-              uses: android-actions/setup-android@v2
-
-            - name: Prepare Environment
-              run: |
-                  echo "Removing large packages"
-                  sudo apt-get remove -y '^dotnet-.*' "aspnetcore-targeting-pack-*"
-                  sudo apt-get remove -y '^llvm-.*'
-                  sudo apt-get remove -y 'php.*'
-                  sudo apt-get remove -y '^mongodb-.*'
-                  sudo apt-get remove -y '^mysql-.*'
-                  sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-                  sudo apt-get autoremove -y
-                  sudo apt-get clean
-                  echo "Removing large directories"
-                  sudo rm -rf /usr/share/dotnet/
-                  sudo rm -rf /usr/local/graalvm/
-                  sudo rm -rf /usr/local/.ghcup/
-                  sudo rm -rf /usr/local/share/powershell
-                  sudo rm -rf /usr/local/share/chromium
-                  sudo rm -rf /usr/local/lib/node_modules
-                  df -h
-                  
-                  sudo apt-get install bison gcc make curl ninja-build -y
-                  echo "y" | sdkmanager --install "ndk;27.0.12077973" --sdk_root=${ANDROID_SDK_ROOT} &> /dev/null
-                  echo "sdk.dir=${ANDROID_HOME}" >> local.properties
-
-            - name: Artifact Build
-              run: |
-                  cat > service_account_credentials.json << EOF
-                  ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}"
-                  EOF
-                  ./gradlew TMessagesProj:assembleDebug
-                  echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
-
-            - uses: actions/upload-artifact@v3
-              name: Upload apk (arm64-v8a)
-              with:
-                  name: Nnngram-arm64-v8a-${{ env.SHA7 }}
-                  path: ${{ env.APK_FILE }}
+      - uses: actions/upload-artifact@master
+        name: Upload apk (arm64-v8a)
+        with:
+            name: Nnngram-arm64-v8a-${{ env.SHA7 }}
+            path: ${{ env.APK_FILE }}
