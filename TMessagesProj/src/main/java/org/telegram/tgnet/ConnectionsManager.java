@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -31,6 +31,8 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Base64;
 
+import androidx.annotation.Keep;
+
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
@@ -56,9 +58,7 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.StatsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.Components.VideoPlayer;
-import org.telegram.ui.LoginActivity;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -90,6 +90,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLException;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.InlinesKt;
 import xyz.nextalone.nnngram.helpers.WebSocketHelper;
 import xyz.nextalone.nnngram.utils.DatabaseUtils;
 import xyz.nextalone.nnngram.utils.Log;
@@ -367,17 +368,13 @@ public class ConnectionsManager extends BaseController {
 //            FileLog.d("send request " + object + " with token = " + requestToken);
         }
 
-        if (Config.disableSendTyping && (object instanceof TLRPC.TL_messages_setTyping || object instanceof TLRPC.TL_messages_setEncryptedTyping)) {
-            return;
-        }
-
-        if (Config.storyStealthMode && ((object instanceof TL_stories.TL_stories_readStories) || (object instanceof TL_stories.TL_updateReadStories))) {
-            return;
-        }
+        object = InlinesKt.processTlRpcObject(this, object);
+        if (object == null) return;
+        TLObject finalObject = object;
 
         var user = getUserConfig().getCurrentUser();
-        if (user != null && user.bot && DatabaseUtils.isUserOnlyMethod(object)) {
-            FileLog.d("skip send request " + object + " user only method");
+        if (user != null && user.bot && DatabaseUtils.isUserOnlyMethod(finalObject)) {
+            FileLog.d("skip send request " + finalObject + " user only method");
             Utilities.stageQueue.postRunnable(() -> {
                 var error = new TLRPC.TL_error();
                 error.code = 400;
@@ -391,9 +388,9 @@ public class ConnectionsManager extends BaseController {
             return;
         }
         try {
-            NativeByteBuffer buffer = new NativeByteBuffer(object.getObjectSize());
-            object.serializeToStream(buffer);
-            object.freeResources();
+            NativeByteBuffer buffer = new NativeByteBuffer(finalObject.getObjectSize());
+            finalObject.serializeToStream(buffer);
+            finalObject.freeResources();
 
             long startRequestTime = 0;
             if (BuildVars.DEBUG_PRIVATE_VERSION && BuildVars.LOGS_ENABLED || (connectionType & ConnectionTypeDownload) != 0) {
@@ -411,7 +408,7 @@ public class ConnectionsManager extends BaseController {
                         responseSize = buff.limit();
                         int magic = buff.readInt32(true);
                         try {
-                            resp = object.deserializeResponse(buff, magic, true);
+                            resp = finalObject.deserializeResponse(buff, magic, true);
                         } catch (Exception e2) {
                             if (BuildVars.DEBUG_PRIVATE_VERSION) {
                                 throw e2;
@@ -424,10 +421,10 @@ public class ConnectionsManager extends BaseController {
                         error.code = errorCode;
                         error.text = errorText;
                         if (BuildVars.LOGS_ENABLED && error.code != -2000) {
-                            FileLog.e(object + " got error " + error.code + " " + error.text);
+                            FileLog.e(finalObject + " got error " + error.code + " " + error.text);
                         }
                         if (Config.showRPCError) {
-                            Utils.showErrorToast(object, errorText);
+                            Utils.showErrorToast(finalObject, errorText);
                         }
                     }
                     if ((connectionType & ConnectionTypeDownload) != 0 && VideoPlayer.activePlayers.isEmpty()) {
@@ -441,7 +438,7 @@ public class ConnectionsManager extends BaseController {
                             // FileLog.d("Cleanup keys for " + currentAccount + " because of CONNECTION_NOT_INITED");
                         }
                         cleanup(true);
-                        sendRequest(object, onComplete, onCompleteTimestamp, onQuickAck, onWriteToSocket, flags, datacenterId, connectionType, immediate);
+                        sendRequest(finalObject, onComplete, onCompleteTimestamp, onQuickAck, onWriteToSocket, flags, datacenterId, connectionType, immediate);
                         return;
                     }
                     if (resp != null) {
@@ -1037,9 +1034,6 @@ public class ConnectionsManager extends BaseController {
     public static native void native_setRegId(int currentAccount, String regId);
 
     public static native void native_setSystemLangCode(int currentAccount, String langCode);
-
-    public static native void native_seSystemLangCode(int currentAccount, String langCode);
-
     public static native void native_setJava(boolean useJavaByteBuffers);
 
     public static native void native_setPushConnectionEnabled(int currentAccount, boolean value);
@@ -1052,7 +1046,6 @@ public class ConnectionsManager extends BaseController {
     public static native void native_discardConnection(int currentAccount, int datacenterId, int connectionType);
     public static native void native_failNotRunningRequest(int currentAccount, int token);
     public static native void native_receivedIntegrityCheckClassic(int currentAccount, int requestToken, String nonce, String token);
-
     public static native boolean native_isGoodPrime(byte[] prime, int g);
 
     public static int generateClassGuid() {
@@ -1580,6 +1573,7 @@ public class ConnectionsManager extends BaseController {
     }
 
     public static long lastPremiumFloodWaitShown = 0;
+    @Keep
     public static void onPremiumFloodWait(final int currentAccount, final int requestToken, boolean isUpload) {
         AndroidUtilities.runOnUIThread(() -> {
             if (UserConfig.selectedAccount != currentAccount) {
@@ -1608,6 +1602,7 @@ public class ConnectionsManager extends BaseController {
         });
     }
 
+    @Keep
     public static void onIntegrityCheckClassic(final int currentAccount, final int requestToken, final String project, final String nonce) {
         native_receivedIntegrityCheckClassic(currentAccount, requestToken, nonce, "PLAYINTEGRITY_FAILED_EXCEPTION_NULL");
     }

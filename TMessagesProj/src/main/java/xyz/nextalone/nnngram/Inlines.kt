@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +26,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.telegram.messenger.AccountInstance
 import org.telegram.messenger.UserConfig
+import org.telegram.tgnet.ConnectionsManager
+import org.telegram.tgnet.TLObject
 import org.telegram.tgnet.TLRPC
+import org.telegram.tgnet.tl.TL_account
+import org.telegram.tgnet.tl.TL_stories
 import org.telegram.ui.Components.LayoutHelper
+import xyz.nextalone.gen.Config
 import xyz.nextalone.nnngram.utils.Log
 import java.net.URLEncoder
 
@@ -76,3 +81,20 @@ internal fun cacheUsersAndChats(users: ArrayList<TLRPC.User>? = null, chats: Arr
         cacheUsersAndChats(users, chats)
     }
 }
+
+fun ConnectionsManager.processTlRpcObject(obj: TLObject): TLObject? {
+    if (Config.disableSendTyping && (obj is TLRPC.TL_messages_setTyping || obj is TLRPC.TL_messages_setEncryptedTyping)) {
+        return null
+    }
+
+    if (Config.storyStealthMode && ((obj is TL_stories.TL_stories_readStories) || (obj is TL_stories.TL_updateReadStories))) {
+        return null
+    }
+
+    if (Config.keepOnlineStatusAs != 0 && obj is TL_account.updateStatus) {
+        obj.offline = Config.keepOnlineStatusAs == 2
+        return obj
+    }
+    return obj
+}
+

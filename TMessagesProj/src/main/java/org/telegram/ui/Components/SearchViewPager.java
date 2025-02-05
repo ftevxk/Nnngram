@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -1310,7 +1310,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
                 items.add(new Item(PUBLIC_POSTS_TYPE));
             }
             items.add(new Item(CHANNELS_TYPE));
-            items.add(new Item(BOTS_TYPE));
+            // items.add(new Item(BOTS_TYPE));
             if (!showOnlyDialogsAdapter) {
                 Item item = new Item(FILTER_TYPE);
                 item.filterIndex = 0;
@@ -1430,5 +1430,11 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         void startChatPreview(RecyclerListView listView, DialogCell cell);
         void move(float dy);
         void finish();
+    }
+
+    public void onShown() {
+        if (dialogsSearchAdapter != null) {
+            dialogsSearchAdapter.resetFilter();
+        }
     }
 }

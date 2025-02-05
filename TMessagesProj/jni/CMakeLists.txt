@@ -61,7 +61,7 @@ add_library(libvpx STATIC IMPORTED)
 set_target_properties(libvpx PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/ffmpeg/${ANDROID_ABI}/libvpx.a)
 
 add_library(rust STATIC IMPORTED)
-set_target_properties(rust PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/integrity/${ANDROID_ABI}/librust.a.22)
+set_target_properties(rust PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/integrity/${ANDROID_ABI}/librust.a.23)
 
 add_library(libdav1d STATIC IMPORTED)
 set_target_properties(libdav1d PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/ffmpeg/${ANDROID_ABI}/libdav1d.a)
@@ -213,6 +213,10 @@ target_compile_definitions(sqlite PUBLIC
 include(${CMAKE_HOME_DIRECTORY}/voip/CMakeLists.txt)
 
 include(${CMAKE_HOME_DIRECTORY}/integrity/CMakeLists.txt)
+
+# cpu features
+include_directories(${ANDROID_NDK}/sources/android/cpufeatures)
+add_library(cpufeatures ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
 
 set(NATIVE_LIB "tmessages.49")
 
@@ -525,7 +529,3 @@ target_link_libraries(${NATIVE_LIB}
 #            -Wl,--whole-archive vpxasm -Wl,--no-whole-archive
 #            c)
 #endif()
-
-include_directories(${ANDROID_NDK}/sources/android/cpufeatures)
-add_library(cpufeatures ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
-target_link_libraries(cpufeatures dl)

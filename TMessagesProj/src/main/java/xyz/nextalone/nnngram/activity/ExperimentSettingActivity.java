@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2023 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -37,7 +37,9 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -207,6 +209,11 @@ public class ExperimentSettingActivity extends BaseActivity {
             PopupBuilder.show(str, LocaleController.getString("keepOnlineStatusAsRow", R.string.keepOnlineStatusAs),
                 Config.getKeepOnlineStatusAs(), getParentActivity(), view, i -> {
                     Config.setKeepOnlineStatusAs(i);
+
+                    TL_account.updateStatus req = new TL_account.updateStatus();
+                    req.offline = i == 2;
+                    ConnectionsManager.getInstance(UserConfig.selectedAccount).sendRequest(req, null);
+
                     listAdapter.notifyItemChanged(keepOnlineStatusAsRow, PARTIAL);
                 });
         } else if (position == alwaysSendWithoutSoundRow) {

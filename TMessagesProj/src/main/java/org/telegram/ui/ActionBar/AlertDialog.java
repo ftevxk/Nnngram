@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -73,6 +73,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AttachableDrawable;
@@ -154,16 +155,20 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
     private boolean notDrawBackgroundOnTopView;
     private RLottieImageView topImageView;
     private CharSequence positiveButtonText;
-    private OnClickListener positiveButtonListener;
+    private OnButtonClickListener positiveButtonListener;
     private CharSequence negativeButtonText;
-    private OnClickListener negativeButtonListener;
+    private OnButtonClickListener negativeButtonListener;
     private CharSequence neutralButtonText;
-    private OnClickListener neutralButtonListener;
+    private OnButtonClickListener neutralButtonListener;
     protected ViewGroup buttonsLayout;
     private LineProgressView lineProgressView;
     private TextView lineProgressViewPercent;
-    private OnClickListener onBackButtonListener;
+    private OnButtonClickListener onBackButtonListener;
     private int[] containerViewLocation = new int[2];
+
+    public interface OnButtonClickListener {
+        void onClick(AlertDialog dialog, int which);
+    }
 
     private boolean checkFocusable = true;
 
@@ -972,7 +977,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                     }
                 };
             }
-            if(bottomView != null) {
+            if (bottomView != null) {
                 buttonsLayout.setPadding(AndroidUtilities.dp(16), 0, AndroidUtilities.dp(16), AndroidUtilities.dp(4));
                 buttonsLayout.setTranslationY(-AndroidUtilities.dp(6));
             } else {
@@ -984,7 +989,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
             }
 
             if (positiveButtonText != null) {
-                TextView textView = new TextView(getContext()) {
+                TextViewWithLoading textView = new TextViewWithLoading(getContext()) {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
@@ -1003,9 +1008,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                 textView.setTextColor(getThemedColor(dialogButtonColorKey));
                 textView.setGravity(Gravity.CENTER);
                 textView.setTypeface(AndroidUtilities.bold());
-//                textView.setLines(1);
-//                textView.setSingleLine(true); //TODO
-                textView.setText(positiveButtonText.toString());
+                textView.setText(positiveButtonText);
                 textView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(AndroidUtilities.dp(6), getThemedColor(dialogButtonColorKey)));
                 textView.setPadding(AndroidUtilities.dp(12), 0, AndroidUtilities.dp(12), 0);
                 if (verticalButtons) {
@@ -1014,6 +1017,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                     buttonsLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 36, Gravity.TOP | Gravity.RIGHT));
                 }
                 textView.setOnClickListener(v -> {
+                    if (textView.isLoading()) return;
                     if (positiveButtonListener != null) {
                         positiveButtonListener.onClick(AlertDialog.this, Dialog.BUTTON_POSITIVE);
                     }
@@ -1024,7 +1028,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
             }
 
             if (negativeButtonText != null) {
-                TextView textView = new TextView(getContext()) {
+                TextViewWithLoading textView = new TextViewWithLoading(getContext()) {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
@@ -1054,6 +1058,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                     buttonsLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 36, Gravity.TOP | Gravity.RIGHT));
                 }
                 textView.setOnClickListener(v -> {
+                    if (textView.isLoading()) return;
                     if (negativeButtonListener != null) {
                         negativeButtonListener.onClick(AlertDialog.this, Dialog.BUTTON_NEGATIVE);
                     }
@@ -1064,7 +1069,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
             }
 
             if (neutralButtonText != null) {
-                TextView textView = new TextView(getContext()) {
+                TextViewWithLoading textView = new TextViewWithLoading(getContext()) {
                     @Override
                     public void setEnabled(boolean enabled) {
                         super.setEnabled(enabled);
@@ -1094,6 +1099,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                     buttonsLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 36, Gravity.TOP | Gravity.LEFT));
                 }
                 textView.setOnClickListener(v -> {
+                    if (textView.isLoading()) return;
                     if (neutralButtonListener != null) {
                         neutralButtonListener.onClick(AlertDialog.this, Dialog.BUTTON_NEGATIVE);
                     }
@@ -1185,6 +1191,22 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
         window.setAttributes(params);
 
         return containerView;
+    }
+
+    @NonNull
+    public Browser.Progress makeButtonLoading(int type) {
+        final View button = getButton(type);
+        dismissDialogByButtons = false;
+        return new Browser.Progress(() -> {
+            if (button instanceof TextViewWithLoading) {
+                ((TextViewWithLoading) button).setLoading(true, true);
+            }
+        }, () -> {
+            if (button instanceof TextViewWithLoading) {
+                ((TextViewWithLoading) button).setLoading(false, true);
+            }
+            dismiss();
+        });
     }
 
     @Override
@@ -1440,17 +1462,17 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
         secondTitle = text;
     }
 
-    public void setPositiveButton(CharSequence text, final OnClickListener listener) {
+    public void setPositiveButton(CharSequence text, final OnButtonClickListener listener) {
         positiveButtonText = text;
         positiveButtonListener = listener;
     }
 
-    public void setNegativeButton(CharSequence text, final OnClickListener listener) {
+    public void setNegativeButton(CharSequence text, final OnButtonClickListener listener) {
         negativeButtonText = text;
         negativeButtonListener = listener;
     }
 
-    public void setNeutralButton(CharSequence text, final OnClickListener listener) {
+    public void setNeutralButton(CharSequence text, final OnButtonClickListener listener) {
         neutralButtonText = text;
         neutralButtonListener = listener;
     }
@@ -1484,7 +1506,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
         messageTextViewClickable = value;
     }
 
-    public void setButton(int type, CharSequence text, final OnClickListener listener) {
+    public void setButton(int type, CharSequence text, final OnButtonClickListener listener) {
         switch (type) {
             case BUTTON_NEUTRAL:
                 neutralButtonText = text;
@@ -1534,7 +1556,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
         super.setOnCancelListener(listener);
     }
 
-    public void setPositiveButtonListener(final OnClickListener listener) {
+    public void setPositiveButtonListener(final OnButtonClickListener listener) {
         positiveButtonListener = listener;
     }
 
@@ -1691,25 +1713,25 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
             return this;
         }
 
-        public Builder setPositiveButton(CharSequence text, final OnClickListener listener) {
+        public Builder setPositiveButton(CharSequence text, final OnButtonClickListener listener) {
             alertDialog.positiveButtonText = text;
             alertDialog.positiveButtonListener = listener;
             return this;
         }
 
-        public Builder setNegativeButton(CharSequence text, final OnClickListener listener) {
+        public Builder setNegativeButton(CharSequence text, final OnButtonClickListener listener) {
             alertDialog.negativeButtonText = text;
             alertDialog.negativeButtonListener = listener;
             return this;
         }
 
-        public Builder setNeutralButton(CharSequence text, final OnClickListener listener) {
+        public Builder setNeutralButton(CharSequence text, final OnButtonClickListener listener) {
             alertDialog.neutralButtonText = text;
             alertDialog.neutralButtonListener = listener;
             return this;
         }
 
-        public Builder setOnBackButtonListener(final OnClickListener listener) {
+        public Builder setOnBackButtonListener(final OnButtonClickListener listener) {
             alertDialog.onBackButtonListener = listener;
             return this;
         }
