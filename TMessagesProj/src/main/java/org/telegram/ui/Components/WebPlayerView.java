@@ -2116,13 +2116,6 @@ public class WebPlayerView extends ViewGroup implements VideoPlayer.VideoPlayerD
         return false;
     }
 
-    public static boolean isSpotify(String url) {
-        if (url != null && url.startsWith("https://embed.spotify.com/")) {
-            return true;
-        }
-        return false;
-    }
-
     public boolean canHandleUrl(String url) {
         if (url != null) {
             if (url.endsWith(".mp4")) {
