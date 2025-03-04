@@ -382,6 +382,7 @@
     <string name="ProviderDeepLXTranslate">DeepLX 翻译</string>
     <string name="disableRepeatInChannel">在频道中禁用复读</string>
     <string name="disableRepeatInChannelError">已禁止在频道中使用复读</string>
+    <string name="disableDoubleTapWhenSelecting">已禁止在选择模式中使用双击</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
