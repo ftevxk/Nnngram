@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -4856,58 +4856,58 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         shadowBlurer = new BlurringShader.StoryBlurDrawer(blurManager, containerView, BlurringShader.StoryBlurDrawer.BLUR_TYPE_SHADOW);
 
         windowView.addView(containerView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
-        if (Build.VERSION.SDK_INT >= 21) {
-            containerView.setFitsSystemWindows(true);
-            containerView.setOnApplyWindowInsetsListener((v, newInsets) -> {
-                final Rect oldInsets = new Rect(insets);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    final Insets r = newInsets.getInsets(WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars());
-                    insets.set(r.left, r.top, r.right, r.bottom);
-                } else {
-                    insets.set(
-                            newInsets.getStableInsetLeft(),
-                            newInsets.getStableInsetTop(),
-                            newInsets.getStableInsetRight(),
-                            newInsets.getStableInsetBottom()
-                    );
-                }
-                int newTopInset = insets.top;
-                if (parentActivity instanceof LaunchActivity && (newTopInset != 0 || AndroidUtilities.isInMultiwindow) && !inBubbleMode && AndroidUtilities.statusBarHeight != newTopInset) {
-                    AndroidUtilities.statusBarHeight = newTopInset;
-                    ((LaunchActivity) parentActivity).drawerLayoutContainer.requestLayout();
-                }
-                if (!oldInsets.equals(newInsets)) {
-                    if (animationInProgress == 1 || animationInProgress == 3) {
-                        animatingImageView.setTranslationX(animatingImageView.getTranslationX() - getLeftInset());
-                        animationValues[0][2] = animatingImageView.getTranslationX();
-                    }
-                    if (windowView != null) {
-                        windowView.requestLayout();
-                    }
-                }
-
-                if (navigationBar != null) {
-                    navigationBarHeight = insets.bottom;
-                    ViewGroup.MarginLayoutParams navigationBarLayoutParams = (ViewGroup.MarginLayoutParams) navigationBar.getLayoutParams();
-                    navigationBarLayoutParams.height = navigationBarHeight;
-                    navigationBarLayoutParams.bottomMargin = -navigationBarHeight / 2;
-                    navigationBar.setLayoutParams(navigationBarLayoutParams);
-                }
-                containerView.setPadding(newInsets.getSystemWindowInsetLeft(), 0, newInsets.getSystemWindowInsetRight(), 0);
-                if (actionBar != null) {
-                    AndroidUtilities.cancelRunOnUIThread(updateContainerFlagsRunnable);
-                    if (isVisible && animationInProgress == 0) {
-                        AndroidUtilities.runOnUIThread(updateContainerFlagsRunnable, 200);
-                    }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    return WindowInsets.CONSUMED;
-                } else {
-                    return newInsets.consumeSystemWindowInsets();
-                }
-            });
-            containerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        }
+//        if (Build.VERSION.SDK_INT >= 21) {
+//            containerView.setFitsSystemWindows(true);
+//            containerView.setOnApplyWindowInsetsListener((v, newInsets) -> {
+//                final Rect oldInsets = new Rect(insets);
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//                    final Insets r = newInsets.getInsets(WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.systemBars());
+//                    insets.set(r.left, r.top, r.right, r.bottom);
+//                } else {
+//                    insets.set(
+//                            newInsets.getStableInsetLeft(),
+//                            newInsets.getStableInsetTop(),
+//                            newInsets.getStableInsetRight(),
+//                            newInsets.getStableInsetBottom()
+//                    );
+//                }
+//                int newTopInset = insets.top;
+//                if (parentActivity instanceof LaunchActivity && (newTopInset != 0 || AndroidUtilities.isInMultiwindow) && !inBubbleMode && AndroidUtilities.statusBarHeight != newTopInset) {
+//                    AndroidUtilities.statusBarHeight = newTopInset;
+//                    ((LaunchActivity) parentActivity).drawerLayoutContainer.requestLayout();
+//                }
+//                if (!oldInsets.equals(newInsets)) {
+//                    if (animationInProgress == 1 || animationInProgress == 3) {
+//                        animatingImageView.setTranslationX(animatingImageView.getTranslationX() - getLeftInset());
+//                        animationValues[0][2] = animatingImageView.getTranslationX();
+//                    }
+//                    if (windowView != null) {
+//                        windowView.requestLayout();
+//                    }
+//                }
+//
+//                if (navigationBar != null) {
+//                    navigationBarHeight = insets.bottom;
+//                    ViewGroup.MarginLayoutParams navigationBarLayoutParams = (ViewGroup.MarginLayoutParams) navigationBar.getLayoutParams();
+//                    navigationBarLayoutParams.height = navigationBarHeight;
+//                    navigationBarLayoutParams.bottomMargin = -navigationBarHeight / 2;
+//                    navigationBar.setLayoutParams(navigationBarLayoutParams);
+//                }
+//                containerView.setPadding(newInsets.getSystemWindowInsetLeft(), 0, newInsets.getSystemWindowInsetRight(), 0);
+//                if (actionBar != null) {
+//                    AndroidUtilities.cancelRunOnUIThread(updateContainerFlagsRunnable);
+//                    if (isVisible && animationInProgress == 0) {
+//                        AndroidUtilities.runOnUIThread(updateContainerFlagsRunnable, 200);
+//                    }
+//                }
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//                    return WindowInsets.CONSUMED;
+//                } else {
+//                    return newInsets.consumeSystemWindowInsets();
+//                }
+//            });
+//            containerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+//        }
 
         windowLayoutParams = new WindowManager.LayoutParams();
         windowLayoutParams.height = WindowManager.LayoutParams.MATCH_PARENT;
@@ -5884,7 +5884,6 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         translateItem.setColors(0xfffafafa, 0xfffafafa);
         qrItem = menuItem.addSubItem(gallery_menu_qr, R.drawable.msg_qrcode, LocaleController.getString("QrCode", R.string.QrCode));
         qrItem.setColors(0xfffafafa, 0xfffafafa);
-
         menuItem.redrawPopup(0xf9222222);
         setMenuItemIcon(false, true);
         menuItem.setPopupItemsSelectorColor(0x0fffffff);
