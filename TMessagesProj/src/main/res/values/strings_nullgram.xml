@@ -397,6 +397,8 @@
     <string name="disableRepeatInChannel">Disable repeat in channel</string>
     <string name="disableRepeatInChannelError">Repeat is disabled in channel</string>
     <string name="disableDoubleTapWhenSelecting">Double tap is disabled when selecting</string>
+    <string name="searchHashtagInCurrentChat">Search hash tag in current chat by default</string>
+    <string name="cancelLoadingVideoWhenClose">Cancel loading video when close</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
     <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>

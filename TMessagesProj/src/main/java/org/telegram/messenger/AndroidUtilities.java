@@ -3839,6 +3839,9 @@ public class AndroidUtilities {
     }
 
     public static String formatDuration(int duration, boolean isLong) {
+        return formatDuration(duration, isLong, false);
+    }
+    public static String formatDuration(int duration, boolean isLong, boolean noSecondsIfHours) {
         int h = duration / 3600;
         int m = duration / 60 % 60;
         int s = duration % 60;
@@ -3849,7 +3852,11 @@ public class AndroidUtilities {
                 return String.format(Locale.US, "%d:%02d", m, s);
             }
         } else {
-            return String.format(Locale.US, "%d:%02d:%02d", h, m, s);
+            if (noSecondsIfHours) {
+                return String.format(Locale.US, "%d:%02d", h, m);
+            } else {
+                return String.format(Locale.US, "%d:%02d:%02d", h, m, s);
+            }
         }
     }
 

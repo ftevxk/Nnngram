@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
+ * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
  * https://github.com/qwq233/Nullgram
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,6 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
-import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.MessageObject.replaceWithLink;
 
@@ -82,7 +81,6 @@ import android.text.TextUtils.TruncateAt;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.LeadingMarginSpan;
-import android.text.style.LeadingMarginSpan.Standard;
 import android.text.style.URLSpan;
 import android.util.Pair;
 import android.util.Property;
@@ -151,8 +149,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.TLRPC.Chat;
 import org.telegram.tgnet.TLRPC.EncryptedChat;
 import org.telegram.tgnet.TLRPC.PhotoSize;
-import org.telegram.tgnet.TLRPC.TL_messageMediaGame;
-import org.telegram.tgnet.TLRPC.TL_messageMediaInvoice;
 import org.telegram.tgnet.TLRPC.TL_peerChannel;
 import org.telegram.tgnet.TLRPC.TL_peerChat;
 import org.telegram.tgnet.TLRPC.TL_peerUser;
@@ -164,7 +160,6 @@ import org.telegram.ui.AvatarSpan;
 import org.telegram.ui.Cells.DialogCell.FixedWidthSpan;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
-import org.telegram.ui.Components.AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedFileDrawable;
 import org.telegram.ui.Components.AnimatedFloat;
@@ -1197,6 +1192,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean timePressed;
 
     private float timeAlpha = 1.0f;
+    private float actionAlpha = 1.0f;
     private float controlsAlpha = 1.0f;
     private long lastControlsAlphaChangeTime;
     private long totalChangeTime;
@@ -1504,9 +1500,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private Paint drillHolePaint;
     private Path drillHolePath;
 
-    private final Path mediaSpoilerPath = new Path();
-    private final float[] mediaSpoilerRadii = new float[8];
-    private final SpoilerEffect mediaSpoilerEffect = new SpoilerEffect();
+    private Path mediaSpoilerPath = new Path();
+    private float[] mediaSpoilerRadii = new float[8];
+    @Nullable
+    private SpoilerEffect mediaSpoilerEffect;
     private float mediaSpoilerRevealProgress;
     private float mediaSpoilerRevealX;
     private float mediaSpoilerRevealY;
@@ -1525,9 +1522,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private StaticLayout unlockLayout;
     private int unlockTextWidth;
     private String currentUnlockString;
-    private final SpoilerEffect unlockSpoilerEffect = new SpoilerEffect();
-    private final Path unlockSpoilerPath = new Path();
-    private final float[] unlockSpoilerRadii = new float[8];
+    @Nullable
+    private SpoilerEffect unlockSpoilerEffect;
+    private Path unlockSpoilerPath = new Path();
+    private float[] unlockSpoilerRadii = new float[8];
 
     private StaticLayout viewsLayout;
     private int viewsTextWidth;
@@ -2762,13 +2760,16 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (delegate != null) {
                             delegate.didPressImage(this, lastTouchX, lastTouchY, true);
                         }
-                    } else if (!currentMessageObject.preview) {
+                    } else if (currentMessageObject != null && !currentMessageObject.preview) {
                         Log.d("cell", "trigger !currentMessageObject.preview");
                         TLRPC.WebPage webPage = MessageObject.getMedia(currentMessageObject.messageOwner).webpage;
-                        if (webPage != null && webPage.photo != null && (lastTouchX < photoImage.getCenterX() + photoImage.getImageWidth() / 2 && lastTouchX > photoImage.getCenterX() - photoImage.getImageWidth() / 2)) {
-                            if (delegate != null) {
-                                delegate.didPressImage(this, lastTouchX, lastTouchY, true);
-                            }
+                        if (webPage != null && webPage.photo != null
+                            && (x < photoImage.getCenterX() + photoImage.getImageWidth() / 2
+                                && x > photoImage.getCenterX() - photoImage.getImageWidth() / 2)
+                            && (y < photoImage.getCenterY() + photoImage.getImageHeight() / 2
+                                && y > photoImage.getCenterY() - photoImage.getImageHeight() / 2)
+                        ) {
+                            delegate.didPressImage(this, lastTouchX, lastTouchY, true);
                         } else if (webPage != null && !TextUtils.isEmpty(webPage.embed_url)) {
                             if (delegate != null) {
                                 delegate.needOpenWebView(currentMessageObject, webPage.embed_url, webPage.site_name, webPage.title, webPage.url, webPage.embed_width, webPage.embed_height);
@@ -10161,6 +10162,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 setPadding(0, starsPriceTopPadding, 0, 0);
             }
             oldPollButtons.clear();
+
+            if (mediaSpoilerEffect != null && !(needReplyImage && currentMessageObject != null && currentMessageObject.hasValidReplyMessageObject() && currentMessageObject.replyMessageObject.hasMediaSpoilers())) {
+                mediaSpoilerEffect = null;
+            }
+            if (unlockSpoilerEffect != null && unlockLayout == null) {
+                unlockSpoilerEffect = null;
+            }
         }
         if (messageIdChanged) {
             currentUrl = null;
@@ -13207,17 +13215,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public void drawBlurredPhotoParticles(Canvas canvas) {
-        if (mediaSpoilerEffect2 != null) {
-            canvas.translate(photoImage.getImageX(), photoImage.getImageY());
-            mediaSpoilerEffect2.draw(canvas, this, (int) photoImage.getImageWidth(), (int) photoImage.getImageHeight(), photoImage.getAlpha(), drawingToBitmap);
-            invalidate();
-        } else {
-            int sColor = Color.WHITE;
-            mediaSpoilerEffect.setColor(ColorUtils.setAlphaComponent(sColor, (int) (Color.alpha(sColor) * 0.325f * photoImage.getAlpha())));
-            mediaSpoilerEffect.setBounds((int) photoImage.getImageX(), (int) photoImage.getImageY(), (int) photoImage.getImageX2(), (int) photoImage.getImageY2());
-            mediaSpoilerEffect.draw(canvas);
-            invalidate();
+        if (mediaSpoilerEffect2 == null) {
+            return;
         }
+        canvas.save();
+        canvas.translate(photoImage.getImageX(), photoImage.getImageY());
+        mediaSpoilerEffect2.draw(canvas, this, (int) photoImage.getImageWidth(), (int) photoImage.getImageHeight(), photoImage.getAlpha(), drawingToBitmap);
+        canvas.restore();
+        invalidate();
     }
 
     private float getUseTranscribeButtonProgress() {
@@ -16403,7 +16408,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         final long starsPrice = currentMessageObject.getDialogId() < 0 ? getStarsPrice() : 0;
         if (starsPrice > 0) {
-            currentTimeString = TextUtils.concat("⭐️", AndroidUtilities.formatWholeNumber((int) starsPrice, 0), ", ", currentTimeString);
+            currentTimeString = TextUtils.concat("⭐️", AndroidUtilities.formatWholeNumber((int) starsPrice, 0), "  ", currentTimeString);
             currentTimeString = StarsIntroActivity.replaceStars(currentTimeString, 0.8f, null, 0, dp(-.33f), 0.94f);
         }
         timeTextWidth = timeWidth = (int) Math.ceil(Theme.chat_timePaint.measureText(currentTimeString, 0, currentTimeString == null ? 0 : currentTimeString.length()));
@@ -18615,6 +18620,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (channelRecommendationsCell != null && currentMessageObject != null && currentMessageObject.type == MessageObject.TYPE_JOINED_CHANNEL) {
             return true;
         }
+        if (starsPriceText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
+            return true;
+        }
         if (getAlpha() != 1f) {
             return false;
         }
@@ -18623,10 +18631,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             (!transitionParams.transitionBotButtons.isEmpty() && transitionParams.animateBotButtonsChanged) ||
                 !botButtons.isEmpty() ||
                 drawSideButton != 0 ||
-            starsPriceText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0) ||
-                drawNameLayout && nameLayout != null && currentNameStatusDrawable != null && currentNameStatusDrawable.getDrawable() != null ||
+            drawNameLayout && nameLayout != null && currentNameEmojiStatusDrawable != null && !currentNameEmojiStatusDrawable.isEmpty() ||
                 animatedEmojiStack != null && !animatedEmojiStack.holders.isEmpty() ||
                 drawTopic && topicButton != null && (currentPosition == null || currentPosition.minY == 0 && currentPosition.minX == 0) ||
+            currentNameStatusDrawable != null && !currentNameStatusDrawable.isEmpty() ||
                 currentMessagesGroup == null &&
                     (transitionParams.animateReplaceCaptionLayout && transitionParams.animateChangeProgress != 1f || transitionParams.animateChangeProgress != 1.0f && transitionParams.animateMessageText) &&
                     transitionParams.animateOutAnimateEmoji != null && !transitionParams.animateOutAnimateEmoji.holders.isEmpty()
@@ -18650,13 +18658,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         if (starsPriceText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
+            final float alpha = transitionParams.ignoreAlpha ? timeAlpha : getAlpha();
             canvas.save();
             canvas.translate((getParentWidth() - starsPriceText.getWidth()) / 2.0f, -starsPriceTopPadding + dp(4.5f) + dp(3.33f));
             applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, getX(), viewTop - starsPriceTopPadding + dp(4.5f) + dp(3.33f));
             final Paint backgroundPaint = getThemedPaint(Theme.key_paint_chatActionBackground);
             int oldAlpha = backgroundPaint.getAlpha();
             backgroundPaint.setPathEffect(starsPriceTextPathEffect);
-            backgroundPaint.setAlpha((int) (oldAlpha * getAlpha()));
+            backgroundPaint.setAlpha((int) (oldAlpha * alpha));
             canvas.drawPath(starsPriceTextPath, backgroundPaint);
             backgroundPaint.setPathEffect(null);
             backgroundPaint.setAlpha(oldAlpha);
@@ -18664,13 +18673,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 final Paint darkenPaint = getThemedPaint(Theme.key_paint_chatActionBackgroundDarken);
                 oldAlpha = darkenPaint.getAlpha();
                 darkenPaint.setPathEffect(starsPriceTextPathEffect);
-                darkenPaint.setAlpha((int) (oldAlpha * getAlpha()));
+                darkenPaint.setAlpha((int) (oldAlpha * alpha));
                 canvas.drawPath(starsPriceTextPath, darkenPaint);
                 darkenPaint.setPathEffect(null);
                 darkenPaint.setAlpha(oldAlpha);
             }
             canvas.restore();
-            starsPriceText.draw(canvas, (getParentWidth() - starsPriceText.getWidth()) / 2.0f, -starsPriceTopPadding + dp(6.83f), getThemedColor(Theme.key_chat_serviceText), getAlpha());
+            starsPriceText.draw(canvas, (getParentWidth() - starsPriceText.getWidth()) / 2.0f, -starsPriceTopPadding + dp(6.83f), getThemedColor(Theme.key_chat_serviceText), alpha);
         }
 
         if (currentMessagesGroup != null) {
@@ -20101,6 +20110,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         canvas.clipPath(mediaSpoilerPath);
 
                         int sColor = Color.WHITE;
+                        if (mediaSpoilerEffect == null) {
+                            mediaSpoilerEffect = new SpoilerEffect();
+                        }
                         mediaSpoilerEffect.setColor(ColorUtils.setAlphaComponent(sColor, (int) (Color.alpha(sColor) * 0.325f * replyImageReceiver.getAlpha())));
                         mediaSpoilerEffect.setBounds((int) replyImageReceiver.getImageX(), (int) replyImageReceiver.getImageY(), (int) replyImageReceiver.getImageX2(), (int) replyImageReceiver.getImageY2());
                         mediaSpoilerEffect.draw(canvas);
@@ -21435,6 +21447,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             int sColor = Color.WHITE;
             if (mediaSpoilerEffect2 == null) {
+                if (unlockSpoilerEffect == null) {
+                    unlockSpoilerEffect = new SpoilerEffect();
+                }
                 unlockSpoilerEffect.setColor(ColorUtils.setAlphaComponent(sColor, (int) (Color.alpha(sColor) * 0.325f)));
                 unlockSpoilerEffect.setBounds((int) photoImage.getImageX(), (int) photoImage.getImageY(), (int) photoImage.getImageX2(), (int) photoImage.getImageY2());
                 unlockSpoilerEffect.draw(canvas);

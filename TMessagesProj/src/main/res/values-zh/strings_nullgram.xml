@@ -383,6 +383,8 @@
     <string name="disableRepeatInChannel">在频道中禁用复读</string>
     <string name="disableRepeatInChannelError">已禁止在频道中使用复读</string>
     <string name="disableDoubleTapWhenSelecting">已禁止在选择模式中使用双击</string>
+    <string name="searchHashtagInCurrentChat">默认在当前聊天中搜索标签</string>
+    <string name="cancelLoadingVideoWhenClose">关闭视频时取消加载</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
