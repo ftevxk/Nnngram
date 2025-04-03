@@ -422,6 +422,7 @@ import xyz.nextalone.nnngram.helpers.QrHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper.Status;
 import xyz.nextalone.nnngram.translate.LanguageDetectorTimeout;
+import xyz.nextalone.nnngram.ui.BackButtonRecentMenu;
 import xyz.nextalone.nnngram.ui.TranslatorSettingsPopupWrapper;
 import xyz.nextalone.nnngram.ui.sortList.items.TextStyleItems;
 import xyz.nextalone.nnngram.utils.Defines;
@@ -8924,7 +8925,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 updateReactionsMentionButton(false);
             }
         }
-
+        if (currentUser != null || currentChat != null) {
+            BackButtonRecentMenu.addToRecentDialogs(currentAccount, currentUser != null ? currentUser.id : -currentChat.id);
+        }
+        
         if (getDialogId() == getUserConfig().getClientUserId() && chatMode != MODE_SAVED) {
             savedMessagesHint = new HintView2(context, HintView2.DIRECTION_TOP);
             savedMessagesHint.setMultilineText(true);
@@ -10182,9 +10186,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         leftMargin += 48;
                     }
                     if (searchUserButton != null && searchUserButton.getVisibility() != GONE) {
-                        leftMargin += 48;
-                    }
-                    if (searchFilterButton != null && searchFilterButton.getVisibility() != GONE) {
                         leftMargin += 48;
                     }
                     if (searchFilterButton != null && searchFilterButton.getVisibility() != GONE) {

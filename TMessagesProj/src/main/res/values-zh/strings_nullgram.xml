@@ -385,6 +385,9 @@
     <string name="disableDoubleTapWhenSelecting">已禁止在选择模式中使用双击</string>
     <string name="searchHashtagInCurrentChat">默认在当前聊天中搜索标签</string>
     <string name="cancelLoadingVideoWhenClose">关闭视频时取消加载</string>
+    <string name="RecentChats">最近对话</string>
+    <string name="ClearRecentChats">清除最近对话</string>
+    <string name="ClearRecentChatAlert">您确定要清除您的最近对话吗？</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
