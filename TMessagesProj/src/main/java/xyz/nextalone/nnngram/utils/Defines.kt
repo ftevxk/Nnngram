@@ -231,10 +231,12 @@ object Defines {
     @BooleanConfig const val sendMp4DocumentAsVideo = "sendMp4DocumentAsVideo"
     @BooleanConfig const val disableGravityDetectionInVideo = "disableGravityDetectionInVideo"
     @BooleanConfig const val hideProxyEntryInTitle = "hideProxyEntryInTitle"
+    @BooleanConfig const val showProxyEntryInDrawer = "showProxyEntryInDrawer"
     @BooleanConfig const val autoMuteAfterJoiningChannel = "autoMuteAfterJoinChannel"
     @BooleanConfig const val disableRepeatInChannel = "disableRepeatInChannel"
     @BooleanConfig const val searchHashtagInCurrentChat = "searchHashtagInCurrentChat"
     @BooleanConfig const val cancelLoadingVideoWhenClose = "cancelLoadingVideoWhenClose"
+    @BooleanConfig const val hideSavedAndArchivedMessagesInList = "hideSavedAndArchivedMessagesInList"
 
     // Drawer List
     @BooleanConfig(true) const val showNewGroup = "showNewGroup"
