@@ -267,6 +267,7 @@
     <string name="DeepLFormalityLess">更口语</string>
     <string name="TranslationTarget">目标语言</string>
     <string name="TranslationTargetApp">跟随应用</string>
+    <string name="EditTextTranslationTarget">输入框目标语言</string>
     <string name="BrokenMLKit">选项不可用</string>
     <string name="BrokenMLKitDetail">Google MLKit 语言识别器在这个设备上不知何故坏了。</string>
     <string name="TranslatorTypePopup">弹出式对话框</string>
@@ -392,6 +393,7 @@
     <string name="hideSavedAndArchivedMessagesInList">在列表里隐藏收藏夹和已归档消息</string>
     <string name="messagePlaceholderInSaved">这里是您收藏的消息</string>
     <string name="messagePlaceholderInArchived">这里是您已归档的消息</string>
+    <string name="retryAfterFileDownloaded">文件未下载完成，请稍后重试</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>

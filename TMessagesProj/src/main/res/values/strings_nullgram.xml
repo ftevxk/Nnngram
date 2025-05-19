@@ -271,6 +271,7 @@
     <string name="DeepLFormalityLess">Less</string>
     <string name="TranslationTarget">Target language</string>
     <string name="TranslationTargetApp">Follow App</string>
+    <string name="EditTextTranslationTarget">Input target language</string>
     <string name="BrokenMLKit">Option unavailable</string>
     <string name="BrokenMLKitDetail">Google MLKit language identifier is somehow broken on this device.</string>
     <string name="TranslatorTypePopup">Popup dialog</string>
@@ -406,6 +407,7 @@
     <string name="hideSavedAndArchivedMessagesInList">Hide saved and archived messages in list</string>
     <string name="messagePlaceholderInSaved">Here are your saved messages</string>
     <string name="messagePlaceholderInArchived">Here are your archived messages</string>
+    <string name="retryAfterFileDownloaded">Please retry after the file is downloaded</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
     <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>

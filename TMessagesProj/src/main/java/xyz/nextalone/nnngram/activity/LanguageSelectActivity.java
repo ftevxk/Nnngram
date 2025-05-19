@@ -57,6 +57,7 @@ public class LanguageSelectActivity extends BaseActivity {
 
     public static final int TYPE_RESTRICTED = 0;
     public static final int TYPE_TARGET = 1;
+    public static final int TYPE_EDIT_TEXT_TARGET = 2;
 
     private static final List<String> RESTRICTED_LIST = Arrays.asList(
         "af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb",
@@ -188,6 +189,9 @@ public class LanguageSelectActivity extends BaseActivity {
                     TranslateHelper.setRestrictedLanguages(newSelectedLanguages);
                 }
                 cell.setChecked(!remove);
+            } else if (currentType == TYPE_EDIT_TEXT_TARGET) {
+                TranslateHelper.setCurrentEditTextTargetLanguage(localeInfo.langCode);
+                finishFragment();
             } else {
                 TranslateHelper.setCurrentTargetLanguage(localeInfo.langCode);
                 finishFragment();
@@ -213,7 +217,8 @@ public class LanguageSelectActivity extends BaseActivity {
 
     @Override
     protected String getActionBarTitle() {
-        return currentType == TYPE_RESTRICTED ? LocaleController.getString("DoNotTranslate", R.string.DoNotTranslate) : LocaleController.getString("TranslationTarget", R.string.TranslationTarget);
+        return currentType == TYPE_RESTRICTED ? LocaleController.getString(R.string.DoNotTranslate) :
+            currentType == TYPE_EDIT_TEXT_TARGET ? LocaleController.getString(R.string.EditTextTranslationTarget) : LocaleController.getString(R.string.TranslationTarget);
     }
 
     @Override
@@ -251,6 +256,10 @@ public class LanguageSelectActivity extends BaseActivity {
             var localeInfo = new LocaleInfo();
             localeInfo.langCode = "app";
             sortedLanguages.add(0, localeInfo);
+        } else if (currentType == TYPE_EDIT_TEXT_TARGET) {
+            var localeInfo = new LocaleInfo();
+            localeInfo.langCode = "disable";
+            sortedLanguages.add(0, localeInfo);
         }
     }
 
@@ -277,6 +286,9 @@ public class LanguageSelectActivity extends BaseActivity {
         for (int a = 0, N = sortedLanguages.size(); a < N; a++) {
             LocaleInfo c = sortedLanguages.get(a);
             if (c.langCode.equals("app")) {
+                continue;
+            }
+            if (c.langCode.equals("disable")) {
                 continue;
             }
             if (c.name.toString().toLowerCase().startsWith(query) || c.nameEnglish.toString().toLowerCase().startsWith(query) || c.nameLocalized.toString().toLowerCase().startsWith(query)) {
@@ -370,8 +382,15 @@ public class LanguageSelectActivity extends BaseActivity {
                     if (localeInfo.langCode.equals("app")) {
                         cell.setTextAndCheck(LocaleController.getString("TranslationTargetApp", R.string.TranslationTargetApp),
                             TranslateHelper.getCurrentTargetLanguage().equals(localeInfo.langCode), !last);
+                    } else if (localeInfo.langCode.equals("disable")) {
+                        cell.setTextAndCheck(LocaleController.getString(R.string.Disable),
+                            TranslateHelper.getCurrentEditTextTargetLanguage().equals(localeInfo.langCode), !last);
                     } else {
-                        cell.setTextAndValueAndCheck(localeInfo.name, localeInfo.nameLocalized, TranslateHelper.getCurrentTargetLanguage().equals(localeInfo.langCode), false, !last);
+                        if (currentType == TYPE_EDIT_TEXT_TARGET) {
+                            cell.setTextAndValueAndCheck(localeInfo.name, localeInfo.nameLocalized, TranslateHelper.getCurrentEditTextTargetLanguage().equals(localeInfo.langCode), false, !last);
+                        } else {
+                            cell.setTextAndValueAndCheck(localeInfo.name, localeInfo.nameLocalized, TranslateHelper.getCurrentTargetLanguage().equals(localeInfo.langCode), false, !last);
+                        }
                     }
                     break;
                 }
@@ -389,7 +408,7 @@ public class LanguageSelectActivity extends BaseActivity {
             if (i == (search ? searchResult : sortedLanguages).size()) {
                 return TYPE_SHADOW;
             }
-            return currentType == TYPE_TARGET ? TYPE_RADIO : TYPE_CHECKBOX;
+            return (currentType == TYPE_TARGET || currentType == TYPE_EDIT_TEXT_TARGET) ? TYPE_RADIO : TYPE_CHECKBOX;
         }
     }
 
