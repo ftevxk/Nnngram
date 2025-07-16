@@ -13209,7 +13209,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     info.updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(photoEntry.caption);
                                     info.hasMediaSpoilers = photoEntry.hasSpoiler;
                                     info.stars = photoEntry.starsAmount;
-                                    info.highQuality = photoEntry.highQuality;
+                                    info.highQuality = photoEntry.editedInfo == null && photoEntry.highQuality;
                                     photos.add(info);
                                     photoEntry.reset();
                                 }
@@ -20469,6 +20469,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();
                 if (!entry.isVideo && entry.imagePath != null) {
                     info.path = entry.imagePath;
+                    if (entry.highQuality) {
+                        info.originalPhotoEntry = entry.clone();
+                    }
                 } else if (entry.path != null) {
                     info.path = entry.path;
                 }
@@ -20482,6 +20485,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 info.videoEditedInfo = entry.editedInfo;
                 info.canDeleteAfter = entry.canDeleteAfter;
                 info.hasMediaSpoilers = entry.hasSpoiler;
+                info.highQuality = entry.editedInfo == null && entry.highQuality;
                 photos.add(info);
                 entry.reset();
             }
