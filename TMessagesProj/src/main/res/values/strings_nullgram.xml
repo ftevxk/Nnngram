@@ -412,6 +412,7 @@
     <string name="PlayerDecoderSoftware">Prefer app decoders</string>
     <string name="PlayerDecoderHardware">Only device decoders</string>
     <string name="PlayerDecoderPerferHW">Prefer device decoders</string>
+    <string name="showIdAndDc">Show ID and DC</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
     <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>

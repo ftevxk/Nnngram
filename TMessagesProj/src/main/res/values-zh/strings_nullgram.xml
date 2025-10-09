@@ -398,6 +398,7 @@
     <string name="PlayerDecoderSoftware">首选应用解码器</string>
     <string name="PlayerDecoderHardware">仅限设备解码器</string>
     <string name="PlayerDecoderPerferHW">设备解码器优先</string>
+    <string name="showIdAndDc">显示用户 ID 和数据中心</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
