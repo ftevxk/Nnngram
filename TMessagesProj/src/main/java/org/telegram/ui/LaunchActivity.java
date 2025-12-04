@@ -434,6 +434,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         flagSecureReason.attach();
 
         super.onCreate(savedInstanceState);
+        // Set initial status bar color immediately to prevent flash
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(0xFF426482); // Use theme's colorPrimaryDark
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    getWindow().getDecorView().getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                );
+            }
+        }
+        
         if (Build.VERSION.SDK_INT >= 24) {
             AndroidUtilities.isInMultiwindow = isInMultiWindowMode();
         }
@@ -857,6 +867,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         });
         actionBarLayout.setDelegate(this);
         Theme.loadWallpaper(true);
+        
+        // Refresh status bar color after theme is loaded
+        AndroidUtilities.runOnUIThread(() -> checkSystemBarColors(false, true, false), 50);
 
         checkCurrentAccount();
         updateCurrentConnectionState(currentAccount);
@@ -6465,8 +6478,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
             }
         } else {
-            boolean notify = dialogsFragment == null || dialogsFragment.forwardContext == null || dialogsFragment.forwardContext.getForwardParams().notify;
-            int scheduleDate = dialogsFragment == null || dialogsFragment.forwardContext == null ? 0 : dialogsFragment.forwardContext.getForwardParams().scheduleDate;
+            boolean notify = dialogsFragment == null || (dialogsFragment.forwardContext == null ? _notify : dialogsFragment.forwardContext.getForwardParams().notify || _notify);
+            int scheduleDate = _scheduleDate != 0 ? _scheduleDate : dialogsFragment.forwardContext == null ? 0 : dialogsFragment.forwardContext.getForwardParams().scheduleDate;
             final ChatActivity fragment;
             if (dids.size() <= 1) {
                 final long did = dids.get(0).dialogId;
@@ -7070,7 +7083,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } catch (Exception e) {
             FileLog.e(e);
         }
-        clearFragments();
         super.onDestroy();
         onFinish();
         FloatingDebugController.onDestroy();

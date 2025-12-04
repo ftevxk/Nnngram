@@ -64,6 +64,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -1498,6 +1500,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         return -1;
     }
 
+    private int lastBottomInset = AndroidUtilities.navigationBarHeight;
+
     public SharedMediaLayout(Context context, long did, SharedMediaPreloader preloader, int commonGroupsCount, ArrayList<Integer> sortedUsers, TLRPC.ChatFull chatInfo, TLRPC.UserFull userInfo, int initialTab, int initialStoryAlbumId, BaseFragment parent, Delegate delegate, int viewType, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         this.viewType = viewType;
@@ -1576,6 +1580,17 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         actionBar = profileActivity.getActionBar();
         mediaColumnsCount[0] = overrideColumnsCount() <= 0 ? SharedConfig.mediaColumnsCount : overrideColumnsCount();
         mediaColumnsCount[1] = overrideColumnsCount() <= 0 ? SharedConfig.storiesColumnsCount : overrideColumnsCount();
+
+        ViewCompat.setOnApplyWindowInsetsListener(this, (v, insets) -> {
+            WindowInsetsCompat rootInsets = ViewCompat.getRootWindowInsets(this);
+            int bottom = 0;
+            if (rootInsets != null) {
+                bottom = Math.max(rootInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom, AndroidUtilities.navigationBarHeight);
+            }
+            applyBottomInset(bottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(this);
 
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.mediaDidLoad);
         profileActivity.getNotificationCenter().addObserver(this, NotificationCenter.messagesDeleted);
@@ -2492,6 +2507,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     updateOptionsSearch(true);
                 }
             };
+            giftsContainer.setBottomInset(lastBottomInset);
 
             storiesContainer = new ProfileStoriesCollectionTabs(context,
                 getStoriesController().getStoryAlbumsList(dialog_id),
@@ -2891,8 +2907,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                             }
                             if (getAdapter() == storiesAdapter) {
                                 mediaPage.buttonView.setVisibility(View.VISIBLE);
-                                mediaPage.buttonView.setTranslationY(getY() + top - dp(72));
+                                mediaPage.buttonView.setTranslationY(getY() + top - dp(72) - lastBottomInset);
                             } else {
+                                mediaPage.buttonView.setVisibility(View.GONE);
                                 if (archivedHintPaint == null) {
                                     archivedHintPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                                     archivedHintPaint.setTextSize(dp(14));
@@ -2966,6 +2983,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             mediaPages[a].listView.setSectionsType(RecyclerListView.SECTIONS_TYPE_DATE);
             mediaPages[a].listView.setLayoutManager(layoutManager);
             mediaPages[a].addView(mediaPages[a].listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+            applyBottomInsetToPage(mediaPages[a]);
             mediaPages[a].addView(mediaPages[a].buttonView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.FILL_HORIZONTAL, 12, 12, 12, 12));
             mediaPages[a].animationSupportingListView = new InternalListView(context);
             mediaPages[a].animationSupportingListView.setLayoutManager(mediaPages[a].animationSupportingLayoutManager = new GridLayoutManager(context, 3) {
@@ -3281,6 +3299,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         mediaPage.invalidate();
                     }
                     invalidateBlur();
+                    applyBottomInsetToPage(mediaPage);
                 }
             });
             mediaPages[a].listView.setOnItemLongClickListener(new RecyclerListView.OnItemLongClickListenerExtended() {
@@ -3521,6 +3540,23 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         if (storiesContainer != null && initialStoryAlbumId > 0) {
             storiesContainer.setInitialTabId(initialStoryAlbumId);
         }
+    }
+
+    private void applyBottomInset(int bottomInset) {
+        lastBottomInset = bottomInset;
+        for (int i = 0; i < mediaPages.length; i++) {
+            applyBottomInsetToPage(mediaPages[i]);
+        }
+        if (giftsContainer != null) {
+            giftsContainer.setBottomInset(lastBottomInset);
+        }
+    }
+
+    private void applyBottomInsetToPage(MediaPage page) {
+        if (page == null || page.listView == null) return;
+        int bottom = lastBottomInset + page.listView.hintPaddingBottom;
+        page.listView.setClipToPadding(false);
+        page.listView.setPadding(page.listView.getPaddingLeft(), page.listView.topPadding, page.listView.getPaddingRight(), bottom);
     }
 
     protected boolean customTabs() {
@@ -5407,6 +5443,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);
             }
         }
+
+        for (int a = 0; a < mediaPages.length; a++) {
+            applyBottomInsetToPage(mediaPages[a]);
+        }
     }
 
     public boolean checkTabsAnimationInProgress() {
@@ -6932,6 +6972,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 mediaPages[a].listView.getPaddingRight(),
                 (mediaPages[a].listView.hintPaddingBottom = isStoriesView() ? dp(72) : 0)
             );
+            applyBottomInsetToPage(mediaPages[a]);
             mediaPages[a].buttonView.setVisibility(mediaPages[a].selectedType == TAB_STORIES && isStoriesView() ? View.VISIBLE : View.GONE);
 
             if (mediaPages[a].selectedType == TAB_PHOTOVIDEO) {

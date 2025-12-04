@@ -92,6 +92,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -306,6 +308,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private boolean storiesOverscrollCalled;
     private boolean wasDrawn;
     private int fragmentContextTopPadding;
+
+    @Override
+    public boolean isSupportEdgeToEdge() {
+        return true;
+    }
 
     public MessagesStorage.TopicKey getOpenedDialogId() {
         return openedDialogId;
@@ -1783,11 +1790,30 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         boolean animateSwitchingSelector;
         UserListPoller poller;
         public int additionalPadding;
+        private int systemBarsBottomInset;
 
         public DialogsRecyclerView(Context context, ViewPage page) {
             super(context);
             parentPage = page;
             additionalClipBottom = dp(200);
+        }
+
+        @Override
+        protected void onAttachedToWindow() {
+            super.onAttachedToWindow();
+            ViewCompat.setOnApplyWindowInsetsListener(this, (v, insets) -> {
+                WindowInsetsCompat root = ViewCompat.getRootWindowInsets(v);
+                int bottom = 0;
+                if (root != null) {
+                    bottom = root.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom + root.getInsets(WindowInsetsCompat.Type.captionBar()).bottom;
+                }
+                if (systemBarsBottomInset != bottom) {
+                    systemBarsBottomInset = bottom;
+                    setPadding(getPaddingLeft(), getPaddingTop(), getPaddingRight(), systemBarsBottomInset);
+                }
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(this);
         }
 
         public void prepareSelectorForAnimation() {
@@ -2131,7 +2157,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (t != getPaddingTop()) {
                     setTopGlowOffset(t);
-                    setPadding(0, t, 0, 0);
+                    setPadding(0, t, 0, systemBarsBottomInset);
                     if (hasStories) {
                         parentPage.progressView.setPaddingTop(t - dp(DialogStoriesCell.HEIGHT_IN_DP));
                     } else {
@@ -4723,6 +4749,36 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 //            }
         });
 
+        ViewCompat.setOnApplyWindowInsetsListener(contentView, (v, insets) -> {
+            WindowInsetsCompat root = ViewCompat.getRootWindowInsets(v);
+            int bottom = 0;
+            if (root != null) {
+                bottom = root.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom + root.getInsets(WindowInsetsCompat.Type.captionBar()).bottom;
+            }
+            if (floatingButtonContainer != null) {
+                ViewGroup.LayoutParams lp = floatingButtonContainer.getLayoutParams();
+                if (lp instanceof FrameLayout.LayoutParams) {
+                    int target = dp(14) + bottom;
+                    if (((FrameLayout.LayoutParams) lp).bottomMargin != target) {
+                        ((FrameLayout.LayoutParams) lp).bottomMargin = target;
+                        floatingButtonContainer.setLayoutParams(lp);
+                    }
+                }
+            }
+            if (floatingButton2Container != null) {
+                ViewGroup.LayoutParams lp2 = floatingButton2Container.getLayoutParams();
+                if (lp2 instanceof FrameLayout.LayoutParams) {
+                    int target2 = dp(14) + dp(60) + dp(8) + bottom;
+                    if (((FrameLayout.LayoutParams) lp2).bottomMargin != target2) {
+                        ((FrameLayout.LayoutParams) lp2).bottomMargin = target2;
+                        floatingButton2Container.setLayoutParams(lp2);
+                    }
+                }
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(contentView);
+
         if (!isArchive() && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
             if (MessagesController.getInstance(currentAccount).getMainSettings().getBoolean("storyhint", true)) {
                 storyHint = new HintView2(context, HintView2.DIRECTION_RIGHT)
@@ -5228,6 +5284,30 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             updateButton = ApplicationLoader.applicationLoaderInstance.takeUpdateButton(context);
             if (updateButton != null) {
                 contentView.addView(updateButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.LEFT | Gravity.BOTTOM));
+                ViewCompat.setOnApplyWindowInsetsListener(updateButton, (v, insets) -> {
+                    WindowInsetsCompat root = ViewCompat.getRootWindowInsets(v);
+                    int bottom = 0;
+                    if (root != null) {
+                        bottom = root.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom + root.getInsets(WindowInsetsCompat.Type.captionBar()).bottom;
+                    }
+                    FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+                    int targetHeight = AndroidUtilities.dp(48) + bottom;
+                    boolean changed = false;
+                    if (lp.height != targetHeight) {
+                        lp.height = targetHeight;
+                        changed = true;
+                    }
+                    if (lp.bottomMargin != 0) {
+                        lp.bottomMargin = 0;
+                        changed = true;
+                    }
+                    if (changed) {
+                        v.setLayoutParams(lp);
+                    }
+                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottom);
+                    return insets;
+                });
+                ViewCompat.requestApplyInsets(updateButton);
                 updateButton.onTranslationUpdate(ty -> {
                     additionalFloatingTranslation2 = dp(48) - ty;
                     if (additionalFloatingTranslation2 < 0) {

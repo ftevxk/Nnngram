@@ -34823,6 +34823,9 @@ public class ChatActivity extends BaseFragment implements
             if (searchUserButton != null) {
                 searchUserButton.setVisibility(View.GONE);
             }
+            if (searchFilterButton != null) {
+                searchFilterButton.setVisibility(View.GONE);
+            }
         }
         if (searchItem != null) {
             preventReopenSearchWithText = true;
