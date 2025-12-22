@@ -253,9 +253,9 @@ public:
 
     static const TlsHello &getDefault(bool useLegacy) {
         if (!useLegacy) {
-            static TlsHello result = [] {
-                TlsHello res;
-                res.ops = {
+        static TlsHello result = [] {
+            TlsHello res;
+            res.ops = {
                     Op::string("\x16\x03\x01", 3),
                     Op::begin_scope(),
                     Op::string("\x01\x00", 2),
@@ -331,12 +331,11 @@ public:
                     Op::end_scope(),
                     Op::end_scope(),
                     Op::end_scope()
-                };
-                return res;
-            }();
-            return result;
+            };
+            return res;
+        }();
+        return result;
         }
-
         static TlsHello result = [] {
             TlsHello res;
             res.ops = {
@@ -416,7 +415,7 @@ public:
                                             {
                                                     Op::string("\xff\x01\x00\x01\x00", 5),
                                             }
-                    }),
+                                    }),
 
                     Op::grease(3),
                     Op::string("\x00\x01\x00", 3),
