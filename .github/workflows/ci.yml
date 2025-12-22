@@ -14,72 +14,116 @@ on:
     workflow_dispatch:
 
 jobs:
-  build:
-    name: Gradle Build
-    if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/wd' }}
-    runs-on: ubuntu-latest
-    env:
-      CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
-      CCACHE_NOHASHDIR: "true"
-      CCACHE_MAXSIZE: "10G"
-      CCACHE_HARDLINK: "true"
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Check out submodules
-        run: |
-          git -c submodule."libs/rust".update=none submodule update --init --recursive
-      - name: Get short SHA
-        run: |
-          echo "SHA7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-      - name: Set up ccache
-        uses: hendrikmuhs/ccache-action@v1
-        with:
-          key: ccache-stable
-          restore-keys: ccache-stable
-      - name: Setup Android SDK Tools
-        uses: android-actions/setup-android@v3
-      - name: Prepare Environment
-        run: |
-            echo "Removing large packages"
-            sudo apt-get remove -y '^dotnet-.*' aspnetcore-targeting-pack-6.0
-            sudo apt-get remove -y '^llvm-.*'
-            sudo apt-get remove -y 'php.*'
-            sudo apt-get remove -y '^mongodb-.*'
-            sudo apt-get remove -y '^mysql-.*'
-            sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
-            sudo apt-get autoremove -y
-            sudo apt-get clean
-            echo "Removing large directories"
-            sudo rm -rf /usr/share/dotnet/
-            sudo rm -rf /usr/local/graalvm/
-            sudo rm -rf /usr/local/.ghcup/
-            sudo rm -rf /usr/local/share/powershell
-            sudo rm -rf /usr/local/share/chromium
-            sudo rm -rf /usr/local/lib/node_modules
-            df -h
-            sudo apt-get install bison gcc make curl ninja-build -y
-            echo "y" | sdkmanager --install "ndk;28.1.13356709" --sdk_root=${ANDROID_SDK_ROOT} &> /dev/null
-            echo "sdk.dir=${ANDROID_HOME}" >> local.properties
-      - name: Artifact Build
-        run: |
-            cat > service_account_credentials.json << EOF
-            ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}"
-            EOF
-            ./gradlew TMessagesProj:assembleDebug
-            echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
+    build:
+        name: Gradle Build
+        if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/wd' }}
+        runs-on: ubuntu-latest
+        env:
+            CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
+            CCACHE_NOHASHDIR: "true"
+            CCACHE_MAXSIZE: "10G"
+            CCACHE_HARDLINK: "true"
+        steps:
+            - uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+                  submodules: recursive
+                  # 添加子模块缓存
+                  path: .
 
-      - uses: actions/upload-artifact@v4
-        name: Upload apk (arm64-v8a)
-        with:
-            name: Nnngram-arm64-v8a-${{ env.SHA7 }}
-            path: ${{ env.APK_FILE }}
+            # 添加Gradle缓存
+            - name: Cache Gradle packages
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.gradle/caches
+                      ~/.gradle/wrapper
+                      .gradle
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+
+            # 添加Android SDK缓存
+            - name: Cache Android SDK
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ${{ env.ANDROID_HOME }}/build-tools
+                      ${{ env.ANDROID_HOME }}/platforms
+                      ${{ env.ANDROID_HOME }}/ndk
+                  key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle*') }}
+                  restore-keys: |
+                      ${{ runner.os }}-android-sdk-
+
+            # 添加NDK缓存
+            - name: Cache Android NDK
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ${{ env.ANDROID_HOME }}/ndk/28.1.13356709
+                  key: ${{ runner.os }}-android-ndk-28.1.13356709
+
+            - name: Get short SHA
+              run: |
+                  echo "SHA7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'temurin'
+                  java-version: '17'
+                  cache: 'gradle'
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v4
+              with:
+                  cache-read-only: ${{ github.ref != 'refs/heads/wd' }}
+
+            - name: Set up ccache
+              uses: hendrikmuhs/ccache-action@v1
+              with:
+                  key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cpp', '**/*.c') }}
+                  restore-keys: |
+                      ccache-${{ runner.os }}-
+                      ccache-
+
+            - name: Setup Android SDK Tools
+              uses: android-actions/setup-android@v3
+              with:
+                  ndk: 28.1.13356709
+
+            - name: Prepare Environment
+              run: |
+                  echo "Removing large packages"
+                  sudo apt-get remove -y '^dotnet-.*' aspnetcore-targeting-pack-6.0
+                  sudo apt-get remove -y '^llvm-.*'
+                  sudo apt-get remove -y 'php.*'
+                  sudo apt-get remove -y '^mongodb-.*'
+                  sudo apt-get remove -y '^mysql-.*'
+                  sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+                  sudo apt-get autoremove -y
+                  sudo apt-get clean
+                  echo "Removing large directories"
+                  sudo rm -rf /usr/share/dotnet/
+                  sudo rm -rf /usr/local/graalvm/
+                  sudo rm -rf /usr/local/.ghcup/
+                  sudo rm -rf /usr/local/share/powershell
+                  sudo rm -rf /usr/local/share/chromium
+                  sudo rm -rf /usr/local/lib/node_modules
+                  df -h
+                  sudo apt-get install bison gcc make curl ninja-build -y
+                  echo "sdk.dir=${ANDROID_HOME}" >> local.properties
+
+            - name: Artifact Build
+              run: |
+                  cat > service_account_credentials.json << EOF
+                  ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}"
+                  EOF
+                  ./gradlew TMessagesProj:assembleDebug
+                  echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
+
+            - uses: actions/upload-artifact@v4
+              name: Upload apk (arm64-v8a)
+              with:
+                  name: Nnngram-arm64-v8a-${{ env.SHA7 }}
+                  path: ${{ env.APK_FILE }}
