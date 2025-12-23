@@ -10956,9 +10956,11 @@ public class MessageObject {
         updateQualitiesCached(useFileDatabaseQueue);
     }
 
+    //wd 设置搜索查询，实现模糊匹配算法
     public void setQuery(String query) {
         setQuery(query, true);
     }
+    //wd 设置搜索查询，支持模糊匹配和结果截断
     public void setQuery(String query, boolean cut) {
         if (TextUtils.isEmpty(query)) {
             highlightedWords = null;
@@ -10971,35 +10973,42 @@ public class MessageObject {
         String[] queryWord = query.split("[^\\p{L}#$]+");
 
         ArrayList<String> searchForWords = new ArrayList<>();
+        boolean exactMatchFound = false;
+        
+        //wd 检查引用文本中的匹配
         if (messageOwner.reply_to != null && !TextUtils.isEmpty(messageOwner.reply_to.quote_text)) {
             String message = messageOwner.reply_to.quote_text.trim().toLowerCase();
             if (message.contains(query) && !foundWords.contains(query)) {
                 foundWords.add(query);
-                handleFoundWords(foundWords, queryWord, true, cut);
-                return;
+                exactMatchFound = true;
             }
             String[] words = message.split("[^\\p{L}#$]+");
             searchForWords.addAll(Arrays.asList(words));
         }
+        
+        //wd 检查消息文本中的匹配
         if (!TextUtils.isEmpty(messageOwner.message)) {
             String message = messageOwner.message.trim().toLowerCase();
             if (message.contains(query) && !foundWords.contains(query)) {
                 foundWords.add(query);
-                handleFoundWords(foundWords, queryWord, false, cut);
-                return;
+                exactMatchFound = true;
             }
             String[] words = message.split("[^\\p{L}#$]+");
             searchForWords.addAll(Arrays.asList(words));
         }
+        
+        //wd 检查文档文件名中的匹配
         if (getDocument() != null) {
             String fileName = FileLoader.getDocumentFileName(getDocument()).toLowerCase();
             if (fileName.contains(query) && !foundWords.contains(query)) {
                 foundWords.add(query);
+                exactMatchFound = true;
             }
             String[] words = fileName.split("[^\\p{L}#$]+");
             searchForWords.addAll(Arrays.asList(words));
         }
 
+        //wd 检查网页标题中的匹配
         if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage && getMedia(messageOwner).webpage instanceof TLRPC.TL_webPage) {
             TLRPC.WebPage webPage = getMedia(messageOwner).webpage;
             String title = webPage.title;
@@ -11010,21 +11019,32 @@ public class MessageObject {
                 title = title.toLowerCase();
                 if (title.contains(query) && !foundWords.contains(query)) {
                     foundWords.add(query);
+                    exactMatchFound = true;
                 }
                 String[] words = title.split("[^\\p{L}#$]+");
                 searchForWords.addAll(Arrays.asList(words));
             }
         }
 
+        //wd 检查音乐作者中的匹配
         String musicAuthor = getMusicAuthor();
         if (musicAuthor != null) {
             musicAuthor = musicAuthor.toLowerCase();
             if (musicAuthor.contains(query) && !foundWords.contains(query)) {
                 foundWords.add(query);
+                exactMatchFound = true;
             }
             String[] words = musicAuthor.split("[^\\p{L}#$]+");
             searchForWords.addAll(Arrays.asList(words));
         }
+        
+        //wd 如果找到精确匹配，直接处理返回
+        if (exactMatchFound) {
+            handleFoundWords(foundWords, queryWord, false, cut);
+            return;
+        }
+        
+        //wd 模糊匹配算法：检查查询词是否为搜索词的子串或部分匹配
         for (int k = 0; k < queryWord.length; k++) {
             String currentQuery = queryWord[k];
             if (currentQuery.length() < 2) {
@@ -11035,24 +11055,31 @@ public class MessageObject {
                     continue;
                 }
                 String word = searchForWords.get(i);
-                int startIndex = word.indexOf(currentQuery.charAt(0));
-                if (startIndex < 0) {
+                
+                //wd 检查查询词是否是搜索词的子串
+                if (word.contains(currentQuery)) {
+                    foundWords.add(searchForWords.get(i));
                     continue;
                 }
-                int l = Math.max(currentQuery.length(), word.length());
-                if (startIndex != 0) {
-                    word = word.substring(startIndex);
+                
+                //wd 检查前缀匹配
+                if (word.startsWith(currentQuery.substring(0, Math.min(3, currentQuery.length())))) {
+                    foundWords.add(searchForWords.get(i));
+                    continue;
                 }
-                int min = Math.min(currentQuery.length(), word.length());
-                int count = 0;
-                for (int j = 0; j < min; j++) {
-                    if (word.charAt(j) == currentQuery.charAt(j)) {
-                        count++;
-                    } else {
-                        break;
+                
+                //wd 检查字符匹配度（Levenshtein距离简化版）
+                int minLength = Math.min(currentQuery.length(), word.length());
+                if (minLength < 2) {
+                    continue;
+                }
+                int matchCount = 0;
+                for (int j = 0; j < minLength; j++) {
+                    if (currentQuery.charAt(j) == word.charAt(j)) {
+                        matchCount++;
                     }
                 }
-                if (count / (float) l >= 0.5) {
+                if (matchCount / (float) minLength >= 0.6) {
                     foundWords.add(searchForWords.get(i));
                 }
             }
@@ -11060,9 +11087,11 @@ public class MessageObject {
         handleFoundWords(foundWords, queryWord, false, cut);
     }
 
+    //wd 处理找到的匹配词，重载方法
     private void handleFoundWords(ArrayList<String> foundWords, String[] queryWord, boolean inQuote) {
         handleFoundWords(foundWords, queryWord, inQuote, true);
     }
+    //wd 处理找到的匹配词，实现搜索结果高亮和相关性排序
     private void handleFoundWords(ArrayList<String> foundWords, String[] queryWord, boolean inQuote, boolean cut) {
         if (!foundWords.isEmpty()) {
             boolean foundExactly = false;

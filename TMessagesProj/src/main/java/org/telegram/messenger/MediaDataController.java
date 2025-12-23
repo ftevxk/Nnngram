@@ -3652,30 +3652,13 @@ public class MediaDataController extends BaseController {
         return updated;
     }
 
+    //wd 双重搜索机制实现：同时整合本地内存数据和服务器搜索结果
     private void updateSearchResults() {
         ArrayList<MessageObject> previousSearchResultMessages = new ArrayList<>(searchResultMessages);
         searchResultMessages.clear();
         HashSet<Integer> messageIds = new HashSet<>();
-        for (int i = 0; i < searchServerResultMessages.size(); ++i) {
-            MessageObject m = searchServerResultMessages.get(i);
-            if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId())) {
-                MessageObject prev = null;
-                for (int j = 0; j < previousSearchResultMessages.size(); ++j) {
-                    if (previousSearchResultMessages.get(j).getId() == m.getId()) {
-                        prev = previousSearchResultMessages.get(j);
-                        break;
-                    }
-                }
-                if (prev != null) {
-                    m.copyStableParams(prev);
-                    m.mediaExists = prev.mediaExists;
-                    m.attachPathExists = prev.attachPathExists;
-                }
-                m.isSavedFiltered = true;
-                searchResultMessages.add(m);
-                messageIds.add(m.getId());
-            }
-        }
+        
+        //wd 先添加本地内存搜索结果
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
             if (!messageIds.contains(m.getId())) {
@@ -3696,6 +3679,46 @@ public class MediaDataController extends BaseController {
                 messageIds.add(m.getId());
             }
         }
+        
+        //wd 再添加服务器搜索结果，避免重复
+        for (int i = 0; i < searchServerResultMessages.size(); ++i) {
+            MessageObject m = searchServerResultMessages.get(i);
+            if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId())) {
+                MessageObject prev = null;
+                for (int j = 0; j < previousSearchResultMessages.size(); ++j) {
+                    if (previousSearchResultMessages.get(j).getId() == m.getId()) {
+                        prev = previousSearchResultMessages.get(j);
+                        break;
+                    }
+                }
+                if (prev != null) {
+                    m.copyStableParams(prev);
+                    m.mediaExists = prev.mediaExists;
+                    m.attachPathExists = prev.attachPathExists;
+                }
+                m.isSavedFiltered = true;
+                searchResultMessages.add(m);
+                messageIds.add(m.getId());
+            }
+        }
+        
+        //wd 优化搜索性能：对搜索结果进行相关性排序
+        Collections.sort(searchResultMessages, (m1, m2) -> {
+            //wd 优先展示本地搜索结果
+            boolean isLocal1 = searchLocalResultMessages.contains(m1);
+            boolean isLocal2 = searchLocalResultMessages.contains(m2);
+            if (isLocal1 != isLocal2) {
+                return isLocal1 ? -1 : 1;
+            }
+            //wd 其次根据匹配程度排序
+            boolean hasHighlight1 = m1.hasHighlightedWords();
+            boolean hasHighlight2 = m2.hasHighlightedWords();
+            if (hasHighlight1 != hasHighlight2) {
+                return hasHighlight1 ? -1 : 1;
+            }
+            //wd 最后根据消息时间排序
+            return Long.compare(m2.getId(), m1.getId());
+        });
     }
 
     public int getMask() {
