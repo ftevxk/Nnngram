@@ -208,6 +208,7 @@ import kotlin.Unit;
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.InlinesKt;
 import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.helpers.ConnectionsHelper;
 import xyz.nextalone.nnngram.helpers.PasscodeHelper;
 import xyz.nextalone.nnngram.ui.BackButtonRecentMenu;
 import xyz.nextalone.nnngram.ui.BottomBuilder;
@@ -801,6 +802,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         moreButtonView.addSubItem(2, LocaleController.getString("QRLoginTitle", R.string.QRLoginTitle));
         if (Config.showHiddenSettings)
             moreButtonView.addSubItem(3, LocaleController.getString("CustomApiLogin", R.string.customAPI));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            moreButtonView.addSubItem(4, getString(R.string.Passkey));
         moreButtonView.setDelegate(id -> {
             if (id == 0) {
                 presentFragment(new ProxyListActivity());
@@ -909,6 +912,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     return Unit.INSTANCE;
                 });
                 builder.show();
+            } else if (id == 4) {
+                PhoneView phoneView = (PhoneView)views[VIEW_PHONE_INPUT];
+                if (phoneView != null) {
+                    phoneView.requestPasskey(true, true);
+                }
             }
         });
         moreButtonView.setSubMenuOpenSide(1);
@@ -3384,23 +3392,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
             ConnectionsManager.getInstance(currentAccount).cleanup(false);
             final TLRPC.TL_auth_sendCode req = new TLRPC.TL_auth_sendCode();
-            String appHash = BuildVars.APP_HASH;
-            int appId = BuildVars.APP_ID;
-            switch(Config.getCustomAPI()){
-                case Defines.disableCustomAPI:
-                    appId = BuildVars.APP_ID;
-                    appHash = BuildVars.APP_HASH;
-                    break;
-                case Defines.useTelegramAPI:
-                    appId = Defines.telegramID;
-                    appHash = Defines.telegramHash;
-                    break;
-                case Defines.useCustomAPI:
-                    appId = Config.getCustomAppId();
-                    appHash = Config.getCustomAppHash();
-                    break;
-
-            }
+            String appHash = ConnectionsHelper.getCurrentApiHash();
+            int appId = ConnectionsHelper.getCurrentApiId();
             Log.i("customAPI:" + ConfigManager.getIntOrDefault(Defines.customAPI, Defines.disableCustomAPI));
             Log.i("appID:" + appId);
             Log.i("appHash:" + appHash);
@@ -3489,8 +3482,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 ConnectionsManager.getInstance(currentAccount).cleanup(false);
 
                 TLRPC.TL_auth_sendCode sendCode = new TLRPC.TL_auth_sendCode();
-                sendCode.api_hash = BuildVars.APP_HASH;
-                sendCode.api_id = BuildVars.APP_ID;
+                sendCode.api_hash = ConnectionsHelper.getCurrentApiHash();
+                sendCode.api_id = ConnectionsHelper.getCurrentApiId();
                 sendCode.phone_number = phone;
                 sendCode.settings = req.settings;
                 req1 = sendCode;
@@ -3727,7 +3720,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     }
                 }
                 if (activityMode == MODE_LOGIN) {
-                    requestPasskey(false);
+//                    requestPasskey(false);
                 }
             }, SHOW_DELAY);
         }
@@ -3744,9 +3737,17 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private boolean requestedPasskey = false;
         private boolean requestingPasskey = false;
         private Runnable cancelRequestingPasskey;
-        private void requestPasskey(boolean clickedButton) {
+        private void requestPasskey(boolean clickedButton, boolean force) {
             if (activityMode != MODE_LOGIN) return;
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P || !BuildVars.SUPPORTS_PASSKEYS) return;
+            if (force) {
+                if (cancelRequestingPasskey != null) {
+                    cancelRequestingPasskey.run();
+                    cancelRequestingPasskey = null;
+                }
+                requestingPasskey = false;
+                requestedPasskey = false;
+            }
             if (requestingPasskey || !clickedButton && requestedPasskey) return;
 
             requestingPasskey = true;
@@ -3757,7 +3758,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (err != null && ("EMPTY".equals(err) || "CANCELLED".equals(err))) {
                     if (subtitleView != null && "CANCELLED".equals(err)) {
                         subtitleView.setText(AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.StartTextPasskey), () -> {
-                            requestPasskey(true);
+                            requestPasskey(true, false);
                         }), true));
                     }
                     return;
@@ -8630,8 +8631,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
 
             TLRPC.TL_auth_exportLoginToken req = new TLRPC.TL_auth_exportLoginToken();
-            req.api_hash = BuildVars.APP_HASH;
-            req.api_id = BuildVars.APP_ID;
+            req.api_hash = ConnectionsHelper.getCurrentApiHash();
+            req.api_id = ConnectionsHelper.getCurrentApiId();
             for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                 UserConfig userConfig = UserConfig.getInstance(a);
                 if (userConfig.isClientActivated()) {
@@ -9384,6 +9385,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     private int currentConnectionState;
 
     private void updateProxyButton(boolean animated, boolean force) {
+        if (true) return;
         if (proxyDrawable == null) {
             return;
         }
