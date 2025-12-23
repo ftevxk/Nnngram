@@ -82,6 +82,7 @@ jobs:
             - name: Set up ccache
               uses: hendrikmuhs/ccache-action@v1
               with:
+                  path: ~/.ccache
                   key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cpp', '**/*.c') }}
                   restore-keys: |
                       ccache-${{ runner.os }}-
@@ -119,7 +120,11 @@ jobs:
                   cat > service_account_credentials.json << EOF
                   ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}"
                   EOF
+                  # Show ccache stats before build
+                  ccache -s
                   ./gradlew TMessagesProj:assembleDebug
+                  # Show ccache stats after build
+                  ccache -s
                   echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
 
             - uses: actions/upload-artifact@v4
