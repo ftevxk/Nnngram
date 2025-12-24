@@ -32,7 +32,9 @@ import org.telegram.ui.ChatActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Objects;
+import android.text.TextUtils;
 
 public class HashtagSearchController {
     private static volatile HashtagSearchController[] Instance = new HashtagSearchController[UserConfig.MAX_ACCOUNT_COUNT];
@@ -66,6 +68,32 @@ public class HashtagSearchController {
 
     public final ArrayList<String> history = new ArrayList<>();
     public final static int HISTORY_LIMIT = 100;
+    
+    //wd 模糊匹配工具方法，支持中英文混合搜索
+    private static boolean fuzzyMatch(String text, String query) {
+        if (TextUtils.isEmpty(text) || TextUtils.isEmpty(query)) {
+            return false;
+        }
+        
+        text = text.toLowerCase(Locale.ROOT);
+        query = query.toLowerCase(Locale.ROOT);
+        
+        int textLen = text.length();
+        int queryLen = query.length();
+        
+        if (queryLen > textLen) {
+            return false;
+        }
+        
+        int queryIndex = 0;
+        for (int textIndex = 0; textIndex < textLen && queryIndex < queryLen; textIndex++) {
+            if (text.charAt(textIndex) == query.charAt(queryIndex)) {
+                queryIndex++;
+            }
+        }
+        
+        return queryIndex == queryLen;
+    }
 
     private HashtagSearchController(int currentAccount) {
         this.currentAccount = currentAccount;
@@ -257,12 +285,37 @@ public class HashtagSearchController {
                 TLRPC.messages_Messages messages = (TLRPC.messages_Messages) res;
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
                 for (TLRPC.Message msg : messages.messages) {
-                    MessageObject obj = new MessageObject(currentAccount, msg, null, null, null, null, null, true, true, 0, false, false, false, searchType);
-                    if (obj.hasValidGroupId()) {
-                        obj.isPrimaryGroupMessage = true;
+                    //wd 应用模糊匹配过滤网络搜索结果
+                    boolean match = false;
+                    if (!TextUtils.isEmpty(query)) {
+                        //wd 检查消息文本内容
+                    if (msg.message != null) {
+                        match = fuzzyMatch(msg.message, query);
                     }
-                    obj.setQuery(query, false);
-                    messageObjects.add(obj);
+                    //wd 检查消息的媒体内容（如照片、视频、文档等）
+                    if (!match && msg.media != null) {
+                        //wd 检查媒体标题
+                        if (msg.media.title != null) {
+                            match = fuzzyMatch(msg.media.title, query);
+                        }
+                        //wd 检查媒体描述
+                        if (!match && msg.media.description != null) {
+                            match = fuzzyMatch(msg.media.description, query);
+                        }
+                    }
+                    } else {
+                        //wd 如果查询为空，则显示所有结果
+                        match = true;
+                    }
+                    
+                    if (match) {
+                        MessageObject obj = new MessageObject(currentAccount, msg, null, null, null, null, null, true, true, 0, false, false, false, searchType);
+                        if (obj.hasValidGroupId()) {
+                            obj.isPrimaryGroupMessage = true;
+                        }
+                        obj.setQuery(query, false);
+                        messageObjects.add(obj);
+                    }
                 }
 
                 AndroidUtilities.runOnUIThread(() -> {
