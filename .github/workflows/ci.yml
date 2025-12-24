@@ -27,9 +27,11 @@ jobs:
             - uses: actions/checkout@v3
               with:
                   fetch-depth: 0
-                  submodules: recursive
                   # 添加子模块缓存
                   path: .
+            - name: Check out submodules
+              run: |
+                git -c submodule."libs/rust".update=none submodule update --init --recursive
 
             # 添加Gradle缓存
             - name: Cache Gradle packages
