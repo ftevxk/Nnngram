@@ -4057,6 +4057,31 @@ public class MediaDataController extends BaseController {
                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
                 }
             }, true);
+        } else if (!isSaved && firstQuery) {
+            //wd 添加普通聊天消息的本地搜索支持
+            lastReturnedNum = 0;
+            searchServerResultMessages.clear();
+            searchServerResultMessagesMap[0].clear();
+            searchServerResultMessagesMap[1].clear();
+            
+            loadingSearchLocal = true;
+            getMessagesStorage().searchMessagesByText(dialogId, query, 300, 0, (messages, users, chats, docs) -> {
+                if (currentReqId == lastReqId) {
+                    loadingSearchLocal = false;
+                    getMessagesController().putUsers(users, true);
+                    getMessagesController().putChats(chats, true);
+                    if (docs != null && !docs.isEmpty()) {
+                        AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(docs);
+                    }
+                    if (messages != null) {
+                        searchLocalResultMessages = messages;
+                    } else {
+                        searchLocalResultMessages.clear();
+                    }
+                    updateSearchResults();
+                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
+                }
+            });
         }
         if (lastReplyMessageId != 0) {
             if (queryWithDialog == getUserConfig().getClientUserId() || getMessagesStorage().isMonoForum(queryWithDialog)) {
@@ -4066,6 +4091,20 @@ public class MediaDataController extends BaseController {
                 req.top_msg_id = (int) lastReplyMessageId;
                 req.flags |= 2;
             }
+        }
+        if (!isSaved && filter == null && firstQuery && !TextUtils.isEmpty(query)) {
+            loadingSearchLocal = true;
+            getMessagesStorage().searchMessagesByText(dialogId, query, 300, 0, (messages, users, chats, emojis) -> {
+                if (currentReqId == lastReqId) {
+                    loadingSearchLocal = false;
+                    getMessagesController().putUsers(users, true);
+                    getMessagesController().putChats(chats, true);
+                    AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(emojis);
+                    searchLocalResultMessages = messages;
+                    updateSearchResults();
+                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
+                }
+            });
         }
         if (reaction != null) {
             req.saved_reaction.add(reaction.toTLReaction());
@@ -4205,7 +4244,7 @@ public class MediaDataController extends BaseController {
             return message.media != null && message.media.voice;
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterUrl) {
             //wd 检查是否包含URL
-            return message.message != null && message.message.contains("http://") || message.message.contains("https://");
+            return message.message != null && (message.message.contains("http://") || message.message.contains("https://"));
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterMusic) {
             //wd 检查是否为音乐文件
             return message.media != null && message.media.document != null && message.media.document.mime_type != null && message.media.document.mime_type.startsWith("audio/");

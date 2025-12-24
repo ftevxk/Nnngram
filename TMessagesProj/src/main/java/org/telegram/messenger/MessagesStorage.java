@@ -4897,78 +4897,54 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void searchSavedByTag(TLRPC.Reaction tag, long topic_id, String query, int limit, int offset, Utilities.Callback4<ArrayList<MessageObject>, ArrayList<TLRPC.User>, ArrayList<TLRPC.Chat>, ArrayList<TLRPC.Document>> done, boolean includeGroups) {
+    public void searchMessagesByText(long dialogId, String query, int limit, int offset, Utilities.Callback4<ArrayList<MessageObject>, ArrayList<TLRPC.User>, ArrayList<TLRPC.Chat>, ArrayList<TLRPC.Document>> done) {
         if (done == null) {
             return;
         }
         storageQueue.postRunnable(() -> {
             SQLitePreparedStatement state = null;
             SQLiteCursor cursor = null;
-            SQLiteCursor cursor_groups = null;
             try {
                 final long selfId = getUserConfig().getClientUserId();
-                state = database.executeFast("SELECT m.data, m.replydata, m.group_id FROM messages_v2 m INNER JOIN tag_message_id t ON m.mid = t.mid WHERE m.uid = ? AND t.tag = ?" + (!TextUtils.isEmpty(query) ? " AND t.text LIKE '%' || ? || '%'" : "") + (topic_id != 0 ? " AND topic_id = ? "  : "") + " ORDER BY m.mid DESC LIMIT ? OFFSET ?");
+                //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
+                state = database.executeFast("SELECT data, replydata FROM messages_v2 WHERE uid = ? AND did = ? ORDER BY mid DESC LIMIT ? OFFSET ?");
 
                 ArrayList<TLRPC.User> users = new ArrayList<>();
-//                ArrayList<TLRPC.User> encUsers = new ArrayList<>();
                 ArrayList<TLRPC.Chat> chats = new ArrayList<>();
                 ArrayList<Long> animatedEmojiToLoad = new ArrayList<>();
                 ArrayList<Long> usersToLoad = new ArrayList<>();
                 ArrayList<Long> chatsToLoad = new ArrayList<>();
                 ArrayList<TLRPC.Document> animatedEmoji = new ArrayList<>();
-//                LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners = new LongSparseArray<>();
-//                LongSparseArray<ArrayList<Integer>> dialogReplyMessagesIds = new LongSparseArray<>();
 
                 int pointer = 1;
                 state.bindLong(pointer++, selfId);
-                long hash = 0;
-                if (tag instanceof TLRPC.TL_reactionEmoji) {
-                    hash = ((TLRPC.TL_reactionEmoji) tag).emoticon.hashCode();
-                } else if (tag instanceof TLRPC.TL_reactionCustomEmoji) {
-                    hash = ((TLRPC.TL_reactionCustomEmoji) tag).document_id;
-                }
-                state.bindLong(pointer++, hash);
-                if (!TextUtils.isEmpty(query)) {
-                    String q = LocaleController.getInstance().getTranslitString(query);
-                    if (q == null) q = "";
-                    state.bindString(pointer++, q);
-                }
-                if (topic_id != 0) {
-                    state.bindLong(pointer++, topic_id);
-                }
-                state.bindInteger(pointer++, limit);
+                state.bindLong(pointer++, dialogId);
+                state.bindInteger(pointer++, limit * 3); //wd 获取更多消息以过滤
                 state.bindInteger(pointer++, offset);
 
                 cursor = state.query(new Object[] {});
                 state = null;
 
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                while (cursor.next()) {
-                    long group_id = cursor.longValue(2);
-                    if (group_id != 0 && includeGroups) {
-                        cursor_groups = database.queryFinalized("SELECT data, replydata, group_id FROM messages_v2 WHERE uid = ? AND group_id = ? ORDER BY mid DESC", selfId, group_id);
-                        ArrayList<MessageObject> groupmessages = new ArrayList<>();
-                        while (cursor_groups.next()) {
-                            NativeByteBuffer data = cursor_groups.byteBufferValue(0);
-                            TLRPC.Message groupmessage = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                            groupmessage.readAttachPath(data, selfId);
-                            data.reuse();
-                            addUsersAndChatsFromMessage(groupmessage, usersToLoad, chatsToLoad, animatedEmojiToLoad);
-                            MessageObject messageObject = new MessageObject(currentAccount, groupmessage, null, null, null, null, null, true, true, 0, false, false, true);
-                            if (groupmessage.reactions != null) {
-                                messageObject.isPrimaryGroupMessage = true;
-                            }
-                            groupmessages.add(messageObject);
+                String lowerQuery = query.toLowerCase();
+                int matchedCount = 0;
+
+                while (cursor.next() && matchedCount < limit) {
+                    NativeByteBuffer data = cursor.byteBufferValue(0);
+                    if (data == null) continue;
+                    TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                    if (message != null) {
+                        message.readAttachPath(data, selfId);
+                        data.reuse();
+
+                        //wd 检查消息是否包含搜索查询
+                        boolean matches = false;
+                        if (message.message != null) {
+                            String lowerMessage = message.message.toLowerCase();
+                            matches = lowerMessage.contains(lowerQuery);
                         }
-                        cursor_groups.dispose();
-                        messageObjects.addAll(groupmessages);
-                    } else {
-                        NativeByteBuffer data = cursor.byteBufferValue(0);
-                        if (data == null) continue;
-                        TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                        if (message != null) {
-                            message.readAttachPath(data, selfId);
-                            data.reuse();
+
+                        if (matches) {
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
                             if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
                                 if (!cursor.isNull(1)) {
@@ -4985,12 +4961,11 @@ public class MessagesStorage extends BaseController {
                             }
                             MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, true);
                             messageObjects.add(messageObject);
+                            matchedCount++;
                         }
                     }
                 }
                 cursor.dispose();
-
-//                loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad, false);
 
                 if (!usersToLoad.isEmpty()) {
                     getUsersInternal(usersToLoad, users);
@@ -5014,9 +4989,6 @@ public class MessagesStorage extends BaseController {
                 }
                 if (cursor != null) {
                     cursor.dispose();
-                }
-                if (cursor_groups != null) {
-                    cursor_groups.dispose();
                 }
             }
         });
