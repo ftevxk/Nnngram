@@ -134,30 +134,7 @@ public class MediaDataController extends BaseController {
         STRIKE_PATTERN = Pattern.compile("~~(.+?)~~");
     
     //wd 模糊匹配工具方法，支持中英文混合搜索
-    private static boolean fuzzyMatch(String text, String query) {
-        if (TextUtils.isEmpty(text) || TextUtils.isEmpty(query)) {
-            return false;
-        }
-        
-        text = text.toLowerCase(Locale.ROOT);
-        query = query.toLowerCase(Locale.ROOT);
-        
-        int textLen = text.length();
-        int queryLen = query.length();
-        
-        if (queryLen > textLen) {
-            return false;
-        }
-        
-        int queryIndex = 0;
-        for (int textIndex = 0; textIndex < textLen && queryIndex < queryLen; textIndex++) {
-            if (text.charAt(textIndex) == query.charAt(queryIndex)) {
-                queryIndex++;
-            }
-        }
-        
-        return queryIndex == queryLen;
-    }
+
 
     public static String SHORTCUT_CATEGORY = "org.telegram.messenger.SHORTCUT_SHARE";
 
@@ -3691,21 +3668,8 @@ public class MediaDataController extends BaseController {
                 //wd 应用模糊匹配过滤
                 boolean match = false;
                 if (!TextUtils.isEmpty(lastSearchQuery)) {
-                    //wd 检查消息文本内容
-                    if (m.messageOwner.message != null) {
-                        match = fuzzyMatch(m.messageOwner.message, lastSearchQuery);
-                    }
-                    //wd 检查消息的媒体内容（如照片、视频、文档等）
-                    if (!match && m.messageOwner.media != null) {
-                        //wd 检查媒体标题
-                        if (m.messageOwner.media.title != null) {
-                            match = fuzzyMatch(m.messageOwner.media.title, lastSearchQuery);
-                        }
-                        //wd 检查媒体描述
-                        if (!match && m.messageOwner.media.description != null) {
-                            match = fuzzyMatch(m.messageOwner.media.description, lastSearchQuery);
-                        }
-                    }
+                    //wd 使用消息对象的fuzzyMatch方法进行匹配
+                    match = m.messageOwner.fuzzyMatch(lastSearchQuery);
                 } else {
                     //wd 如果查询为空，则显示所有本地结果
                     match = true;

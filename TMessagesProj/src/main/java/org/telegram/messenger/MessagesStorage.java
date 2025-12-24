@@ -4907,7 +4907,15 @@ public class MessagesStorage extends BaseController {
             try {
                 final long selfId = getUserConfig().getClientUserId();
                 //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
-                state = database.executeFast("SELECT data, replydata FROM messages_v2 WHERE uid = ? AND did = ? ORDER BY mid DESC LIMIT ? OFFSET ?");
+                String querySQL;
+                if (dialogId == 0) {
+                    //wd 全局搜索：查询所有对话框的消息
+                    querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
+                } else {
+                    //wd 单对话框搜索：仅查询指定对话框的消息
+                    querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? AND did = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
+                }
+                state = database.executeFast(querySQL);
 
                 ArrayList<TLRPC.User> users = new ArrayList<>();
                 ArrayList<TLRPC.Chat> chats = new ArrayList<>();
@@ -4918,7 +4926,9 @@ public class MessagesStorage extends BaseController {
 
                 int pointer = 1;
                 state.bindLong(pointer++, selfId);
-                state.bindLong(pointer++, dialogId);
+                if (dialogId != 0) {
+                    state.bindLong(pointer++, dialogId);
+                }
                 state.bindInteger(pointer++, limit * 3); //wd 获取更多消息以过滤
                 state.bindInteger(pointer++, offset);
 
@@ -4926,7 +4936,6 @@ public class MessagesStorage extends BaseController {
                 state = null;
 
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                String lowerQuery = query.toLowerCase();
                 int matchedCount = 0;
 
                 while (cursor.next() && matchedCount < limit) {
@@ -4938,10 +4947,19 @@ public class MessagesStorage extends BaseController {
                         data.reuse();
 
                         //wd 检查消息是否包含搜索查询
-                        boolean matches = false;
-                        if (message.message != null) {
-                            String lowerMessage = message.message.toLowerCase();
-                            matches = lowerMessage.contains(lowerQuery);
+                        boolean matches = message.fuzzyMatch(query);
+                        //wd 检查回复消息的内容
+                        if (!matches && message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
+                            if (!cursor.isNull(1)) {
+                                NativeByteBuffer replyData = cursor.byteBufferValue(1);
+                                if (replyData != null) {
+                                    TLRPC.Message replyMessage = TLRPC.Message.TLdeserialize(replyData, replyData.readInt32(false), false);
+                                    if (replyMessage != null) {
+                                        matches = replyMessage.fuzzyMatch(query);
+                                    }
+                                    replyData.reuse();
+                                }
+                            }
                         }
 
                         if (matches) {

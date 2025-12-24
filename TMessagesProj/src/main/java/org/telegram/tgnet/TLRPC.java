@@ -18,7 +18,6 @@ import android.text.TextUtils;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 
-import org.osmdroid.util.TileSystemWebMercator;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.DialogObject;
@@ -45,6 +44,7 @@ import org.telegram.ui.Stories.MessageMediaStoryFull_old;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 import me.vkryl.core.BitwiseUtils;
 
@@ -61644,6 +61644,59 @@ public class TLRPC {
         public InputQuickReplyShortcut quick_reply_shortcut; //custom
         public long errorAllowedPriceStars; //custom
         public long errorNewPriceStars; //custom
+
+        /**
+         * 关键词模糊搜索匹配
+         * @param query 关键词
+         * @return 是否模糊搜索匹配
+         */
+        public boolean fuzzyMatch(String query) {
+            if (TextUtils.isEmpty(query)) {
+                return true;
+            }
+            query = query.toLowerCase(Locale.ROOT);
+            
+            // 检查消息文本
+            if (!TextUtils.isEmpty(this.message)) {
+                String text = this.message.toLowerCase(Locale.ROOT);
+                if (fuzzyMatchText(text, query)) {
+                    return true;
+                }
+            }
+            
+            // 检查媒体标题
+            if (this.media != null && !TextUtils.isEmpty(this.media.title)) {
+                String title = this.media.title.toLowerCase(Locale.ROOT);
+                if (fuzzyMatchText(title, query)) {
+                    return true;
+                }
+            }
+            
+            // 检查媒体描述
+            if (this.media != null && !TextUtils.isEmpty(this.media.description)) {
+                String description = this.media.description.toLowerCase(Locale.ROOT);
+                if (fuzzyMatchText(description, query)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        private boolean fuzzyMatchText(String text, String query) {
+            int textLen = text.length();
+            int queryLen = query.length();
+            if (queryLen > textLen) {
+                return false;
+            }
+            int queryIndex = 0;
+            for (int textIndex = 0; textIndex < textLen && queryIndex < queryLen; textIndex++) {
+                if (text.charAt(textIndex) == query.charAt(queryIndex)) {
+                    queryIndex++;
+                }
+            }
+            return queryIndex == queryLen;
+        }
 
         public static Message TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
             Message result = null;

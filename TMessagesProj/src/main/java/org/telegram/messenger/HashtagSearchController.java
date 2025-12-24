@@ -70,30 +70,7 @@ public class HashtagSearchController {
     public final static int HISTORY_LIMIT = 100;
     
     //wd 模糊匹配工具方法，支持中英文混合搜索
-    private static boolean fuzzyMatch(String text, String query) {
-        if (TextUtils.isEmpty(text) || TextUtils.isEmpty(query)) {
-            return false;
-        }
-        
-        text = text.toLowerCase(Locale.ROOT);
-        query = query.toLowerCase(Locale.ROOT);
-        
-        int textLen = text.length();
-        int queryLen = query.length();
-        
-        if (queryLen > textLen) {
-            return false;
-        }
-        
-        int queryIndex = 0;
-        for (int textIndex = 0; textIndex < textLen && queryIndex < queryLen; textIndex++) {
-            if (text.charAt(textIndex) == query.charAt(queryIndex)) {
-                queryIndex++;
-            }
-        }
-        
-        return queryIndex == queryLen;
-    }
+
 
     private HashtagSearchController(int currentAccount) {
         this.currentAccount = currentAccount;
@@ -279,6 +256,35 @@ public class HashtagSearchController {
                 request = req;
             }
         }
+        //wd 首先搜索本地消息
+        if (searchType == ChatActivity.SEARCH_MY_MESSAGES) {
+            //wd 调用本地搜索API获取本地消息
+            MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 100, 0, (localMessages, localUsers, localChats, localDocs) -> {
+                if (TextUtils.equals(search.lastHashtag, query)) {
+                    //wd 处理本地搜索结果
+                    AndroidUtilities.runOnUIThread(() -> {
+                        if (searchType != ChatActivity.SEARCH_MY_MESSAGES) return;
+                        
+                        for (MessageObject msg : localMessages) {
+                            MessageCompositeID compositeId = new MessageCompositeID(msg.messageOwner);
+                            Integer id = search.generatedIds.get(compositeId);
+                            if (id == null) {
+                                id = search.lastGeneratedId--;
+                                search.generatedIds.put(compositeId, id);
+                                search.messages.add(msg);
+                                msg.messageOwner.realId = msg.messageOwner.id;
+                                msg.messageOwner.id = id;
+                            }
+                        }
+                        
+                        //wd 刷新UI显示本地搜索结果
+                        NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.hashtagSearchUpdated, guid, search.messages.size(), search.endReached, search.getMask(), search.selectedIndex, 0);
+                    });
+                }
+            });
+        }
+        
+        //wd 然后搜索网络消息
         final int[] reqId = new int[1];
         reqId[0] = search.reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(request, (res, err) -> {
             if (res instanceof TLRPC.messages_Messages) {
@@ -288,21 +294,7 @@ public class HashtagSearchController {
                     //wd 应用模糊匹配过滤网络搜索结果
                     boolean match = false;
                     if (!TextUtils.isEmpty(query)) {
-                        //wd 检查消息文本内容
-                    if (msg.message != null) {
-                        match = fuzzyMatch(msg.message, query);
-                    }
-                    //wd 检查消息的媒体内容（如照片、视频、文档等）
-                    if (!match && msg.media != null) {
-                        //wd 检查媒体标题
-                        if (msg.media.title != null) {
-                            match = fuzzyMatch(msg.media.title, query);
-                        }
-                        //wd 检查媒体描述
-                        if (!match && msg.media.description != null) {
-                            match = fuzzyMatch(msg.media.description, query);
-                        }
-                    }
+                        match = msg.fuzzyMatch(query);
                     } else {
                         //wd 如果查询为空，则显示所有结果
                         match = true;

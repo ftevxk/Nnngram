@@ -94,7 +94,7 @@ jobs:
               uses: android-actions/setup-android@v3
               with:
                   api-level: 36
-                  build-tools: 35.0.1
+                  build-tools: 36.0.2
                   ndk: 28.1.13356709
 
             - name: Prepare Environment
