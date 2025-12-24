@@ -419,5 +419,4 @@
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
     <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>
     <string name="Lock">Lock</string>
-    <string name="Unlock">Unlock</string>
 </resources>
