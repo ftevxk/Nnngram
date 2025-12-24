@@ -4190,7 +4190,7 @@ public class MediaDataController extends BaseController {
         //wd 根据不同的过滤类型检查消息
         if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterPhotoVideo) {
             //wd 检查是否为照片或视频
-            return message.media != null && (message.media.photo != null || message.media.video != null);
+            return message.media != null && (message.media.photo != null || message.media.video);
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterPhotos) {
             //wd 检查是否为照片
             return message.media != null && message.media.photo != null;
