@@ -484,6 +484,8 @@ public class FilePathDatabase {
                             filesByDialogId.put(fileMeta.dialogId, list);
                         }
                         keepMediaFiles.get(i).isStory = fileMeta.messageType == MessageObject.TYPE_STORY;
+                        keepMediaFiles.get(i).dialogId = fileMeta.dialogId; //wd 存储对话ID用于锁定检查
+                        keepMediaFiles.get(i).messageId = fileMeta.messageId; //wd 存储消息ID用于锁定检查
                         list.add(keepMediaFiles.get(i));
                     }
                 }

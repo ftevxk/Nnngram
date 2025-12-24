@@ -22529,6 +22529,36 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
         canvas.restore();
+        
+        //wd 如果消息被锁定则绘制锁定图标
+        if (currentMessageObject.isLocked) {
+            Drawable lockIcon = ContextCompat.getDrawable(getContext(), R.drawable.msg_filled_lockedrecord);
+            if (lockIcon != null) {
+                float lockX, lockY;
+                if (shouldDrawTimeOnMedia()) {
+                    lockX = timeX - dp(16);
+                    lockY = getPhotoBottom() + additionalTimeOffsetY - dp(9);
+                } else {
+                    // 重新计算additionalX值，与时间绘制逻辑保持一致
+                    float additionalX = -timeLayout.getLineLeft(0);
+                    if (currentMessageObject.shouldDrawReactions() && reactionsLayoutInBubble.isSmall && !reactionsLayoutInBubble.isEmpty) {
+                        additionalX -= reactionsLayoutInBubble.width;
+                    }
+                    if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0 || (repliesLayout != null) || isPinned) {
+                        additionalX += timeWidth - timeLayout.getLineWidth(0);
+                        if (currentMessageObject.shouldDrawReactions() && reactionsLayoutInBubble.isSmall && !reactionsLayoutInBubble.isEmpty) {
+                            additionalX -= reactionsLayoutInBubble.width;
+                        }
+                    }
+                    lockX = timeTitleTimeX + additionalX - dp(16);
+                    lockY = layoutHeight - dp(pinnedBottom || pinnedTop ? 9.5f : 8.5f) + timeYOffset;
+                }
+                setDrawableBounds(lockIcon, (int) lockX, (int) lockY - dp(14));
+                lockIcon.setAlpha((int) (255 * alpha));
+                lockIcon.draw(canvas);
+                lockIcon.setAlpha(255);
+            }
+        }
 
         if (unlockLayout != null) {
             if (unlockX == 0 || unlockY == 0) {

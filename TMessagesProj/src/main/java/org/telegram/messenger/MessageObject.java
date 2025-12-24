@@ -387,12 +387,28 @@ public class MessageObject {
     public Drawable customAvatarDrawable;
     public boolean isSaved;
     public boolean isSavedFiltered;
+    public boolean isLocked; //wd 锁定状态
     public String quick_reply_shortcut;
     public int searchType;
     private BotInlineKeyboard.Source inlineKeyboardSource;
 
     private byte[] randomWaveform;
     public boolean drawServiceWithDefaultTypeface;
+
+    //wd 设置锁定状态
+    public void setLocked(boolean locked) {
+        if (this.isLocked != locked) {
+            this.isLocked = locked;
+            if (messageOwner.params == null) {
+                messageOwner.params = new HashMap<>();
+            }
+            if (locked) {
+                messageOwner.params.put("wd_lock", "1");
+            } else {
+                messageOwner.params.remove("wd_lock");
+            }
+        }
+    }
 
     public static boolean hasUnreadReactions(TLRPC.Message message) {
         if (message == null) {
@@ -1872,6 +1888,12 @@ public class MessageObject {
         this.isRepostVideoPreview = isRepostVideoPreview;
         this.isSaved = isSavedMessages || getDialogId(message) == UserConfig.getInstance(accountNum).getClientUserId();
         this.searchType = searchType;
+        
+        //wd 从params加载锁定状态
+        if (message.params != null) {
+            String lockParam = message.params.get("wd_lock");
+            this.isLocked = lockParam != null && lockParam.equals("1");
+        }
 
         currentAccount = accountNum;
         messageOwner = message;

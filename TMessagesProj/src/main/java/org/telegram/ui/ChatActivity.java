@@ -1226,6 +1226,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_SUGGESTION_EDIT_TIME = 112;
     public final static int OPTION_SUGGESTION_EDIT_MESSAGE = 113;
     public final static int OPTION_SUGGESTION_ADD_OFFER = 114;
+    public final static int OPTION_LOCK = 915; //wd 锁定/解锁消息
 
     private boolean isChannelBottomMuteView = false;
 
@@ -33849,6 +33850,15 @@ public class ChatActivity extends BaseFragment implements
                 hideAds();
                 break;
             }
+            case OPTION_LOCK: {
+                //wd 切换锁定状态
+                if (selectedObject != null) {
+                    selectedObject.setLocked(!selectedObject.isLocked);
+                    // 更新UI显示
+                    updateVisibleRows();
+                }
+                break;
+            }
             case OPTION_SPEED_PROMO: {
                 showDialog(new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_DOWNLOAD_SPEED, true));
                 break;
@@ -45137,6 +45147,10 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_DETAIL);
                     icons.add(R.drawable.msg_info);
                 }
+                //wd 添加锁定/解锁选项
+                items.add(LocaleController.getString(selectedObject.isLocked ? "Unlock" : "Lock", R.string.Unlock));
+                options.add(OPTION_LOCK);
+                icons.add(selectedObject.isLocked ? R.drawable.msg_filled_lockedrecord : R.drawable.msg_filled_unlockedrecord);
                 boolean canViewStats = false;
                 if (message.messageOwner.views > 0 || message.messageOwner.forwards > 0) {
                     if (message.messageOwner.fwd_from != null && message.messageOwner.fwd_from.channel_post != 0) {

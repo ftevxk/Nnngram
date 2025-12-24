@@ -115,7 +115,35 @@ public class AutoDeleteMediaTask {
                                 timeLocal = time - seconds;
                             }
                             long lastUsageTime = Utilities.getLastUsageFileTime(file.file.getAbsolutePath());
-                            boolean needDelete = lastUsageTime > 316000000 && lastUsageTime < timeLocal && !usingFilePaths.contains(file.file.getPath());
+                            boolean isLocked = false;
+                            //wd 检查消息是否被锁定
+                            if (file.dialogId != 0 && file.messageId != 0) {
+                                for (int account = 0; account < UserConfig.MAX_ACCOUNT_COUNT; account++) {
+                                    if (UserConfig.getInstance(account).isClientActivated()) {
+                                        MessagesController messagesController = MessagesController.getInstance(account);
+                                        ArrayList<MessageObject> dialogMessages = messagesController.dialogMessage.get(file.dialogId);
+                                        if (dialogMessages != null) {
+                                            for (MessageObject messageObject : dialogMessages) {
+                                                if (messageObject.getId() == file.messageId) {
+                                                    isLocked = messageObject.isLocked;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        // 如果在dialogMessage中没找到，尝试在全局ID映射中查找
+                                        if (!isLocked) {
+                                            MessageObject messageObject = messagesController.dialogMessagesByIds.get(file.messageId);
+                                            if (messageObject != null) {
+                                                isLocked = messageObject.isLocked;
+                                            }
+                                        }
+                                        if (isLocked) {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            boolean needDelete = lastUsageTime > 316000000 && lastUsageTime < timeLocal && !usingFilePaths.contains(file.file.getPath()) && !isLocked;
                             if (needDelete) {
                                 try {
                                     if (BuildVars.LOGS_ENABLED) {

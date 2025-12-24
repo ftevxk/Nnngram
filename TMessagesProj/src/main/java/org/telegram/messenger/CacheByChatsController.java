@@ -225,6 +225,8 @@ public class CacheByChatsController {
         int keepMedia = -1;
         int dialogType = KEEP_MEDIA_TYPE_CHANNEL;
         boolean isStory;
+        long dialogId; //wd 对话ID用于锁定检查
+        int messageId; //wd 消息ID用于锁定检查
 
         public KeepMediaFile(File file) {
             this.file = file;
