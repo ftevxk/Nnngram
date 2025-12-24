@@ -3661,6 +3661,9 @@ public class MediaDataController extends BaseController {
         searchResultMessages.clear();
         HashSet<Integer> messageIds = new HashSet<>();
         
+        //wd 获取当前已加载显示的消息列表作为补充数据源
+        ArrayList<MessageObject> loadedMessages = getMessagesController().dialogMessage.get(lastDialogId);
+        
         //wd 先添加本地内存搜索结果，应用模糊匹配过滤和高级过滤条件
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
@@ -3700,6 +3703,47 @@ public class MediaDataController extends BaseController {
             }
         }
         
+        //wd 添加当前已加载显示的消息列表作为补充数据源
+        if (loadedMessages != null && !loadedMessages.isEmpty()) {
+            for (int i = 0; i < loadedMessages.size(); ++i) {
+                MessageObject m = loadedMessages.get(i);
+                if (!messageIds.contains(m.getId())) {
+                    //wd 应用模糊匹配过滤
+                    boolean match = false;
+                    if (!TextUtils.isEmpty(lastSearchQuery)) {
+                        //wd 使用消息对象的fuzzyMatch方法进行匹配
+                        match = m.messageOwner.fuzzyMatch(lastSearchQuery);
+                    } else {
+                        //wd 如果查询为空，则显示所有本地结果
+                        match = true;
+                    }
+                    
+                    //wd 应用高级过滤条件
+                    if (match && lastSearchFilter != null) {
+                        match = checkMessageFilter(m);
+                    }
+                    
+                    if (match) {
+                        MessageObject prev = null;
+                        for (int j = 0; j < previousSearchResultMessages.size(); ++j) {
+                            if (previousSearchResultMessages.get(j).getId() == m.getId()) {
+                                prev = previousSearchResultMessages.get(j);
+                                break;
+                            }
+                        }
+                        if (prev != null) {
+                            m.copyStableParams(prev);
+                            m.mediaExists = prev.mediaExists;
+                            m.attachPathExists = prev.attachPathExists;
+                        }
+                        m.isSavedFiltered = true;
+                        searchResultMessages.add(m);
+                        messageIds.add(m.getId());
+                    }
+                }
+            }
+        }
+        
         //wd 再添加服务器搜索结果，避免重复
         for (int i = 0; i < searchServerResultMessages.size(); ++i) {
             MessageObject m = searchServerResultMessages.get(i);
@@ -3724,9 +3768,9 @@ public class MediaDataController extends BaseController {
         
         //wd 优化搜索性能：对搜索结果进行相关性排序
         Collections.sort(searchResultMessages, (m1, m2) -> {
-            //wd 优先展示本地搜索结果
-            boolean isLocal1 = searchLocalResultMessages.contains(m1);
-            boolean isLocal2 = searchLocalResultMessages.contains(m2);
+            //wd 优先展示本地搜索结果（包括已加载消息列表中的本地消息）
+            boolean isLocal1 = searchLocalResultMessages.contains(m1) || (loadedMessages != null && loadedMessages.contains(m1));
+            boolean isLocal2 = searchLocalResultMessages.contains(m2) || (loadedMessages != null && loadedMessages.contains(m2));
             if (isLocal1 != isLocal2) {
                 return isLocal1 ? -1 : 1;
             }
@@ -4055,20 +4099,6 @@ public class MediaDataController extends BaseController {
                 req.top_msg_id = (int) lastReplyMessageId;
                 req.flags |= 2;
             }
-        }
-        if (!isSaved && filter == null && firstQuery && !TextUtils.isEmpty(query)) {
-            loadingSearchLocal = true;
-            getMessagesStorage().searchMessagesByText(dialogId, query, 300, 0, (messages, users, chats, emojis) -> {
-                if (currentReqId == lastReqId) {
-                    loadingSearchLocal = false;
-                    getMessagesController().putUsers(users, true);
-                    getMessagesController().putChats(chats, true);
-                    AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(emojis);
-                    searchLocalResultMessages = messages;
-                    updateSearchResults();
-                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
-                }
-            });
         }
         if (reaction != null) {
             req.saved_reaction.add(reaction.toTLReaction());
