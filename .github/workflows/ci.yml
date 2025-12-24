@@ -91,6 +91,8 @@ jobs:
             - name: Setup Android SDK Tools
               uses: android-actions/setup-android@v3
               with:
+                  api-level: 36
+                  build-tools: 35.0.1
                   ndk: 28.1.13356709
 
             - name: Prepare Environment

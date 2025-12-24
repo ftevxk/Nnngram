@@ -3684,7 +3684,7 @@ public class MediaDataController extends BaseController {
         searchResultMessages.clear();
         HashSet<Integer> messageIds = new HashSet<>();
         
-        //wd 先添加本地内存搜索结果，应用模糊匹配过滤
+        //wd 先添加本地内存搜索结果，应用模糊匹配过滤和高级过滤条件
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
             if (!messageIds.contains(m.getId())) {
@@ -3709,6 +3709,11 @@ public class MediaDataController extends BaseController {
                 } else {
                     //wd 如果查询为空，则显示所有本地结果
                     match = true;
+                }
+                
+                //wd 应用高级过滤条件
+                if (match && lastSearchFilter != null) {
+                    match = checkMessageFilter(m);
                 }
                 
                 if (match) {
@@ -4174,6 +4179,48 @@ public class MediaDataController extends BaseController {
         getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), getUserConfig().getClientUserId(), lastReturnedNum, getSearchCount(), true);
     }
 
+    //wd 检查消息是否符合过滤条件
+    private boolean checkMessageFilter(MessageObject messageObject) {
+        if (messageObject == null || messageObject.messageOwner == null || lastSearchFilter == null) {
+            return true;
+        }
+        
+        TLRPC.Message message = messageObject.messageOwner;
+        
+        //wd 根据不同的过滤类型检查消息
+        if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterPhotoVideo) {
+            //wd 检查是否为照片或视频
+            return message.media != null && (message.media.photo != null || message.media.video != null);
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterPhotos) {
+            //wd 检查是否为照片
+            return message.media != null && message.media.photo != null;
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterVideo) {
+            //wd 检查是否为视频
+            return message.media != null && message.media.video;
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterDocument) {
+            //wd 检查是否为文档
+            return message.media != null && message.media.document != null;
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterRoundVoice) {
+            //wd 检查是否为语音消息
+            return message.media != null && message.media.voice;
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterUrl) {
+            //wd 检查是否包含URL
+            return message.message != null && message.message.contains("http://") || message.message.contains("https://");
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterMusic) {
+            //wd 检查是否为音乐文件
+            return message.media != null && message.media.document != null && message.media.document.mime_type != null && message.media.document.mime_type.startsWith("audio/");
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterGif) {
+            //wd 检查是否为GIF
+            return message.media != null && message.media.document != null && message.media.document.mime_type != null && message.media.document.mime_type.equals("image/gif");
+        } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterEmpty) {
+            //wd 空过滤器，匹配所有消息
+            return true;
+        }
+        
+        //wd 默认匹配所有消息
+        return true;
+    }
+    
     public String getLastSearchQuery() {
         return lastSearchQuery;
     }
