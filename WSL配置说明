@@ -1,5 +1,0 @@
-# 自用local.properties下SDK目录设置
-sdk.dir=/usr/lib/android-sdk
-
-# 自用编译打包命令
-cd projects/Nnngram/ && ./gradlew TMessagesProj:assembleDebug
