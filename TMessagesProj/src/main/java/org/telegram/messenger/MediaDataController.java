@@ -3657,14 +3657,20 @@ public class MediaDataController extends BaseController {
 
     //wd 双重搜索机制实现：同时整合本地内存数据和服务器搜索结果
     private void updateSearchResults() {
+        android.util.Log.d("wd", "updateSearchResults开始执行");
         ArrayList<MessageObject> previousSearchResultMessages = new ArrayList<>(searchResultMessages);
         searchResultMessages.clear();
         HashSet<Integer> messageIds = new HashSet<>();
         
         //wd 获取当前已加载显示的消息列表作为补充数据源
         ArrayList<MessageObject> loadedMessages = getMessagesController().dialogMessage.get(lastDialogId);
+        android.util.Log.d("wd", "loadedMessages size: " + (loadedMessages != null ? loadedMessages.size() : 0));
+        android.util.Log.d("wd", "lastDialogId: " + lastDialogId);
+        android.util.Log.d("wd", "lastSearchQuery: " + lastSearchQuery);
         
         //wd 先添加本地内存搜索结果，应用模糊匹配过滤和高级过滤条件
+        android.util.Log.d("wd", "searchLocalResultMessages size: " + searchLocalResultMessages.size());
+        int localAddedCount = 0;
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
             if (!messageIds.contains(m.getId())) {
@@ -3699,11 +3705,14 @@ public class MediaDataController extends BaseController {
                     m.isSavedFiltered = true;
                     searchResultMessages.add(m);
                     messageIds.add(m.getId());
+                    localAddedCount++;
                 }
             }
         }
+        android.util.Log.d("wd", "本地数据库搜索结果添加数量: " + localAddedCount);
         
         //wd 添加当前已加载显示的消息列表作为补充数据源
+        int loadedAddedCount = 0;
         if (loadedMessages != null && !loadedMessages.isEmpty()) {
             for (int i = 0; i < loadedMessages.size(); ++i) {
                 MessageObject m = loadedMessages.get(i);
@@ -3739,12 +3748,16 @@ public class MediaDataController extends BaseController {
                         m.isSavedFiltered = true;
                         searchResultMessages.add(m);
                         messageIds.add(m.getId());
+                        loadedAddedCount++;
                     }
                 }
             }
         }
+        android.util.Log.d("wd", "已加载消息列表添加数量: " + loadedAddedCount);
         
         //wd 再添加服务器搜索结果，避免重复
+        android.util.Log.d("wd", "searchServerResultMessages size: " + searchServerResultMessages.size());
+        int serverAddedCount = 0;
         for (int i = 0; i < searchServerResultMessages.size(); ++i) {
             MessageObject m = searchServerResultMessages.get(i);
             if ((!m.hasValidGroupId() || m.isPrimaryGroupMessage) && !messageIds.contains(m.getId())) {
@@ -3763,8 +3776,10 @@ public class MediaDataController extends BaseController {
                 m.isSavedFiltered = true;
                 searchResultMessages.add(m);
                 messageIds.add(m.getId());
+                serverAddedCount++;
             }
         }
+        android.util.Log.d("wd", "服务器搜索结果添加数量: " + serverAddedCount);
         
         //wd 优化搜索性能：对搜索结果进行相关性排序
         Collections.sort(searchResultMessages, (m1, m2) -> {
@@ -3783,6 +3798,10 @@ public class MediaDataController extends BaseController {
             //wd 最后根据消息时间排序
             return Long.compare(m2.getId(), m1.getId());
         });
+        
+        //wd 输出最终搜索结果统计
+        android.util.Log.d("wd", "updateSearchResults执行完成，总结果数量: " + searchResultMessages.size());
+        android.util.Log.d("wd", "本地数据库结果: " + localAddedCount + "，已加载消息补充: " + loadedAddedCount + "，服务器结果: " + serverAddedCount);
     }
 
     public int getMask() {
@@ -4067,6 +4086,8 @@ public class MediaDataController extends BaseController {
             }, true);
         } else if (!isSaved && firstQuery) {
             //wd 添加普通聊天消息的本地搜索支持
+            android.util.Log.d("wd", "触发普通聊天消息本地搜索");
+            android.util.Log.d("wd", "dialogId: " + dialogId + ", query: " + query + ", filter: " + filter);
             lastReturnedNum = 0;
             searchServerResultMessages.clear();
             searchServerResultMessagesMap[0].clear();
@@ -4081,6 +4102,7 @@ public class MediaDataController extends BaseController {
                     if (docs != null && !docs.isEmpty()) {
                         AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(docs);
                     }
+                    android.util.Log.d("wd", "searchMessagesByText返回结果数量: " + (messages != null ? messages.size() : 0));
                     if (messages != null) {
                         searchLocalResultMessages = messages;
                     } else {
