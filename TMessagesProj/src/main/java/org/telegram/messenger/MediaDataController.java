@@ -4009,9 +4009,7 @@ public class MediaDataController extends BaseController {
                 if (filter != null) {
                     req.filter = filter;
                 } else {
-//                    req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
-                    //wd 过滤规则默认请求视频类型
-                    req.filter = new TLRPC.TL_inputMessagesFilterVideo();
+                    req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
                 }
                 mergeReqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                     if (lastMergeDialogId == mergeDialogId) {
@@ -4129,9 +4127,7 @@ public class MediaDataController extends BaseController {
         if (filter != null) {
             req.filter = filter;
         } else {
-//            req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
-            //wd 过滤规则默认请求视频类型
-            req.filter = new TLRPC.TL_inputMessagesFilterVideo();
+            req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
         }
         lastSearchQuery = query;
         long queryWithDialogFinal = queryWithDialog;
