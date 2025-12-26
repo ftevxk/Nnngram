@@ -23,9 +23,14 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
-        maven("https://maven.aliyun.com/repository/public/")
-        maven("https://maven.aliyun.com/repository/google/")
-        maven("https://maven.aliyun.com/repository/gradle-plugin/")
+        maven("https://jitpack.io")
+        maven("https://developer.huawei.com/repo/")
+        maven("https://developer.hihonor.com/repo")
+        maven("https://maven.aliyun.com/repository/public")
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://artifact.bytedance.com/repository/pangle")
+        maven("https://oss.sonatype.org/content/repositories/snapshots/")
+        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
     }
 }
 
@@ -35,11 +40,14 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
-
         maven("https://jitpack.io")
-        maven("https://maven.aliyun.com/repository/public/")
-        maven("https://maven.aliyun.com/repository/google/")
-        maven("https://maven.aliyun.com/repository/gradle-plugin/")
+        maven("https://developer.huawei.com/repo/")
+        maven("https://developer.hihonor.com/repo")
+        maven("https://maven.aliyun.com/repository/public")
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://artifact.bytedance.com/repository/pangle")
+        maven("https://oss.sonatype.org/content/repositories/snapshots/")
+        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
     }
 }
 
