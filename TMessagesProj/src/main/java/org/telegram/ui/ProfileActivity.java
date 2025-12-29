@@ -13909,7 +13909,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     view = cell;
                     break;
             }
-            if (viewType != VIEW_TYPE_SHARED_MEDIA) {
+            if (viewType != VIEW_TYPE_SHARED_MEDIA && view != null) {
                 view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
             }
             return new RecyclerListView.Holder(view);
