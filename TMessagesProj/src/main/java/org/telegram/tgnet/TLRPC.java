@@ -14,6 +14,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
@@ -61655,11 +61656,14 @@ public class TLRPC {
                 return true;
             }
             query = query.toLowerCase(Locale.ROOT);
+            Log.d("wd", "fuzzyMatch开始匹配，query: " + query);
             
             // 检查消息文本
             if (!TextUtils.isEmpty(this.message)) {
                 String text = this.message.toLowerCase(Locale.ROOT);
+                Log.d("wd", "检查消息文本: " + text);
                 if (fuzzyMatchText(text, query)) {
+                    Log.d("wd", "消息文本匹配成功");
                     return true;
                 }
             }
@@ -61667,7 +61671,9 @@ public class TLRPC {
             // 检查媒体标题
             if (this.media != null && !TextUtils.isEmpty(this.media.title)) {
                 String title = this.media.title.toLowerCase(Locale.ROOT);
+                Log.d("wd", "检查媒体标题: " + title);
                 if (fuzzyMatchText(title, query)) {
+                    Log.d("wd", "媒体标题匹配成功");
                     return true;
                 }
             }
@@ -61675,27 +61681,21 @@ public class TLRPC {
             // 检查媒体描述
             if (this.media != null && !TextUtils.isEmpty(this.media.description)) {
                 String description = this.media.description.toLowerCase(Locale.ROOT);
+                Log.d("wd", "检查媒体描述: " + description);
                 if (fuzzyMatchText(description, query)) {
+                    Log.d("wd", "媒体描述匹配成功");
                     return true;
                 }
             }
             
+            Log.d("wd", "没有找到匹配项");
             return false;
         }
         
         private boolean fuzzyMatchText(String text, String query) {
-            int textLen = text.length();
-            int queryLen = query.length();
-            if (queryLen > textLen) {
-                return false;
-            }
-            int queryIndex = 0;
-            for (int textIndex = 0; textIndex < textLen && queryIndex < queryLen; textIndex++) {
-                if (text.charAt(textIndex) == query.charAt(queryIndex)) {
-                    queryIndex++;
-                }
-            }
-            return queryIndex == queryLen;
+            boolean contains = text.contains(query);
+            Log.d("wd", "fuzzyMatchText匹配: text=" + text + ", query=" + query + ", result=" + contains);
+            return contains;
         }
 
         public static Message TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
