@@ -1678,8 +1678,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                 int thumbInsertIndex = 0;
                                 if (!useFromUserAsAvatar && (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || currentDialogFolderId != 0 && stringBuilder.length() > 0)) {
                                     try {
-                                        stringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_nameMessage, resourcesProvider), 0, thumbInsertIndex = messageNameString.length() + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                        offsetName = thumbInsertIndex;
+                                        //wd 确保设置跨度的范围不超过stringBuilder的实际长度
+                                        thumbInsertIndex = Math.min(messageNameString.length() + 1, stringBuilder.length());
+                                        if (thumbInsertIndex > 0) {
+                                            stringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_nameMessage, resourcesProvider), 0, thumbInsertIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                            offsetName = thumbInsertIndex;
+                                        }
                                     } catch (Exception e) {
                                         FileLog.e(e);
                                     }

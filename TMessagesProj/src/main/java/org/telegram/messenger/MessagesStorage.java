@@ -4908,13 +4908,7 @@ public class MessagesStorage extends BaseController {
                 final long selfId = getUserConfig().getClientUserId();
                 //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
                 String querySQL;
-                if (dialogId == 0) {
-                    //wd 全局搜索：查询所有对话框的消息
-                    querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
-                } else {
-                    //wd 单对话框搜索：仅查询指定对话框的消息
-                    querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? AND did = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
-                }
+                querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
                 state = database.executeFast(querySQL);
 
                 ArrayList<TLRPC.User> users = new ArrayList<>();
@@ -4926,10 +4920,7 @@ public class MessagesStorage extends BaseController {
 
                 int pointer = 1;
                 state.bindLong(pointer++, selfId);
-                if (dialogId != 0) {
-                    state.bindLong(pointer++, dialogId);
-                }
-                state.bindInteger(pointer++, limit * 3); //wd 获取更多消息以过滤
+                state.bindInteger(pointer++, limit * 3);
                 state.bindInteger(pointer++, offset);
 
                 cursor = state.query(new Object[] {});
