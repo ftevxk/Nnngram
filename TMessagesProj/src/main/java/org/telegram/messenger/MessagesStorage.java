@@ -4934,6 +4934,10 @@ public class MessagesStorage extends BaseController {
                     if (data == null) continue;
                     TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                     if (message != null) {
+                        //wd 确保只搜索指定对话ID的消息
+                        if (message.dialog_id != dialogId) {
+                            continue;
+                        }
                         message.readAttachPath(data, selfId);
                         data.reuse();
 

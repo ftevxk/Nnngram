@@ -3048,9 +3048,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             listContentHeight += listView.getMeasuredHeight();
                         } else {
                             RecyclerView.ViewHolder holder = listAdapter.createViewHolder(null, type);
-                            listAdapter.onBindViewHolder(holder, i);
-                            holder.itemView.measure(ws, hs);
-                            listContentHeight += holder.itemView.getMeasuredHeight();
+                            if (holder != null && holder.itemView != null) {
+                                listAdapter.onBindViewHolder(holder, i);
+                                holder.itemView.measure(ws, hs);
+                                listContentHeight += holder.itemView.getMeasuredHeight();
+                            }
                         }
                     }
 
