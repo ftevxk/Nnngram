@@ -4905,7 +4905,6 @@ public class MessagesStorage extends BaseController {
             SQLitePreparedStatement state = null;
             SQLiteCursor cursor = null;
             try {
-                final long selfId = getUserConfig().getClientUserId();
                 android.util.Log.d("wd", "searchMessagesByText开始执行: dialogId=" + dialogId + ", query=" + query + ", limit=" + limit + ", offset=" + offset);
                 //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
                 //wd 增加查询范围以确保能找到匹配的消息，使用uid字段作为对话ID过滤
@@ -4921,11 +4920,11 @@ public class MessagesStorage extends BaseController {
                 ArrayList<TLRPC.Document> animatedEmoji = new ArrayList<>();
 
                 int pointer = 1;
-                state.bindLong(pointer++, selfId);
+                state.bindLong(pointer++, dialogId);
                 int scanLimit = limit * 10;
                 state.bindInteger(pointer++, scanLimit);
                 state.bindInteger(pointer++, offset);
-                android.util.Log.d("wd", "数据库查询: uid=" + selfId + ", scanLimit=" + scanLimit + ", offset=" + offset);
+                android.util.Log.d("wd", "数据库查询: uid=" + dialogId + ", scanLimit=" + scanLimit + ", offset=" + offset);
 
                 cursor = state.query(new Object[] {});
                 state = null;
@@ -4945,7 +4944,7 @@ public class MessagesStorage extends BaseController {
                             data.reuse();
                             continue;
                         }
-                        message.readAttachPath(data, selfId);
+                        message.readAttachPath(data, dialogId);
                         data.reuse();
 
                         //wd 检查消息是否包含搜索查询
@@ -4972,7 +4971,7 @@ public class MessagesStorage extends BaseController {
                                     data = cursor.byteBufferValue(1);
                                     if (data != null) {
                                         message.replyMessage = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                                        message.replyMessage.readAttachPath(data, selfId);
+                                        message.replyMessage.readAttachPath(data, dialogId);
                                         data.reuse();
                                         if (message.replyMessage != null) {
                                             addUsersAndChatsFromMessage(message.replyMessage, usersToLoad, chatsToLoad, animatedEmojiToLoad);
