@@ -4906,7 +4906,9 @@ public class MessagesStorage extends BaseController {
             SQLiteCursor cursor = null;
             try {
                 final long selfId = getUserConfig().getClientUserId();
+                android.util.Log.d("wd", "searchMessagesByText开始执行: dialogId=" + dialogId + ", query=" + query + ", limit=" + limit + ", offset=" + offset);
                 //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
+                //wd 增加查询范围以确保能找到匹配的消息，使用uid字段作为对话ID过滤
                 String querySQL;
                 querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
                 state = database.executeFast(querySQL);
@@ -4920,22 +4922,27 @@ public class MessagesStorage extends BaseController {
 
                 int pointer = 1;
                 state.bindLong(pointer++, selfId);
-                state.bindInteger(pointer++, limit * 3);
+                int scanLimit = limit * 10;
+                state.bindInteger(pointer++, scanLimit);
                 state.bindInteger(pointer++, offset);
+                android.util.Log.d("wd", "数据库查询: uid=" + selfId + ", scanLimit=" + scanLimit + ", offset=" + offset);
 
                 cursor = state.query(new Object[] {});
                 state = null;
 
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
                 int matchedCount = 0;
+                int scannedCount = 0;
 
                 while (cursor.next() && matchedCount < limit) {
+                    scannedCount++;
                     NativeByteBuffer data = cursor.byteBufferValue(0);
                     if (data == null) continue;
                     TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                     if (message != null) {
                         //wd 确保只搜索指定对话ID的消息
                         if (message.dialog_id != dialogId) {
+                            data.reuse();
                             continue;
                         }
                         message.readAttachPath(data, selfId);
@@ -4958,6 +4965,7 @@ public class MessagesStorage extends BaseController {
                         }
 
                         if (matches) {
+                            android.util.Log.d("wd", "找到匹配消息: messageId=" + message.id + ", text=" + message.message);
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
                             if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
                                 if (!cursor.isNull(1)) {
@@ -4978,6 +4986,7 @@ public class MessagesStorage extends BaseController {
                         }
                     }
                 }
+                android.util.Log.d("wd", "数据库查询完成: scannedCount=" + scannedCount + ", matchedCount=" + matchedCount);
                 cursor.dispose();
 
                 if (!usersToLoad.isEmpty()) {

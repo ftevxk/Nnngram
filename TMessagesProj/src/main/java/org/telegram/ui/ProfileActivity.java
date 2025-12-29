@@ -13841,9 +13841,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     view.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider_bottom, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
                     break;
                 }
-                default: {
-                    break;
-                }
                 case VIEW_TYPE_SUGGESTION: {
                     view = new SettingsSuggestionCell(mContext, resourcesProvider) {
                         @Override

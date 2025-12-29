@@ -11069,9 +11069,6 @@ public class MessageObject {
         //wd 模糊匹配算法：检查查询词是否为搜索词的子串或部分匹配
         for (int k = 0; k < queryWord.length; k++) {
             String currentQuery = queryWord[k];
-            if (currentQuery.length() < 2) {
-                continue;
-            }
             for (int i = 0; i < searchForWords.size(); i++) {
                 if (foundWords.contains(searchForWords.get(i))) {
                     continue;
