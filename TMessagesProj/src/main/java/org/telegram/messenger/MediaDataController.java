@@ -3865,10 +3865,7 @@ public class MediaDataController extends BaseController {
     }
 
     public int getSearchCount() {
-        if (searchServerResultMessages.isEmpty()) {
-            return Math.max(Math.max(messagesSearchCount[0] + messagesSearchCount[1], messagesLocalSearchCount), searchServerResultMessages.size());
-        }
-        return Math.max(messagesSearchCount[0] + messagesSearchCount[1], searchServerResultMessages.size());
+        return searchResultMessages.size();
     }
 
     public void setSearchedPosition(int index) {
