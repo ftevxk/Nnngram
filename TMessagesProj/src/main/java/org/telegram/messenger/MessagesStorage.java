@@ -4945,17 +4945,31 @@ public class MessagesStorage extends BaseController {
                     NativeByteBuffer data = cursor.byteBufferValue(0);
                     if (data == null) continue;
                     TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                    if (message != null) {
-                        //wd 确保只搜索指定对话ID的消息
-                        if (message.dialog_id != dialogId) {
-                            data.reuse();
-                            continue;
-                        }
-                        message.readAttachPath(data, dialogId);
+                    if (message == null) {
+                        Log.d("wd", "消息反序列化失败，跳过");
                         data.reuse();
+                        continue;
+                    }
+                    
+                    //wd 调试：检查消息基本信息
+                    if (scannedCount <= 5) {
+                        Log.d("wd", "消息" + scannedCount + ": id=" + message.id + ", dialog_id=" + message.dialog_id + 
+                              ", message=" + (message.message != null ? message.message.substring(0, Math.min(50, message.message.length())) : "null"));
+                    }
+                    
+                    //wd 确保只搜索指定对话ID的消息
+                    if (message.dialog_id != dialogId) {
+                        if (scannedCount <= 3) {
+                            Log.d("wd", "跳过消息: message.dialog_id=" + message.dialog_id + ", target dialogId=" + dialogId);
+                        }
+                        data.reuse();
+                        continue;
+                    }
+                    message.readAttachPath(data, dialogId);
+                    data.reuse();
 
-                        //wd 检查消息是否包含搜索查询
-                        boolean matches = message.fuzzyMatch(query);
+                    //wd 检查消息是否包含搜索查询
+                    boolean matches = message.fuzzyMatch(query);
                         //wd 检查回复消息的内容
                         if (!matches && message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
                             if (!cursor.isNull(1)) {
