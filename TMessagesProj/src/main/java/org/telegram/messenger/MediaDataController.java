@@ -4025,19 +4025,6 @@ public class MediaDataController extends BaseController {
 
     public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat,
         boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction, TLRPC.MessagesFilter filter, boolean firstSearch) {
-        //wd 空字符串或纯空格不触发搜索
-        if (TextUtils.isEmpty(query) || query.trim().isEmpty()) {
-            Log.d("wd", "searchMessagesInChat: query为空或纯空格，跳过搜索");
-            if (firstQuery && query != null) {
-                searchResultMessages.clear();
-                searchServerResultMessagesMap[0].clear();
-                searchServerResultMessagesMap[1].clear();
-                getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, 0, 0, jumpToMessage);
-            }
-            loadingMoreSearchMessages = false;
-            return;
-        }
-        
         int max_id = 0;
         long queryWithDialog = dialogId;
         boolean firstQuery = !internal;
@@ -4050,7 +4037,7 @@ public class MediaDataController extends BaseController {
             getConnectionsManager().cancelRequest(mergeReqId, true);
             mergeReqId = 0;
         }
-        if (query == null) {
+        if (query == null || TextUtils.isEmpty(query) || query.trim().isEmpty()) {
             if (searchResultMessages.isEmpty()) {
                 loadingMoreSearchMessages = false;
                 return;

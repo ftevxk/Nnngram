@@ -31,6 +31,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
@@ -4933,7 +4934,7 @@ public class MessagesStorage extends BaseController {
                 state.bindInteger(pointer++, offset);
                 android.util.Log.d("wd", "数据库查询: dialogId=" + dialogId + ", uid=" + uidToSearch + ", scanLimit=" + scanLimit + ", offset=" + offset);
 
-                cursor = state.query(new Object[] {});
+                cursor = state.query(new Object[]{});
                 state = null;
 
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
@@ -4950,13 +4951,13 @@ public class MessagesStorage extends BaseController {
                         data.reuse();
                         continue;
                     }
-                    
+
                     //wd 调试：检查消息基本信息
                     if (scannedCount <= 5) {
-                        Log.d("wd", "消息" + scannedCount + ": id=" + message.id + ", dialog_id=" + message.dialog_id + 
-                              ", message=" + (message.message != null ? message.message.substring(0, Math.min(50, message.message.length())) : "null"));
+                        Log.d("wd", "消息" + scannedCount + ": id=" + message.id + ", dialog_id=" + message.dialog_id +
+                            ", message=" + (message.message != null ? message.message.substring(0, Math.min(50, message.message.length())) : "null"));
                     }
-                    
+
                     //wd 确保只搜索指定对话ID的消息
                     if (message.dialog_id != dialogId) {
                         if (scannedCount <= 3) {
@@ -4970,43 +4971,42 @@ public class MessagesStorage extends BaseController {
 
                     //wd 检查消息是否包含搜索查询
                     boolean matches = message.fuzzyMatch(query);
-                        //wd 检查回复消息的内容
-                        if (!matches && message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
-                            if (!cursor.isNull(1)) {
-                                NativeByteBuffer replyData = cursor.byteBufferValue(1);
-                                if (replyData != null) {
-                                    TLRPC.Message replyMessage = TLRPC.Message.TLdeserialize(replyData, replyData.readInt32(false), false);
-                                    if (replyMessage != null) {
-                                        matches = replyMessage.fuzzyMatch(query);
-                                    }
-                                    replyData.reuse();
+                    //wd 检查回复消息的内容
+                    if (!matches && message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
+                        if (!cursor.isNull(1)) {
+                            NativeByteBuffer replyData = cursor.byteBufferValue(1);
+                            if (replyData != null) {
+                                TLRPC.Message replyMessage = TLRPC.Message.TLdeserialize(replyData, replyData.readInt32(false), false);
+                                if (replyMessage != null) {
+                                    matches = replyMessage.fuzzyMatch(query);
                                 }
+                                replyData.reuse();
                             }
-                        }
-
-                        if (matches) {
-                            android.util.Log.d("wd", "找到匹配消息: messageId=" + message.id + ", text=" + message.message);
-                            addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
-                            if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
-                                if (!cursor.isNull(1)) {
-                                    data = cursor.byteBufferValue(1);
-                                    if (data != null) {
-                                        message.replyMessage = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                                        message.replyMessage.readAttachPath(data, dialogId);
-                                        data.reuse();
-                                        if (message.replyMessage != null) {
-                                            addUsersAndChatsFromMessage(message.replyMessage, usersToLoad, chatsToLoad, animatedEmojiToLoad);
-                                        }
-                                    }
-                                }
-                            }
-                            MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, true);
-                            messageObjects.add(messageObject);
-                            matchedCount++;
                         }
                     }
+
+                    if (matches) {
+                        android.util.Log.d("wd", "找到匹配消息: messageId=" + message.id + ", text=" + message.message);
+                        addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
+                        if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
+                            if (!cursor.isNull(1)) {
+                                data = cursor.byteBufferValue(1);
+                                if (data != null) {
+                                    message.replyMessage = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                                    message.replyMessage.readAttachPath(data, dialogId);
+                                    data.reuse();
+                                    if (message.replyMessage != null) {
+                                        addUsersAndChatsFromMessage(message.replyMessage, usersToLoad, chatsToLoad, animatedEmojiToLoad);
+                                    }
+                                }
+                            }
+                        }
+                        MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, true);
+                        messageObjects.add(messageObject);
+                        matchedCount++;
+                    }
                 }
-                android.util.Log.d("wd", "数据库查询完成: scannedCount=" + scannedCount + ", matchedCount=" + matchedCount);
+                Log.d("wd", "数据库查询完成: scannedCount=" + scannedCount + ", matchedCount=" + matchedCount);
                 cursor.dispose();
 
                 if (!usersToLoad.isEmpty()) {
