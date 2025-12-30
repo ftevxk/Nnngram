@@ -33,29 +33,6 @@ jobs:
               run: |
                 git -c submodule."libs/rust".update=none submodule update --init --recursive
 
-            # 添加Gradle缓存
-            - name: Cache Gradle packages
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      ~/.gradle/caches
-                      ~/.gradle/wrapper
-                      .gradle
-                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-                  restore-keys: |
-                      ${{ runner.os }}-gradle-
-
-            # 添加Android SDK缓存
-            - name: Cache Android SDK
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      ${{ env.ANDROID_HOME }}/build-tools
-                      ${{ env.ANDROID_HOME }}/platforms
-                  key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle*') }}
-                  restore-keys: |
-                      ${{ runner.os }}-android-sdk-
-
             - name: Get short SHA
               run: |
                   echo "SHA7=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
@@ -97,6 +74,7 @@ jobs:
                   api-level: 36
                   build-tools: 36.0.2
                   ndk: 28.1.13356709
+                  cache: true
 
             - name: Prepare Environment
               run: |
