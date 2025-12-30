@@ -35,7 +35,7 @@ jobs:
 
             # 添加Gradle缓存
             - name: Cache Gradle packages
-              uses: actions/cache@v3
+              uses: actions/cache@v4
               with:
                   path: |
                       ~/.gradle/caches
@@ -47,23 +47,14 @@ jobs:
 
             # 添加Android SDK缓存
             - name: Cache Android SDK
-              uses: actions/cache@v3
+              uses: actions/cache@v4
               with:
                   path: |
                       ${{ env.ANDROID_HOME }}/build-tools
                       ${{ env.ANDROID_HOME }}/platforms
-                      ${{ env.ANDROID_HOME }}/ndk
                   key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle*') }}
                   restore-keys: |
                       ${{ runner.os }}-android-sdk-
-
-            # 添加NDK缓存
-            - name: Cache Android NDK
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ${{ env.ANDROID_HOME }}/ndk/28.1.13356709
-                  key: ${{ runner.os }}-android-ndk-28.1.13356709
 
             - name: Get short SHA
               run: |
@@ -79,16 +70,26 @@ jobs:
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v4
               with:
-                  cache-read-only: ${{ github.ref != 'refs/heads/wd' }}
+                  cache-read-only: true
 
-            - name: Set up ccache
-              uses: hendrikmuhs/ccache-action@v1
+            - name: Cache Android SDK
+              uses: actions/cache@v4
               with:
-                  path: ~/.ccache
-                  key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cpp', '**/*.c') }}
+                  path: |
+                      ${{ env.ANDROID_HOME }}/build-tools
+                      ${{ env.ANDROID_HOME }}/platforms
+                      ${{ env.ANDROID_HOME }}/ndk
+                  key: ${{ runner.os }}-android-sdk-v36-${{ hashFiles('**/build.gradle*') }}
                   restore-keys: |
-                      ccache-${{ runner.os }}-
-                      ccache-
+                      ${{ runner.os }}-android-sdk-v36-
+
+            - name: Cache APT Packages
+              uses: actions/cache@v4
+              with:
+                  path: /var/cache/apt/archives
+                  key: ${{ runner.os }}-apt-build-deps-${{ hashFiles('.github/workflows/ci.yml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-apt-build-deps-
 
             - name: Setup Android SDK Tools
               uses: android-actions/setup-android@v3
@@ -116,9 +117,20 @@ jobs:
                   sudo rm -rf /usr/local/share/chromium
                   sudo rm -rf /usr/local/lib/node_modules
                   df -h
-                  sudo apt-get install bison gcc make curl ninja-build -y
+                  echo "Installing build dependencies"
+                  sudo apt-get update -qq
+                  sudo apt-get install -y bison gcc make curl ninja-build
                   echo "sdk.dir=${ANDROID_HOME}" >> local.properties
 
+            - name: Set up ccache
+              uses: hendrikmuhs/ccache-action@v1
+              with:
+                  path: ~/.ccache
+                  key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cpp', '**/*.c') }}
+                  restore-keys: |
+                      ccache-${{ runner.os }}-
+                      ccache-
+                      
             - name: Artifact Build
               run: |
                   cat > service_account_credentials.json << EOF
