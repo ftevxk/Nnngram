@@ -133,15 +133,65 @@ jobs:
                       
             - name: Artifact Build
               run: |
+                  # 设置错误时显示详细信息
+                  set -e
+                  
                   cat > service_account_credentials.json << EOF
                   ${{ secrets.ANDROID_PUBLISHER_CREDENTIALS }}"
                   EOF
-                  # Show ccache stats before build
-                  ccache -s
-                  ./gradlew TMessagesProj:assembleDebug
-                  # Show ccache stats after build
-                  ccache -s
-                  echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
+                  
+                  # 显示 ccache 状态
+                  echo "=== ccache stats (before) ==="
+                  ccache -s 2>/dev/null || echo "ccache not available"
+                  
+                  # 构建并捕获错误
+                  echo "=== Starting build ==="
+                  if ./gradlew TMessagesProj:assembleDebug --stacktrace --info 2>&1 | tee build.log; then
+                      echo "=== Build succeeded ==="
+                  else
+                      echo "=== Build FAILED ==="
+                      echo ""
+                      echo "=== Last 100 lines of build log ==="
+                      tail -100 build.log
+                      
+                      # 查找关键错误信息
+                      echo ""
+                      echo "=== Compilation Errors ==="
+                      grep -i "error:" build.log | head -50 || echo "No error lines found"
+                      
+                      echo ""
+                      echo "=== Build Failures ==="
+                      grep -i "failure\|failed" build.log | head -30 || echo "No failure lines found"
+                      
+                      echo ""
+                      echo "=== What went wrong ==="
+                      grep -A5 "What went wrong" build.log || echo "No summary found"
+                  fi
+                  
+                  # 显示 ccache 状态
+                  echo "=== ccache stats (after) ==="
+                  ccache -s 2>/dev/null || echo "ccache not available"
+                  
+                  # 如果构建成功，查找 APK
+                  if [ -f build.log ]; then
+                      APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk' 2>/dev/null | head -1)
+                      if [ -n "$APK_FILE" ]; then
+                          echo "APK_FILE=$APK_FILE" >> $GITHUB_ENV
+                      fi
+                  fi
+                  
+                  # 如果构建失败，上传日志供查看
+                  if [ ! -f "TMessagesProj/build/outputs/apk" ]; then
+                      echo "Build failed - see error above"
+                  fi
+
+            - name: Upload Build Logs on Failure
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: build-logs-failed
+                  path: build.log
+                  retention-days: 7
 
             - uses: actions/upload-artifact@v4
               name: Upload apk (arm64-v8a)
