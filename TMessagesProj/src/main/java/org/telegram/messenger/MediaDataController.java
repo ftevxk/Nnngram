@@ -3809,6 +3809,13 @@ public class MediaDataController extends BaseController {
         //wd 输出最终搜索结果统计
         Log.d("wd", "updateSearchResults执行完成，总结果数量: " + searchResultMessages.size());
         Log.d("wd", "本地数据库结果: " + localAddedCount + "，已加载消息补充: " + loadedAddedCount + "，服务器结果: " + serverAddedCount);
+        
+        //wd 发送通知更新UI
+        if (!searchResultMessages.isEmpty()) {
+            messagesSearchEndReached[0] = true;
+            Log.d("wd", "updateSearchResults: 发送UI通知, guid=" + lastGuid + ", dialogId=" + lastDialogId + ", count=" + getSearchCount());
+            getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, lastGuid, 0, getMask(), lastDialogId, lastReturnedNum, getSearchCount(), true);
+        }
     }
 
     public int getMask() {
