@@ -4951,6 +4951,7 @@ public class MessagesStorage extends BaseController {
                         data.reuse();
                         continue;
                     }
+                    message.dialog_id = dialogId;
 
                     //wd 调试：检查消息基本信息
                     if (scannedCount <= 5) {

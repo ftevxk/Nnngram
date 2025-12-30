@@ -4230,6 +4230,7 @@ public class MediaDataController extends BaseController {
                     } else {
                         searchLocalResultMessages.clear();
                     }
+                    Log.d("wd", "本地数据库搜索完成，缓存结果数量: " + searchLocalResultMessages.size());
                     updateSearchResults();
                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
                 }
@@ -4301,6 +4302,7 @@ public class MediaDataController extends BaseController {
                             }
                             boolean added = false;
                             int N = Math.min(res.messages.size(), req.limit - 1);
+                            Log.d("wd", "网络请求返回消息数量: " + res.messages.size() + ", 实际使用数量: " + N);
                             for (int a = 0; a < N; a++) {
                                 added = true;
                                 MessageObject messageObject = messageObjects.get(a);
