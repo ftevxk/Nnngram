@@ -4315,10 +4315,14 @@ public class MediaDataController extends BaseController {
                             } else {
                                 if (added) {
                                     if (lastReturnedNum >= searchResultMessages.size()) {
-                                        lastReturnedNum = searchResultMessages.size() - 1;
+                                        lastReturnedNum = Math.max(0, searchResultMessages.size() - 1);
                                     }
-                                    MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
-                                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, getSearchCount(), jumpToMessage, firstSearch, filter);
+                                    if (!searchResultMessages.isEmpty() && lastReturnedNum >= 0) {
+                                        MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
+                                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, getSearchCount(), jumpToMessage, firstSearch, filter);
+                                    } else {
+                                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), (long) 0, 0, getSearchCount(), jumpToMessage, firstSearch, filter);
+                                    }
                                 } else if (isSaved) {
                                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), false);
                                 }

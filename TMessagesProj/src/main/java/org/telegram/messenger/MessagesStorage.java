@@ -4920,16 +4920,11 @@ public class MessagesStorage extends BaseController {
                 ArrayList<TLRPC.Document> animatedEmoji = new ArrayList<>();
 
                 int pointer = 1;
-                //wd 根据对话类型正确设置uid：
-                // - 私聊：使用对方用户ID（dialogId本身就是对方ID）
-                // - 群组：使用负的群组ID（dialogId已经是负的）
-                // - 保存的消息：使用当前用户ID
+                //wd 根据对话类型正确设置uid
                 long uidToSearch;
                 if (dialogId == getUserConfig().getClientUserId()) {
-                    // 保存的消息对话，使用当前用户ID作为uid
                     uidToSearch = getUserConfig().getClientUserId();
                 } else {
-                    // 普通对话（私聊或群组），使用dialogId作为uid
                     uidToSearch = dialogId;
                 }
                 state.bindLong(pointer++, uidToSearch);
