@@ -11227,16 +11227,222 @@ public class MessageObject {
         return super.equals(obj);
     }
 
-    //wd 比较两个对象是否相同
+    //wd 比较两个对象是否相同，基于消息内容判断而非仅仅ID
     public boolean equals(MessageObject obj) {
         if (obj == null) {
             return false;
         }
-        if (isVideo() && obj.isVideo() && getSize() == obj.getSize() &&
-            getDuration() == obj.getDuration()) {
-            return true;
+        
+        // 视频消息：优先通过时长匹配
+        if (isVideo() && obj.isVideo()) {
+            int thisDuration = getDuration();
+            int objDuration = obj.getDuration();
+            
+            if (thisDuration > 0 && objDuration > 0 && thisDuration == objDuration) {
+                Log.d("wd", "MessageObject.equals: 视频匹配 id1=" + getId() + " id2=" + obj.getId() + " duration=" + thisDuration);
+                return true;
+            }
         }
+        
+        // 图片消息：通过尺寸 + 大小匹配
+        if (isPhoto() && obj.isPhoto()) {
+            long thisSize = getSize();
+            long objSize = obj.getSize();
+            int[] thisDim = getPhotoDimensions();
+            int[] objDim = obj.getPhotoDimensions();
+            
+            if (thisSize > 0 && objSize > 0 && thisSize == objSize &&
+                thisDim[0] == objDim[0] && thisDim[1] == objDim[1]) {
+                Log.d("wd", "MessageObject.equals: 图片匹配 id1=" + getId() + " id2=" + obj.getId());
+                return true;
+            }
+        }
+        
+        // 语音消息：通过时长 + 大小匹配
+        if (isVoice() && obj.isVoice()) {
+            int thisDuration = getDuration();
+            int objDuration = obj.getDuration();
+            long thisSize = getSize();
+            long objSize = obj.getSize();
+            
+            if (thisDuration > 0 && objDuration > 0 && thisDuration == objDuration &&
+                thisSize > 0 && objSize > 0 && thisSize == objSize) {
+                Log.d("wd", "MessageObject.equals: 语音匹配 id1=" + getId() + " id2=" + obj.getId());
+                return true;
+            }
+        }
+        
+        // GIF消息：通过大小匹配
+        if (isGif() && obj.isGif()) {
+            long thisSize = getSize();
+            long objSize = obj.getSize();
+            
+            if (thisSize > 0 && objSize > 0 && thisSize == objSize) {
+                Log.d("wd", "MessageObject.equals: GIF匹配 id1=" + getId() + " id2=" + obj.getId());
+                return true;
+            }
+        }
+        
+        // 文档消息：通过大小 + 文件名匹配
+        if (isDocument() && obj.isDocument()) {
+            long thisSize = getSize();
+            long objSize = obj.getSize();
+            String thisName = getFileName();
+            String objName = obj.getFileName();
+            
+            if (thisSize > 0 && objSize > 0 && thisSize == objSize &&
+                !TextUtils.isEmpty(thisName) && thisName.equals(objName)) {
+                Log.d("wd", "MessageObject.equals: 文档匹配 id1=" + getId() + " id2=" + obj.getId());
+                return true;
+            }
+        }
+        
+        // 文本消息：通过消息内容匹配
+        if (isText() && obj.isText()) {
+            String thisText = getTextContent();
+            String objText = obj.getTextContent();
+            
+            if (!TextUtils.isEmpty(thisText) && thisText.equals(objText)) {
+                Log.d("wd", "MessageObject.equals: 文本匹配 id1=" + getId() + " id2=" + obj.getId() + " text=" + (thisText.length() > 30 ? thisText.substring(0, 30) + "..." : thisText));
+                return true;
+            }
+        }
+        
+        // 默认使用ID判断
         return getId() == obj.getId() && getDialogId() == obj.getDialogId();
+    }
+
+    //wd 辅助方法：判断是否为视频消息
+    public boolean isVideo() {
+        return messageOwner != null && (messageOwner.media instanceof TLRPC.TL_messageMediaVideo || 
+               messageOwner.media instanceof TLRPC.TL_messageMediaDocument document && 
+               (document.video != null || isGif()));
+    }
+
+    //wd 辅助方法：判断是否为图片消息
+    public boolean isPhoto() {
+        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaPhoto;
+    }
+
+    //wd 辅助方法：判断是否为语音消息
+    public boolean isVoice() {
+        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaDocument document &&
+               document.document != null && document.document.mime_type != null && 
+               (document.document.mime_type.startsWith("audio/") || 
+                document.document.mime_type.equals("application/ogg"));
+    }
+
+    //wd 辅助方法：判断是否为GIF消息
+    public boolean isGif() {
+        if (messageOwner == null || messageOwner.media == null) {
+            return false;
+        }
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
+            return document.document != null && document.document.mime_type != null &&
+                   document.document.mime_type.equals("image/gif");
+        }
+        return false;
+    }
+
+    //wd 辅助方法：判断是否为文档消息
+    public boolean isDocument() {
+        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaDocument document &&
+               document.document != null && !isVideo() && !isGif() && !isVoice();
+    }
+
+    //wd 辅助方法：判断是否为文本消息
+    public boolean isText() {
+        return messageOwner != null && !isVideo() && !isPhoto() && !isVoice() && 
+               !isGif() && !isDocument() && !TextUtils.isEmpty(messageOwner.message);
+    }
+
+    //wd 辅助方法：获取视频/媒体时长（秒）
+    public int getDuration() {
+        if (messageOwner == null) return 0;
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaVideo video) {
+            return video.duration;
+        }
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
+            if (document.video != null) {
+                return document.video.duration;
+            }
+            if (document.document != null && document.document.attributes != null) {
+                for (TLRPC.DocumentAttribute attr : document.document.attributes) {
+                    if (attr instanceof TLRPC.TL_documentAttributeVideo) {
+                        return ((TLRPC.TL_documentAttributeVideo) attr).duration;
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+    //wd 辅助方法：获取文件大小
+    public long getSize() {
+        if (messageOwner == null) return 0;
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaVideo video) {
+            return video.size;
+        }
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaPhoto photo) {
+            if (photo.photo.sizes != null && !photo.photo.sizes.isEmpty()) {
+                TLRPC.PhotoSize size = photo.photo.sizes.get(photo.photo.sizes.size() - 1);
+                return size.size;
+            }
+        }
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
+            if (document.document != null) {
+                return document.document.size;
+            }
+        }
+        return 0;
+    }
+
+    //wd 辅助方法：获取图片尺寸
+    public int[] getPhotoDimensions() {
+        int[] dim = new int[]{0, 0};
+        if (messageOwner == null || messageOwner.media == null) return dim;
+        
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaPhoto photo) {
+            if (photo.photo.sizes != null && !photo.photo.sizes.isEmpty()) {
+                TLRPC.PhotoSize size = photo.photo.sizes.get(photo.photo.sizes.size() - 1);
+                dim[0] = size.w;
+                dim[1] = size.h;
+            }
+        }
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
+            if (document.document != null && document.document.attributes != null) {
+                for (TLRPC.DocumentAttribute attr : document.document.attributes) {
+                    if (attr instanceof TLRPC.TL_documentAttributeImageSize) {
+                        dim[0] = ((TLRPC.TL_documentAttributeImageSize) attr).w;
+                        dim[1] = ((TLRPC.TL_documentAttributeImageSize) attr).h;
+                        break;
+                    }
+                }
+            }
+        }
+        return dim;
+    }
+
+    //wd 辅助方法：获取文件名
+    public String getFileName() {
+        if (messageOwner == null || messageOwner.media == null) return "";
+        
+        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
+            if (document.document != null && document.document.attributes != null) {
+                for (TLRPC.DocumentAttribute attr : document.document.attributes) {
+                    if (attr instanceof TLRPC.TL_documentAttributeFile) {
+                        return ((TLRPC.TL_documentAttributeFile) attr).file_name;
+                    }
+                }
+            }
+        }
+        return "";
+    }
+
+    //wd 辅助方法：获取文本内容
+    public String getTextContent() {
+        if (messageOwner == null) return "";
+        return messageOwner.message != null ? messageOwner.message : "";
     }
 
     public boolean isReactionsAvailable() {

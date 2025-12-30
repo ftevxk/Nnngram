@@ -3985,7 +3985,44 @@ public class MediaDataController extends BaseController {
                             
                             MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, false);
                             messageObject.setQuery(lastSearchQuery, true);
-                            newMessages.add(messageObject);
+                            
+                            //wd 使用 equals 方法进行内容级别的去重检查
+                            boolean isDuplicate = false;
+                            
+                            // 检查是否已存在于新消息列表中
+                            for (MessageObject existing : newMessages) {
+                                if (existing.equals(messageObject)) {
+                                    Log.d("wd", "loadMoreHistoryForSearch: 新消息列表中已存在相同内容 id=" + messageObject.getId() + " existingId=" + existing.getId());
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+                            
+                            // 检查是否已存在于服务器搜索结果中
+                            if (!isDuplicate) {
+                                for (MessageObject existing : searchServerResultMessages) {
+                                    if (existing.equals(messageObject)) {
+                                        Log.d("wd", "loadMoreHistoryForSearch: 服务器结果中已存在相同内容 id=" + messageObject.getId() + " existingId=" + existing.getId());
+                                        isDuplicate = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // 检查是否已存在于本地搜索结果中（避免本地和服务器结果重复）
+                            if (!isDuplicate) {
+                                for (MessageObject existing : searchLocalResultMessages) {
+                                    if (existing.equals(messageObject)) {
+                                        Log.d("wd", "loadMoreHistoryForSearch: 本地结果中已存在相同内容 id=" + messageObject.getId() + " existingId=" + existing.getId());
+                                        isDuplicate = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (!isDuplicate) {
+                                newMessages.add(messageObject);
+                            }
                         }
                         
                         // 更新搜索结果
