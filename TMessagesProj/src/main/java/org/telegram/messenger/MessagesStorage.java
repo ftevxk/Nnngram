@@ -4987,7 +4987,7 @@ public class MessagesStorage extends BaseController {
                                 }
                             }
                         }
-                        MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, true);
+                        MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, false);
                         messageObjects.add(messageObject);
                         matchedCount++;
                     }

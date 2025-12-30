@@ -7645,7 +7645,7 @@ public class ChatActivity extends BaseFragment implements
                             HashtagSearchController.getInstance(currentAccount).searchHashtag(searchingHashtag, classGuid, searchType, lastLoadIndex++);
                         }
                     } else {
-                        getMediaDataController().loadMoreSearchMessages(true);
+                        getMediaDataController().loadMoreSearchMessages(false);
                     }
                 }
             }
