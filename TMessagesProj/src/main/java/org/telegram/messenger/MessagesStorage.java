@@ -5004,8 +5004,11 @@ public class MessagesStorage extends BaseController {
                     getAnimatedEmoji(TextUtils.join(",", animatedEmojiToLoad), animatedEmoji);
                 }
 
+                Log.d("wd", "searchMessagesByText: 准备调用回调, messageObjects.size=" + messageObjects.size());
                 AndroidUtilities.runOnUIThread(() -> {
+                    Log.d("wd", "searchMessagesByText: 开始执行回调");
                     done.run(messageObjects, users, chats, animatedEmoji);
+                    Log.d("wd", "searchMessagesByText: 回调执行完成");
                 });
 
             } catch (Exception e) {

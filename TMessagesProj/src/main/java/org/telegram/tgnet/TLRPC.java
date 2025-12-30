@@ -61649,8 +61649,10 @@ public class TLRPC {
         public long errorAllowedPriceStars; //custom
         public long errorNewPriceStars; //custom
 
+
         /**
          * 关键词模糊搜索匹配
+         *
          * @param query 关键词
          * @return 是否模糊搜索匹配
          */
@@ -61659,79 +61661,68 @@ public class TLRPC {
                 return true;
             }
             query = query.toLowerCase(Locale.ROOT);
-            Log.d("wd", "fuzzyMatch开始匹配，query: " + query);
-            
             // 检查消息文本
             if (!TextUtils.isEmpty(this.message)) {
                 String text = this.message.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查消息文本: " + text);
                 if (fuzzyMatchText(text, query)) {
-                    Log.d("wd", "消息文本匹配成功");
+                    Log.d("wd", "关键词: " + query + ",文本匹配成功: " + text);
                     return true;
                 }
             }
-            
+
             // 检查语音转录文本
             if (!TextUtils.isEmpty(this.voiceTranscription)) {
                 String voiceTransText = this.voiceTranscription.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查语音转录: " + voiceTransText);
                 if (fuzzyMatchText(voiceTransText, query)) {
-                    Log.d("wd", "语音转录匹配成功");
+                    Log.d("wd", "关键词: " + query + ",语音转录匹配成功: " + voiceTransText);
                     return true;
                 }
             }
-            
+
             // 检查翻译后的文本
             if (this.translatedText != null && !TextUtils.isEmpty(this.translatedText.text)) {
                 String translatedText = this.translatedText.text.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查翻译文本: " + translatedText);
                 if (fuzzyMatchText(translatedText, query)) {
-                    Log.d("wd", "翻译文本匹配成功");
+                    Log.d("wd", "关键词: " + query + ",翻译文本匹配成功: " + translatedText);
                     return true;
                 }
             }
-            
+
             // 检查帖子作者
             if (!TextUtils.isEmpty(this.post_author)) {
                 String postAuthor = this.post_author.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查帖子作者: " + postAuthor);
                 if (fuzzyMatchText(postAuthor, query)) {
-                    Log.d("wd", "帖子作者匹配成功");
+                    Log.d("wd", "关键词: " + query + ",帖子作者匹配成功: " + postAuthor);
                     return true;
                 }
             }
-            
+
             // 检查回复消息的文本
             if (this.replyMessage != null && !TextUtils.isEmpty(this.replyMessage.message)) {
                 String replyText = this.replyMessage.message.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查回复消息: " + replyText);
                 if (fuzzyMatchText(replyText, query)) {
-                    Log.d("wd", "回复消息匹配成功");
+                    Log.d("wd", "关键词: " + query + ",回复消息匹配成功: " + replyText);
                     return true;
                 }
             }
-            
+
             // 检查媒体标题
             if (this.media != null && !TextUtils.isEmpty(this.media.title)) {
                 String title = this.media.title.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查媒体标题: " + title);
                 if (fuzzyMatchText(title, query)) {
-                    Log.d("wd", "媒体标题匹配成功");
+                    Log.d("wd", "关键词: " + query + ",媒体标题匹配成功: " + title);
                     return true;
                 }
             }
-            
+
             // 检查媒体描述
             if (this.media != null && !TextUtils.isEmpty(this.media.description)) {
                 String description = this.media.description.toLowerCase(Locale.ROOT);
-                Log.d("wd", "检查媒体描述: " + description);
                 if (fuzzyMatchText(description, query)) {
-                    Log.d("wd", "媒体描述匹配成功");
+                    Log.d("wd", "关键词: " + query + ",媒体描述匹配成功: " + description);
                     return true;
                 }
             }
-            
-            Log.d("wd", "没有找到匹配项");
             return false;
         }
         
@@ -61739,10 +61730,7 @@ public class TLRPC {
             if (TextUtils.isEmpty(text) || TextUtils.isEmpty(query)) {
                 return false;
             }
-            // 注意：text和query已经在fuzzyMatch方法中转换为小写
-            boolean contains = text.contains(query);
-            Log.d("wd", "模糊匹配: text=" + text + ", query=" + query + ", result=" + contains);
-            return contains;
+            return text.contains(query);
         }
 
         public static Message TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {

@@ -4000,6 +4000,14 @@ public class MediaDataController extends BaseController {
                             
                             // 通知UI更新
                             getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, lastGuid, 0, getMask(), lastDialogId, lastReturnedNum, getSearchCount(), false);
+                            
+                            // 打印加载更多的汇总
+                            Log.d("wd", "========== 加载更多完成汇总 ==========");
+                            Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
+                            Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
+                            Log.d("wd", "网络请求匹配数量: " + newMessages.size());
+                            Log.d("wd", "最终显示数量: " + searchResultMessages.size());
+                            Log.d("wd", "=====================================");
                         } else {
                             Log.d("wd", "loadMoreHistoryForSearch: 没有找到更多历史消息");
                             messagesSearchEndReached[0] = true;
@@ -4203,6 +4211,13 @@ public class MediaDataController extends BaseController {
                     AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(emojis);
                     searchLocalResultMessages = messages;
                     updateSearchResults();
+                    // 打印汇总
+                    Log.d("wd", "========== 搜索完成汇总 ==========");
+                    Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
+                    Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
+                    Log.d("wd", "网络请求结果: 待返回");
+                    Log.d("wd", "最终显示数量: " + searchResultMessages.size());
+                    Log.d("wd", "=================================");
                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
                 }
             }, true);
