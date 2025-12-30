@@ -46,6 +46,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
+import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
@@ -3657,19 +3658,24 @@ public class MediaDataController extends BaseController {
 
     //wd 双重搜索机制实现：同时整合本地内存数据和服务器搜索结果
     private void updateSearchResults() {
-        android.util.Log.d("wd", "updateSearchResults开始执行");
+        Log.d("wd", "updateSearchResults开始执行");
         ArrayList<MessageObject> previousSearchResultMessages = new ArrayList<>(searchResultMessages);
         searchResultMessages.clear();
         HashSet<Integer> messageIds = new HashSet<>();
         
         //wd 获取当前已加载显示的消息列表作为补充数据源
         ArrayList<MessageObject> loadedMessages = getMessagesController().dialogMessage.get(lastDialogId);
-        android.util.Log.d("wd", "loadedMessages size: " + (loadedMessages != null ? loadedMessages.size() : 0));
-        android.util.Log.d("wd", "lastDialogId: " + lastDialogId);
-        android.util.Log.d("wd", "lastSearchQuery: " + lastSearchQuery);
+        Log.d("wd", "loadedMessages size: " + (loadedMessages != null ? loadedMessages.size() : 0));
+        Log.d("wd", "lastDialogId: " + lastDialogId);
+        Log.d("wd", "lastSearchQuery: " + lastSearchQuery);
         
-        //wd 先添加本地内存搜索结果，应用模糊匹配过滤和高级过滤条件
-        android.util.Log.d("wd", "searchLocalResultMessages size: " + searchLocalResultMessages.size());
+        //wd 如果本地数据库和已加载消息都没有找到结果，尝试加载更多历史消息
+        if (searchLocalResultMessages.isEmpty() && loadedMessages != null && loadedMessages.size() <= 1) {
+            Log.d("wd", "尝试加载更多历史消息进行搜索");
+            loadMoreHistoryForSearch();
+            return;
+        }
+        Log.d("wd", "searchLocalResultMessages size: " + searchLocalResultMessages.size());
         int localAddedCount = 0;
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
@@ -3709,7 +3715,7 @@ public class MediaDataController extends BaseController {
                 }
             }
         }
-        android.util.Log.d("wd", "本地数据库搜索结果添加数量: " + localAddedCount);
+        Log.d("wd", "本地数据库搜索结果添加数量: " + localAddedCount);
         
         //wd 添加当前已加载显示的消息列表作为补充数据源
         int loadedAddedCount = 0;
@@ -3753,10 +3759,10 @@ public class MediaDataController extends BaseController {
                 }
             }
         }
-        android.util.Log.d("wd", "已加载消息列表添加数量: " + loadedAddedCount);
+        Log.d("wd", "已加载消息列表添加数量: " + loadedAddedCount);
         
         //wd 再添加服务器搜索结果，避免重复
-        android.util.Log.d("wd", "searchServerResultMessages size: " + searchServerResultMessages.size());
+        Log.d("wd", "searchServerResultMessages size: " + searchServerResultMessages.size());
         int serverAddedCount = 0;
         for (int i = 0; i < searchServerResultMessages.size(); ++i) {
             MessageObject m = searchServerResultMessages.get(i);
@@ -3779,7 +3785,7 @@ public class MediaDataController extends BaseController {
                 serverAddedCount++;
             }
         }
-        android.util.Log.d("wd", "服务器搜索结果添加数量: " + serverAddedCount);
+        Log.d("wd", "服务器搜索结果添加数量: " + serverAddedCount);
         
         //wd 优化搜索性能：对搜索结果进行相关性排序
         Collections.sort(searchResultMessages, (m1, m2) -> {
@@ -3800,8 +3806,8 @@ public class MediaDataController extends BaseController {
         });
         
         //wd 输出最终搜索结果统计
-        android.util.Log.d("wd", "updateSearchResults执行完成，总结果数量: " + searchResultMessages.size());
-        android.util.Log.d("wd", "本地数据库结果: " + localAddedCount + "，已加载消息补充: " + loadedAddedCount + "，服务器结果: " + serverAddedCount);
+        Log.d("wd", "updateSearchResults执行完成，总结果数量: " + searchResultMessages.size());
+        Log.d("wd", "本地数据库结果: " + localAddedCount + "，已加载消息补充: " + loadedAddedCount + "，服务器结果: " + serverAddedCount);
     }
 
     public int getMask() {
@@ -3889,6 +3895,123 @@ public class MediaDataController extends BaseController {
         loadingMoreSearchMessages = true;
         searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false, lastReaction, lastSearchFilter);
         lastReturnedNum = temp;
+    }
+
+    //wd 实现加载更多历史消息进行搜索的方法
+    private void loadMoreHistoryForSearch() {
+        Log.d("wd", "loadMoreHistoryForSearch开始执行");
+        
+        // 检查是否已经在加载或已经到达搜索边界
+        if (loadingMoreSearchMessages || reqId != 0 || messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1]) {
+            Log.d("wd", "loadMoreHistoryForSearch: 已在加载或已到达边界，跳过");
+            return;
+        }
+        
+        // 设置加载状态
+        loadingMoreSearchMessages = true;
+        
+        // 获取当前对话的最后一条消息ID作为偏移量
+        int max_id = 0;
+        if (!searchResultMessages.isEmpty()) {
+            MessageObject lastMessage = searchResultMessages.get(searchResultMessages.size() - 1);
+            max_id = lastMessage.getId();
+        }
+        
+        Log.d("wd", "loadMoreHistoryForSearch: dialogId=" + lastDialogId + ", max_id=" + max_id + ", query=" + lastSearchQuery);
+        
+        // 创建搜索请求
+        TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
+        req.peer = getMessagesController().getInputPeer(lastDialogId);
+        if (req.peer == null) {
+            Log.d("wd", "loadMoreHistoryForSearch: 无法获取peer，退出");
+            loadingMoreSearchMessages = false;
+            return;
+        }
+        
+        req.limit = 50; // 加载更多历史消息的数量
+        req.q = lastSearchQuery != null ? lastSearchQuery : "";
+        req.offset_id = max_id;
+        
+        // 设置过滤条件
+        if (lastSearchFilter != null) {
+            req.filter = lastSearchFilter;
+        } else {
+            req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
+        }
+        
+        // 设置其他搜索参数
+        if (lastReplyMessageId != 0) {
+            if (lastDialogId == getUserConfig().getClientUserId() || getMessagesStorage().isMonoForum(lastDialogId)) {
+                req.saved_peer_id = getMessagesController().getInputPeer(lastReplyMessageId);
+                req.flags |= 4;
+            } else {
+                req.top_msg_id = (int) lastReplyMessageId;
+                req.flags |= 2;
+            }
+        }
+        
+        if (lastReaction != null) {
+            req.saved_reaction.add(lastReaction.toTLReaction());
+            req.flags |= 8;
+        }
+        
+        // 发送服务器请求
+        int currentReqId = ++lastReqId;
+        reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+            AndroidUtilities.runOnUIThread(() -> {
+                if (currentReqId == lastReqId) {
+                    reqId = 0;
+                    loadingMoreSearchMessages = false;
+                    
+                    if (error == null && response != null) {
+                        TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+                        
+                        // 处理服务器返回的消息
+                        ArrayList<MessageObject> newMessages = new ArrayList<>();
+                        for (TLRPC.Message message : res.messages) {
+                            if (message instanceof TLRPC.TL_messageEmpty || message.action instanceof TLRPC.TL_messageActionHistoryClear) {
+                                continue;
+                            }
+                            
+                            MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, false);
+                            messageObject.setQuery(lastSearchQuery, true);
+                            newMessages.add(messageObject);
+                        }
+                        
+                        // 更新搜索结果
+                        if (!newMessages.isEmpty()) {
+                            // 将新消息添加到服务器搜索结果
+                            searchServerResultMessages.addAll(newMessages);
+                            
+                            // 更新搜索结果映射
+                            for (MessageObject messageObject : newMessages) {
+                                searchServerResultMessagesMap[0].put(messageObject.getId(), messageObject);
+                            }
+                            
+                            // 更新搜索状态
+                            messagesSearchEndReached[0] = res.messages.size() < req.limit;
+                            messagesSearchCount[0] = res instanceof TLRPC.TL_messages_messagesSlice ? res.count : res.messages.size();
+                            
+                            Log.d("wd", "loadMoreHistoryForSearch: 成功加载 " + newMessages.size() + " 条新消息");
+                            
+                            // 重新更新搜索结果
+                            updateSearchResults();
+                            
+                            // 通知UI更新
+                            getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, lastGuid, 0, getMask(), lastDialogId, lastReturnedNum, getSearchCount(), false);
+                        } else {
+                            Log.d("wd", "loadMoreHistoryForSearch: 没有找到更多历史消息");
+                            messagesSearchEndReached[0] = true;
+                        }
+                    } else {
+                        Log.d("wd", "loadMoreHistoryForSearch: 服务器请求失败: " + (error != null ? error.text : "null"));
+                        messagesSearchEndReached[0] = true;
+                    }
+                }
+            });
+        }, ConnectionsManager.RequestFlagFailOnServerErrors);
+        
+        Log.d("wd", "loadMoreHistoryForSearch: 服务器请求已发送，reqId=" + reqId);
     }
 
     public boolean isSearchLoading() {
@@ -4084,8 +4207,8 @@ public class MediaDataController extends BaseController {
             }, true);
         } else if (!isSaved && firstQuery) {
             //wd 添加普通聊天消息的本地搜索支持
-            android.util.Log.d("wd", "触发普通聊天消息本地搜索");
-            android.util.Log.d("wd", "dialogId: " + dialogId + ", query: " + query + ", filter: " + filter);
+            Log.d("wd", "触发普通聊天消息本地搜索");
+            Log.d("wd", "dialogId: " + dialogId + ", query: " + query + ", filter: " + filter);
             lastReturnedNum = 0;
             searchServerResultMessages.clear();
             searchServerResultMessagesMap[0].clear();
@@ -4100,7 +4223,7 @@ public class MediaDataController extends BaseController {
                     if (docs != null && !docs.isEmpty()) {
                         AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(docs);
                     }
-                    android.util.Log.d("wd", "searchMessagesByText返回结果数量: " + (messages != null ? messages.size() : 0));
+                    Log.d("wd", "searchMessagesByText返回结果数量: " + (messages != null ? messages.size() : 0));
                     if (messages != null) {
                         searchLocalResultMessages = messages;
                     } else {
@@ -10005,7 +10128,7 @@ public class MediaDataController extends BaseController {
     }
 
     private final HashMap<SearchStickersKey, Integer> loadingSearchStickersKeys = new HashMap<>();
-    private final android.util.LruCache<SearchStickersKey, SearchStickersResult> searchStickerResults = new android.util.LruCache<>(25);
+    private final LruCache<SearchStickersKey, SearchStickersResult> searchStickerResults = new LruCache<>(25);
     public SearchStickersKey searchStickers(boolean emojis, String lang_code, String q, Utilities.Callback<ArrayList<TLRPC.Document>> whenDone) {
         return searchStickers(emojis, lang_code, q, whenDone, false);
     }
