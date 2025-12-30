@@ -193,8 +193,9 @@ jobs:
                   path: build.log
                   retention-days: 7
 
-            - uses: actions/upload-artifact@v4
-              name: Upload apk (arm64-v8a)
+            - name: Upload apk (arm64-v8a)
+              if: env.APK_FILE != ''
+              uses: actions/upload-artifact@v4
               with:
                   name: Nnngram-arm64-v8a-${{ env.SHA7 }}
                   path: ${{ env.APK_FILE }}
