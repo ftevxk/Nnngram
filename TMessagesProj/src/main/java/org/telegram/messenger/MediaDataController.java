@@ -49,6 +49,7 @@ import android.text.util.Linkify;
 import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
+import android.util.LruCache;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
