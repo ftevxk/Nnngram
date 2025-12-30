@@ -3895,11 +3895,16 @@ public class MediaDataController extends BaseController {
         if (!force && (loadingMoreSearchMessages || reqId != 0 || messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1])) {
             return;
         }
-        int temp = lastReturnedNum;
-        lastReturnedNum = searchResultMessages.size();
-        loadingMoreSearchMessages = true;
-        searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false, lastReaction, lastSearchFilter);
-        lastReturnedNum = temp;
+        
+        if (fromList) {
+            int temp = lastReturnedNum;
+            lastReturnedNum = searchResultMessages.size();
+            loadingMoreSearchMessages = true;
+            searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false, lastReaction, lastSearchFilter);
+            lastReturnedNum = temp;
+        } else {
+            loadMoreHistoryForSearch();
+        }
     }
 
     //wd 实现加载更多历史消息进行搜索的方法
