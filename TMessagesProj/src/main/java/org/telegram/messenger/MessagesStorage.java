@@ -4952,21 +4952,6 @@ public class MessagesStorage extends BaseController {
                         continue;
                     }
                     message.dialog_id = dialogId;
-
-                    //wd 调试：检查消息基本信息
-                    if (scannedCount <= 5) {
-                        Log.d("wd", "消息" + scannedCount + ": id=" + message.id + ", dialog_id=" + message.dialog_id +
-                            ", message=" + (message.message != null ? message.message.substring(0, Math.min(50, message.message.length())) : "null"));
-                    }
-
-                    //wd 确保只搜索指定对话ID的消息
-                    if (message.dialog_id != dialogId) {
-                        if (scannedCount <= 3) {
-                            Log.d("wd", "跳过消息: message.dialog_id=" + message.dialog_id + ", target dialogId=" + dialogId);
-                        }
-                        data.reuse();
-                        continue;
-                    }
                     message.readAttachPath(data, dialogId);
                     data.reuse();
 
@@ -4987,7 +4972,7 @@ public class MessagesStorage extends BaseController {
                     }
 
                     if (matches) {
-                        android.util.Log.d("wd", "找到匹配消息: messageId=" + message.id + ", text=" + message.message);
+                        Log.d("wd", "找到匹配消息: messageId=" + message.id + ", text=" + message.message);
                         addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
                         if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
                             if (!cursor.isNull(1)) {
@@ -5007,7 +4992,6 @@ public class MessagesStorage extends BaseController {
                         matchedCount++;
                     }
                 }
-                Log.d("wd", "数据库查询完成: scannedCount=" + scannedCount + ", matchedCount=" + matchedCount);
                 cursor.dispose();
 
                 if (!usersToLoad.isEmpty()) {

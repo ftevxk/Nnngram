@@ -4216,6 +4216,7 @@ public class MediaDataController extends BaseController {
             searchServerResultMessagesMap[1].clear();
             
             loadingSearchLocal = true;
+            Log.d("wd", "========== 开始搜索: query=" + query + " ==========");
             getMessagesStorage().searchMessagesByText(dialogId, query, 300, 0, (messages, users, chats, docs) -> {
                 if (currentReqId == lastReqId) {
                     loadingSearchLocal = false;
@@ -4224,15 +4225,22 @@ public class MediaDataController extends BaseController {
                     if (docs != null && !docs.isEmpty()) {
                         AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(docs);
                     }
-                    Log.d("wd", "searchMessagesByText返回结果数量: " + (messages != null ? messages.size() : 0));
+                    int dbCount = (messages != null ? messages.size() : 0);
+                    Log.d("wd", "数据库搜索结果: 找到 " + dbCount + " 条匹配消息");
                     if (messages != null) {
                         searchLocalResultMessages = messages;
                     } else {
                         searchLocalResultMessages.clear();
                     }
-                    Log.d("wd", "本地数据库搜索完成，缓存结果数量: " + searchLocalResultMessages.size());
                     updateSearchResults();
-                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
+                    int searchCount = getSearchCount();
+                    Log.d("wd", "========== 搜索完成汇总 ==========");
+                    Log.d("wd", "数据库匹配数量: " + dbCount);
+                    Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
+                    Log.d("wd", "网络请求结果: 待返回");
+                    Log.d("wd", "最终显示数量: " + searchResultMessages.size());
+                    Log.d("wd", "=================================");
+                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, searchCount, true);
                 }
             });
         }
@@ -4300,11 +4308,8 @@ public class MediaDataController extends BaseController {
                                 messagesSearchCount[0] = 0;
                                 getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsLoading, guid);
                             }
-                            boolean added = false;
                             int N = Math.min(res.messages.size(), req.limit - 1);
-                            Log.d("wd", "网络请求返回消息数量: " + res.messages.size() + ", 实际使用数量: " + N);
                             for (int a = 0; a < N; a++) {
-                                added = true;
                                 MessageObject messageObject = messageObjects.get(a);
                                 searchServerResultMessages.add(messageObject);
                                 searchServerResultMessagesMap[queryWithDialogFinal == dialogId ? 0 : 1].put(messageObject.getId(), messageObject);
@@ -4312,6 +4317,12 @@ public class MediaDataController extends BaseController {
                             updateSearchResults();
                             messagesSearchEndReached[queryWithDialogFinal == dialogId ? 0 : 1] = res.messages.size() < req.limit;
                             messagesSearchCount[queryWithDialogFinal == dialogId ? 0 : 1] = res instanceof TLRPC.TL_messages_messagesSlice || res instanceof TLRPC.TL_messages_channelMessages ? res.count : res.messages.size();
+                            Log.d("wd", "========== 网络搜索完成汇总 ==========");
+                            Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
+                            Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
+                            Log.d("wd", "网络请求匹配数量: " + N);
+                            Log.d("wd", "最终显示数量: " + searchResultMessages.size());
+                            Log.d("wd", "=====================================");
                             if (searchServerResultMessages.isEmpty()) {
                                 getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), (long) 0, 0, 0, jumpToMessage);
                             } else {
