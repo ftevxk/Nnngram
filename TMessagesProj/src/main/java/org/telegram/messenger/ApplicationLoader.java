@@ -56,7 +56,9 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 import xyz.nextalone.nnngram.CrashListener;
+import xyz.nextalone.nnngram.NnngramNative;
 import xyz.nextalone.nnngram.utils.AnalyticsUtils;
+import xyz.nextalone.nnngram.config.ConfigManager;
 public class ApplicationLoader extends Application {
 
     public static ApplicationLoader applicationLoaderInstance;
@@ -102,6 +104,18 @@ public class ApplicationLoader extends Application {
 
     protected ILocationServiceProvider onCreateLocationServiceProvider() {
         return new GoogleLocationProvider();
+    }
+
+    private void initNativeConfigs() {
+        // Initialize native configurations from shared preferences
+        try {
+            boolean disableSecondAddress = ConfigManager.getBooleanOrDefault("disableSecondAddress", true);
+            NnngramNative.setDisableSecondAddress(disableSecondAddress);
+        } catch (Exception e) {
+            if (BuildVars.LOGS_ENABLED) {
+                FileLog.e("Failed to initialize native configs", e);
+            }
+        }
     }
 
     public static IMapsProvider getMapsProvider() {
@@ -322,6 +336,10 @@ public class ApplicationLoader extends Application {
         } catch (UnsatisfiedLinkError error) {
             throw new RuntimeException("can't load native libraries " +  Build.CPU_ABI + " lookup folder " + NativeLoader.getAbiFolder());
         }
+
+        // Initialize native configurations from shared preferences
+        initNativeConfigs();
+
         new ForegroundDetector(this) {
             @Override
             public void onActivityStarted(Activity activity) {

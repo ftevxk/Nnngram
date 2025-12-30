@@ -43,6 +43,7 @@ jmethodID jclass_ByteBuffer_allocateDirect = nullptr;
 #endif
 
 static bool done = false;
+static bool disableSecondAddress = true;
 
 ConnectionsManager::ConnectionsManager(int32_t instance) {
     instanceNum = instance;
@@ -719,17 +720,19 @@ void ConnectionsManager::onConnectionClosed(Connection *connection, int reason) 
                     maxTimeout = 20;
                 }
                 if (disconnectTimeoutAmount >= maxTimeout) {
-                    if (!connection->hasUsefullData()) {
-                        if (LOGS_ENABLED) DEBUG_D("start requesting new address and port due to timeout reach");
-                        requestingSecondAddressByTlsHashMismatch = connection->hasTlsHashMismatch();
-                        if (requestingSecondAddressByTlsHashMismatch) {
-                            requestingSecondAddress = 1;
+                    if (!disableSecondAddress) {
+                        if (!connection->hasUsefullData()) {
+                            if (LOGS_ENABLED) DEBUG_D("start requesting new address and port due to timeout reach");
+                            requestingSecondAddressByTlsHashMismatch = connection->hasTlsHashMismatch();
+                            if (requestingSecondAddressByTlsHashMismatch) {
+                                requestingSecondAddress = 1;
+                            } else {
+                                requestingSecondAddress = 0;
+                            }
+                            delegate->onRequestNewServerIpAndPort(requestingSecondAddress, instanceNum);
                         } else {
-                            requestingSecondAddress = 0;
+                            if (LOGS_ENABLED) DEBUG_D("connection has usefull data, don't request anything");
                         }
-                        delegate->onRequestNewServerIpAndPort(requestingSecondAddress, instanceNum);
-                    } else {
-                        if (LOGS_ENABLED) DEBUG_D("connection has usefull data, don't request anything");
                     }
                     disconnectTimeoutAmount = 0;
                 }
@@ -3640,14 +3643,16 @@ void ConnectionsManager::applyDnsConfig(NativeByteBuffer *buffer, std::string ph
                 delete config;
                 if (LOGS_ENABLED) DEBUG_D("dns config not valid due to date or expire, current date = %d, config date = %d, config expired = %d", currentDate, config->date, config->expires);
             }
-            if (requestingSecondAddress == 1) {
-                requestingSecondAddress = 2;
-                delegate->onRequestNewServerIpAndPort(requestingSecondAddress, instanceNum);
-            } else if (requestingSecondAddress == 0) {
-                requestingSecondAddress = 1;
-                delegate->onRequestNewServerIpAndPort(requestingSecondAddress, instanceNum);
-            } else {
-                requestingSecondAddress = 0;
+            if (!disableSecondAddress) {
+                if (requestingSecondAddress == 1) {
+                    requestingSecondAddress = 2;
+                    delegate->onRequestNewServerIpAndPort(requestingSecondAddress, instanceNum);
+                } else if (requestingSecondAddress == 0) {
+                    requestingSecondAddress = 1;
+                    delegate->onRequestNewServerIpAndPort(requestingSecondAddress, instanceNum);
+                } else {
+                    requestingSecondAddress = 0;
+                }
             }
         }
         buffer->reuse();
@@ -3980,6 +3985,11 @@ void ConnectionsManager::reconnect(int32_t dcId, int32_t connectionType) {
             }
         });
     });
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_xyz_nextalone_nnngram_NnngramNative_setDisableSecondAddress(JNIEnv *env, jclass clazz, jboolean disable) {
+    disableSecondAddress = disable;
 }
 
 #endif
