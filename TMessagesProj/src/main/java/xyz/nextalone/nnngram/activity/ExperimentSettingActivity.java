@@ -106,8 +106,6 @@ public class ExperimentSettingActivity extends BaseActivity {
 
     private int experiment2Row;
 
-    //wd 自定义搜索视频最小时长
-    private int searchVideoMinDurationRow;
     //wd 直接打开媒体对话
     private int openTheMediaConversationDirectlyRow;
 
@@ -285,12 +283,6 @@ public class ExperimentSettingActivity extends BaseActivity {
             });
         }
 
-        //wd 自定义视频最小时长
-        else if (position == searchVideoMinDurationRow) {
-            setSearchVideoMinDuration(view, position);
-            listAdapter.notifyItemChanged(position, PARTIAL);
-        }
-
         //wd 直接打开媒体对话
         else if (position == openTheMediaConversationDirectlyRow) {
             setOpenTheMediaConversationDirectly(view, position);
@@ -320,8 +312,6 @@ public class ExperimentSettingActivity extends BaseActivity {
         enchantAudioRow = addRow("enchantAudio");
         linkedUserRow = addRow("linkedUser");
         alwaysSendWithoutSoundRow = addRow();
-        //wd 自定义视频最小时长
-        searchVideoMinDurationRow = addRow();
         //wd 直接打开媒体对话
         openTheMediaConversationDirectlyRow = addRow();
 
@@ -429,11 +419,6 @@ public class ExperimentSettingActivity extends BaseActivity {
                         };
                         textCell.setTextAndValue(LocaleController.getString("keepOnlineStatusAs", R.string.keepOnlineStatusAs),
                             value, payload, false);
-                    }
-
-                    //wd 自定义搜索视频最小时长
-                    else if (position == searchVideoMinDurationRow){
-                        textCell.setTextAndValue(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration), String.valueOf(Config.getSearchVideoMinDuration()), payload, true);
                     }
 
                     //wd 直接打开媒体对话
@@ -556,53 +541,12 @@ public class ExperimentSettingActivity extends BaseActivity {
             } else if (position == pangu3Row) {
                 return TYPE_INFO_PRIVACY;
             }
-            //wd 返回自定义视频最小时长类型
-            else if (position == searchVideoMinDurationRow) {
-                return TYPE_SETTINGS;
-            }
             //wd 直接打开媒体对话
             else if (position == openTheMediaConversationDirectlyRow) {
                 return TYPE_SETTINGS;
             }
             return TYPE_CHECK;
         }
-    }
-
-    //wd 设置自定义搜索视频最小时长
-    private void setSearchVideoMinDuration(View view, int pos) {
-        showSearchVideoMinDurationDialog(this, view, listAdapter, pos);
-    }
-
-    public static void showSearchVideoMinDurationDialog(BaseFragment fragment, View view, BaseListAdapter listAdapter, int pos) {
-        showCustomInputDialog(fragment, (builder, editText) -> {
-            builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration));
-            editText.setSingleLine(true);
-            editText.setHintText(LocaleController.getString("Number", R.string.Number));
-            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
-            return null;
-        }, (editText -> {
-            String str = editText.getText().toString().trim();
-            if (str.isEmpty()) {
-                Config.setSearchVideoMinDuration(0);
-            } else {
-                if (!InlinesKt.isNumber(str)) {
-                    if (view != null) {
-                        AndroidUtilities.shakeView(view);
-                    }
-                    AlertUtil.showToast(LocaleController.getString("notANumber", R.string.notANumber));
-                } else {
-                    final int targetNum = Integer.parseInt(str);
-                    if (targetNum < 0)
-                        Config.setSearchVideoMinDuration(0);
-                    else
-                        Config.setSearchVideoMinDuration(Integer.parseInt(str));
-                }
-            }
-            if (listAdapter != null) {
-                listAdapter.notifyItemChanged(pos, PARTIAL);
-            }
-            return null;
-        }));
     }
 
     //wd 设置直接打开媒体对话

@@ -39,11 +39,16 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.SparseArray;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.core.graphics.ColorUtils;
 
@@ -72,6 +77,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Paint.ShapeDetector;
@@ -81,6 +87,11 @@ import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.InlinesKt;
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines;
 
 public class MediaActivity extends BaseFragment implements SharedMediaLayout.SharedMediaPreloaderDelegate, FloatingDebugProvider, NotificationCenter.NotificationCenterDelegate {
 
@@ -360,6 +371,10 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 showVideosItem.setChecked(filterVideos = !filterVideos);
                 sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
             });
+
+            optionsItem.addColoredGap();
+            ActionBarMenuSubItem searchVideoMinDurationItem = optionsItem.addSubItem(11, 0, LocaleController.getString(R.string.SearchVideoMinDuration), false);
+            searchVideoMinDurationItem.setOnClickListener(e -> showSearchVideoMinDurationDialog());
         }
 
         boolean hasAvatar = type == TYPE_MEDIA;
@@ -1132,6 +1147,58 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 }
             )
         );
+    }
+
+    private void showSearchVideoMinDurationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        EditTextBoldCursor editText = new EditTextBoldCursor(getParentActivity()) {
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(64), MeasureSpec.EXACTLY));
+            }
+        };
+        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+        editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
+        editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
+        editText.setTransformHintToHeader(true);
+        editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField),
+            getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated),
+            getThemedColor(Theme.key_text_RedRegular));
+        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        editText.setBackgroundDrawable(null);
+        editText.requestFocus();
+        editText.setPadding(0, 0, 0, 0);
+        editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+        builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration));
+        builder.setView(editText);
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
+            String str = editText.getText().toString().trim();
+            if (str.isEmpty()) {
+                Config.setSearchVideoMinDuration(0);
+            } else {
+                if (!InlinesKt.isNumber(str)) {
+                    Toast.makeText(getParentActivity(), LocaleController.getString("notANumber", R.string.notANumber), Toast.LENGTH_SHORT).show();
+                } else {
+                    int targetNum = Integer.parseInt(str);
+                    Config.setSearchVideoMinDuration(Math.max(0, targetNum));
+                }
+            }
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.show().setOnShowListener(dialog -> {
+            editText.requestFocus();
+            AndroidUtilities.showKeyboard(editText);
+        });
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) editText.getLayoutParams();
+        if (layoutParams != null) {
+            if (layoutParams instanceof FrameLayout.LayoutParams) {
+                ((FrameLayout.LayoutParams) layoutParams).gravity = Gravity.CENTER_HORIZONTAL;
+            }
+            layoutParams.rightMargin = layoutParams.leftMargin = AndroidUtilities.dp(24);
+            layoutParams.height = AndroidUtilities.dp(36);
+            editText.setLayoutParams(layoutParams);
+        }
+        editText.setSelection(0, editText.getText().length());
     }
 
     private class StoriesTabsView extends BottomPagerTabs {

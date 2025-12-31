@@ -1840,6 +1840,12 @@ public class MessageObject {
         localChannel = isChannel;
         localSupergroup = supergroup;
         localEdit = edit;
+        
+        //wd 从params加载锁定状态
+        if (message.params != null) {
+            String lockParam = message.params.get("wd_lock");
+            this.isLocked = lockParam != null && lockParam.equals("1");
+        }
     }
 
     public MessageObject(int accountNum, TLRPC.Message message, AbstractMap<Long, TLRPC.User> users, boolean generateLayout, boolean checkMediaExists) {
