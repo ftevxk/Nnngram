@@ -61665,7 +61665,6 @@ public class TLRPC {
             if (!TextUtils.isEmpty(this.message)) {
                 String text = this.message.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(text, query)) {
-                    Log.d("wd", "关键词: " + query + ",文本匹配成功: " + text);
                     return true;
                 }
             }
@@ -61674,7 +61673,6 @@ public class TLRPC {
             if (!TextUtils.isEmpty(this.voiceTranscription)) {
                 String voiceTransText = this.voiceTranscription.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(voiceTransText, query)) {
-                    Log.d("wd", "关键词: " + query + ",语音转录匹配成功: " + voiceTransText);
                     return true;
                 }
             }
@@ -61683,7 +61681,6 @@ public class TLRPC {
             if (this.translatedText != null && !TextUtils.isEmpty(this.translatedText.text)) {
                 String translatedText = this.translatedText.text.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(translatedText, query)) {
-                    Log.d("wd", "关键词: " + query + ",翻译文本匹配成功: " + translatedText);
                     return true;
                 }
             }
@@ -61692,7 +61689,6 @@ public class TLRPC {
             if (!TextUtils.isEmpty(this.post_author)) {
                 String postAuthor = this.post_author.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(postAuthor, query)) {
-                    Log.d("wd", "关键词: " + query + ",帖子作者匹配成功: " + postAuthor);
                     return true;
                 }
             }
@@ -61701,7 +61697,6 @@ public class TLRPC {
             if (this.replyMessage != null && !TextUtils.isEmpty(this.replyMessage.message)) {
                 String replyText = this.replyMessage.message.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(replyText, query)) {
-                    Log.d("wd", "关键词: " + query + ",回复消息匹配成功: " + replyText);
                     return true;
                 }
             }
@@ -61710,7 +61705,6 @@ public class TLRPC {
             if (this.media != null && !TextUtils.isEmpty(this.media.title)) {
                 String title = this.media.title.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(title, query)) {
-                    Log.d("wd", "关键词: " + query + ",媒体标题匹配成功: " + title);
                     return true;
                 }
             }
@@ -61719,7 +61713,6 @@ public class TLRPC {
             if (this.media != null && !TextUtils.isEmpty(this.media.description)) {
                 String description = this.media.description.toLowerCase(Locale.ROOT);
                 if (fuzzyMatchText(description, query)) {
-                    Log.d("wd", "关键词: " + query + ",媒体描述匹配成功: " + description);
                     return true;
                 }
             }

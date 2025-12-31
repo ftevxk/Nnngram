@@ -4972,7 +4972,6 @@ public class MessagesStorage extends BaseController {
                     }
 
                     if (matches) {
-                        Log.d("wd", "找到匹配消息: messageId=" + message.id + ", text=" + message.message);
                         addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
                         if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
                             if (!cursor.isNull(1)) {

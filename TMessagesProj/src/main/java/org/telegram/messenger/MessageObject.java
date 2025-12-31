@@ -11242,7 +11242,6 @@ public class MessageObject {
             long objSize = obj.getSize();
             
             if (objDuration > 0 && thisDuration == objDuration && objSize > 0 && thisSize == objSize) {
-                Log.d("wd", "MessageObject.equals: 视频匹配 id1=" + getId() + " id2=" + obj.getId() + " duration=" + thisDuration);
                 return true;
             }
         }
@@ -11256,7 +11255,6 @@ public class MessageObject {
             
             if (objSize > 0 && thisSize == objSize &&
                 thisDim[0] == objDim[0] && thisDim[1] == objDim[1]) {
-                Log.d("wd", "MessageObject.equals: 图片匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
             }
         }
@@ -11270,7 +11268,6 @@ public class MessageObject {
             
             if (thisDuration > 0 && objDuration > 0 && thisDuration == objDuration &&
                 objSize > 0 && thisSize == objSize) {
-                Log.d("wd", "MessageObject.equals: 语音匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
             }
         }
@@ -11281,7 +11278,6 @@ public class MessageObject {
             long objSize = obj.getSize();
             
             if (objSize > 0 && thisSize == objSize) {
-                Log.d("wd", "MessageObject.equals: GIF匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
             }
         }
@@ -11295,7 +11291,6 @@ public class MessageObject {
             
             if (objSize > 0 && thisSize == objSize &&
                 !TextUtils.isEmpty(thisName) && thisName.equals(objName)) {
-                Log.d("wd", "MessageObject.equals: 文档匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
             }
         }
@@ -11306,8 +11301,6 @@ public class MessageObject {
             String objText = obj.getTextContent();
             
             if (!TextUtils.isEmpty(thisText) && thisText.equals(objText)) {
-                Log.d("wd", "MessageObject.equals: 文本匹配 id1=" + getId() + " id2=" + obj.getId() +
-                    " text=" + (thisText.length() > 30 ? thisText.substring(0, 30) + "..." : thisText));
                 return true;
             }
         }
