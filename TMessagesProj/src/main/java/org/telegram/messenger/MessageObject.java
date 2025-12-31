@@ -41,6 +41,7 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.Base64;
+import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.widget.Toast;
@@ -11235,10 +11236,12 @@ public class MessageObject {
         
         // 视频消息：优先通过时长匹配
         if (isVideo() && obj.isVideo()) {
-            int thisDuration = getDuration();
-            int objDuration = obj.getDuration();
+            double thisDuration = getDuration();
+            double objDuration = obj.getDuration();
+            long thisSize = getSize();
+            long objSize = obj.getSize();
             
-            if (thisDuration > 0 && objDuration > 0 && thisDuration == objDuration) {
+            if (objDuration > 0 && thisDuration == objDuration && objSize > 0 && thisSize == objSize) {
                 Log.d("wd", "MessageObject.equals: 视频匹配 id1=" + getId() + " id2=" + obj.getId() + " duration=" + thisDuration);
                 return true;
             }
@@ -11251,7 +11254,7 @@ public class MessageObject {
             int[] thisDim = getPhotoDimensions();
             int[] objDim = obj.getPhotoDimensions();
             
-            if (thisSize > 0 && objSize > 0 && thisSize == objSize &&
+            if (objSize > 0 && thisSize == objSize &&
                 thisDim[0] == objDim[0] && thisDim[1] == objDim[1]) {
                 Log.d("wd", "MessageObject.equals: 图片匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
@@ -11260,13 +11263,13 @@ public class MessageObject {
         
         // 语音消息：通过时长 + 大小匹配
         if (isVoice() && obj.isVoice()) {
-            int thisDuration = getDuration();
-            int objDuration = obj.getDuration();
+            double thisDuration = getDuration();
+            double objDuration = obj.getDuration();
             long thisSize = getSize();
             long objSize = obj.getSize();
             
             if (thisDuration > 0 && objDuration > 0 && thisDuration == objDuration &&
-                thisSize > 0 && objSize > 0 && thisSize == objSize) {
+                objSize > 0 && thisSize == objSize) {
                 Log.d("wd", "MessageObject.equals: 语音匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
             }
@@ -11277,7 +11280,7 @@ public class MessageObject {
             long thisSize = getSize();
             long objSize = obj.getSize();
             
-            if (thisSize > 0 && objSize > 0 && thisSize == objSize) {
+            if (objSize > 0 && thisSize == objSize) {
                 Log.d("wd", "MessageObject.equals: GIF匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
             }
@@ -11290,7 +11293,7 @@ public class MessageObject {
             String thisName = getFileName();
             String objName = obj.getFileName();
             
-            if (thisSize > 0 && objSize > 0 && thisSize == objSize &&
+            if (objSize > 0 && thisSize == objSize &&
                 !TextUtils.isEmpty(thisName) && thisName.equals(objName)) {
                 Log.d("wd", "MessageObject.equals: 文档匹配 id1=" + getId() + " id2=" + obj.getId());
                 return true;
@@ -11303,7 +11306,8 @@ public class MessageObject {
             String objText = obj.getTextContent();
             
             if (!TextUtils.isEmpty(thisText) && thisText.equals(objText)) {
-                Log.d("wd", "MessageObject.equals: 文本匹配 id1=" + getId() + " id2=" + obj.getId() + " text=" + (thisText.length() > 30 ? thisText.substring(0, 30) + "..." : thisText));
+                Log.d("wd", "MessageObject.equals: 文本匹配 id1=" + getId() + " id2=" + obj.getId() +
+                    " text=" + (thisText.length() > 30 ? thisText.substring(0, 30) + "..." : thisText));
                 return true;
             }
         }
@@ -11312,89 +11316,10 @@ public class MessageObject {
         return getId() == obj.getId() && getDialogId() == obj.getDialogId();
     }
 
-    //wd 辅助方法：判断是否为视频消息
-    public boolean isVideo() {
-        return messageOwner != null && (messageOwner.media instanceof TLRPC.TL_messageMediaVideo || 
-               messageOwner.media instanceof TLRPC.TL_messageMediaDocument document && 
-               (document.video != null || isGif()));
-    }
-
-    //wd 辅助方法：判断是否为图片消息
-    public boolean isPhoto() {
-        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaPhoto;
-    }
-
-    //wd 辅助方法：判断是否为语音消息
-    public boolean isVoice() {
-        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaDocument document &&
-               document.document != null && document.document.mime_type != null && 
-               (document.document.mime_type.startsWith("audio/") || 
-                document.document.mime_type.equals("application/ogg"));
-    }
-
-    //wd 辅助方法：判断是否为GIF消息
-    public boolean isGif() {
-        if (messageOwner == null || messageOwner.media == null) {
-            return false;
-        }
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
-            return document.document != null && document.document.mime_type != null &&
-                   document.document.mime_type.equals("image/gif");
-        }
-        return false;
-    }
-
-    //wd 辅助方法：判断是否为文档消息
-    public boolean isDocument() {
-        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaDocument document &&
-               document.document != null && !isVideo() && !isGif() && !isVoice();
-    }
-
     //wd 辅助方法：判断是否为文本消息
     public boolean isText() {
         return messageOwner != null && !isVideo() && !isPhoto() && !isVoice() && 
                !isGif() && !isDocument() && !TextUtils.isEmpty(messageOwner.message);
-    }
-
-    //wd 辅助方法：获取视频/媒体时长（秒）
-    public int getDuration() {
-        if (messageOwner == null) return 0;
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaVideo video) {
-            return video.duration;
-        }
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
-            if (document.video != null) {
-                return document.video.duration;
-            }
-            if (document.document != null && document.document.attributes != null) {
-                for (TLRPC.DocumentAttribute attr : document.document.attributes) {
-                    if (attr instanceof TLRPC.TL_documentAttributeVideo) {
-                        return ((TLRPC.TL_documentAttributeVideo) attr).duration;
-                    }
-                }
-            }
-        }
-        return 0;
-    }
-
-    //wd 辅助方法：获取文件大小
-    public long getSize() {
-        if (messageOwner == null) return 0;
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaVideo video) {
-            return video.size;
-        }
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaPhoto photo) {
-            if (photo.photo.sizes != null && !photo.photo.sizes.isEmpty()) {
-                TLRPC.PhotoSize size = photo.photo.sizes.get(photo.photo.sizes.size() - 1);
-                return size.size;
-            }
-        }
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
-            if (document.document != null) {
-                return document.document.size;
-            }
-        }
-        return 0;
     }
 
     //wd 辅助方法：获取图片尺寸
@@ -11413,30 +11338,14 @@ public class MessageObject {
             if (document.document != null && document.document.attributes != null) {
                 for (TLRPC.DocumentAttribute attr : document.document.attributes) {
                     if (attr instanceof TLRPC.TL_documentAttributeImageSize) {
-                        dim[0] = ((TLRPC.TL_documentAttributeImageSize) attr).w;
-                        dim[1] = ((TLRPC.TL_documentAttributeImageSize) attr).h;
+                        dim[0] = attr.w;
+                        dim[1] = attr.h;
                         break;
                     }
                 }
             }
         }
         return dim;
-    }
-
-    //wd 辅助方法：获取文件名
-    public String getFileName() {
-        if (messageOwner == null || messageOwner.media == null) return "";
-        
-        if (messageOwner.media instanceof TLRPC.TL_messageMediaDocument document) {
-            if (document.document != null && document.document.attributes != null) {
-                for (TLRPC.DocumentAttribute attr : document.document.attributes) {
-                    if (attr instanceof TLRPC.TL_documentAttributeFile) {
-                        return ((TLRPC.TL_documentAttributeFile) attr).file_name;
-                    }
-                }
-            }
-        }
-        return "";
     }
 
     //wd 辅助方法：获取文本内容
