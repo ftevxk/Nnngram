@@ -267,7 +267,6 @@ public class ExperimentSettingActivity extends BaseActivity {
             }
         } else if (position == disableSecondAddressRow) {
             Config.toggleDisableSecondAddress();
-            NnngramNative.setDisableSecondAddress(Config.disableSecondAddress);
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.disableSecondAddress);
             }
