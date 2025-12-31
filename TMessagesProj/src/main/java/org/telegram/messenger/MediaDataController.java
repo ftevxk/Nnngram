@@ -4257,27 +4257,34 @@ public class MediaDataController extends BaseController {
                     AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(emojis);
                     searchLocalResultMessages = messages;
                     updateSearchResults();
-                    // 打印汇总
+                    
+                    //wd 打印保存消息搜索汇总
                     Log.d("wd", "========== 搜索完成汇总 ==========");
                     Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
                     Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
-                    Log.d("wd", "网络请求结果: 待返回");
                     Log.d("wd", "最终显示数量: " + searchResultMessages.size());
                     Log.d("wd", "=================================");
                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
                 }
             }, true);
         } else if (!isSaved && firstQuery) {
-            //wd 添加普通聊天消息的本地搜索支持
-            Log.d("wd", "触发普通聊天消息本地搜索");
+            //wd 添加普通聊天消息、频道和群组的本地搜索支持
+            Log.d("wd", "触发本地搜索 - 对话类型检查");
             Log.d("wd", "dialogId: " + dialogId + ", query: " + query + ", filter: " + filter);
+            
+            //wd 判断对话类型（频道、群组、私聊）
+            boolean isChannel = dialogId < 0 && getMessagesController().getChat(-dialogId) != null && getMessagesController().getChat(-dialogId).broadcast;
+            boolean isGroup = dialogId < 0 && getMessagesController().getChat(-dialogId) != null && !getMessagesController().getChat(-dialogId).broadcast;
+            String dialogType = isChannel ? "频道" : (isGroup ? "群组" : "私聊");
+            Log.d("wd", "对话类型: " + dialogType + ", dialogId: " + dialogId);
+            
             lastReturnedNum = 0;
             searchServerResultMessages.clear();
             searchServerResultMessagesMap[0].clear();
             searchServerResultMessagesMap[1].clear();
             
             loadingSearchLocal = true;
-            Log.d("wd", "========== 开始搜索: query=" + query + " ==========");
+            Log.d("wd", "========== 开始" + dialogType + "本地搜索: query=" + query + " ==========");
             getMessagesStorage().searchMessagesByText(dialogId, query, 300, 0, (messages, users, chats, docs) -> {
                 if (currentReqId == lastReqId) {
                     loadingSearchLocal = false;
@@ -4287,7 +4294,7 @@ public class MediaDataController extends BaseController {
                         AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(docs);
                     }
                     int dbCount = (messages != null ? messages.size() : 0);
-                    Log.d("wd", "数据库搜索结果: 找到 " + dbCount + " 条匹配消息");
+                    Log.d("wd", "数据库搜索结果: " + dialogType + "中找到 " + dbCount + " 条匹配消息");
                     if (messages != null) {
                         searchLocalResultMessages = messages;
                     } else {
@@ -4295,12 +4302,14 @@ public class MediaDataController extends BaseController {
                     }
                     updateSearchResults();
                     int searchCount = getSearchCount();
-                    Log.d("wd", "========== 搜索完成汇总 ==========");
+                    
+                    //wd 打印本地搜索完成汇总
+                    Log.d("wd", "========== 本地搜索完成汇总 ==========");
                     Log.d("wd", "数据库匹配数量: " + dbCount);
                     Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
-                    Log.d("wd", "网络请求结果: 待返回");
                     Log.d("wd", "最终显示数量: " + searchResultMessages.size());
-                    Log.d("wd", "=================================");
+                    Log.d("wd", "====================================");
+                    
                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, searchCount, true);
                 }
             });
@@ -4380,7 +4389,9 @@ public class MediaDataController extends BaseController {
                             updateSearchResults();
                             messagesSearchEndReached[queryWithDialogFinal == dialogId ? 0 : 1] = res.messages.size() < req.limit;
                             messagesSearchCount[queryWithDialogFinal == dialogId ? 0 : 1] = res instanceof TLRPC.TL_messages_messagesSlice || res instanceof TLRPC.TL_messages_channelMessages ? res.count : res.messages.size();
-                            Log.d("wd", "========== 网络搜索完成汇总 ==========");
+                            
+                            //wd 打印完整的搜索汇总（包括本地和网络结果）
+                            Log.d("wd", "========== 加载更多完成汇总 ==========");
                             Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
                             Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
                             Log.d("wd", "网络请求匹配数量: " + N);

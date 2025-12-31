@@ -584,11 +584,13 @@ public class UserConfig extends BaseController {
     }
 
     public boolean isPremium() {
-        TLRPC.User user = currentUser;
-        if (user == null) {
-            return false;
-        }
-        return user.premium;
+//        TLRPC.User user = currentUser;
+//        if (user == null) {
+//            return false;
+//        }
+//        return user.premium;
+        //wd 本地高级版功能
+        return true;
     }
 
     public Long getEmojiStatus() {
