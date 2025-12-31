@@ -3671,9 +3671,13 @@ public class MediaDataController extends BaseController {
         Log.d("wd", "lastSearchQuery: " + lastSearchQuery);
         
         //wd 如果本地数据库和已加载消息都没有找到结果，尝试加载更多历史消息
-        if (searchLocalResultMessages.isEmpty() && loadedMessages != null && loadedMessages.size() <= 1) {
-            Log.d("wd", "尝试加载更多历史消息进行搜索");
+        //wd 注意：数据库搜索是异步的，不要在这里立即判断，需要等待数据库回调完成
+        if (searchLocalResultMessages.isEmpty() && loadedMessages != null && loadedMessages.size() <= 1 && !loadingSearchLocal) {
+            Log.d("wd", "本地搜索结果为空且不在加载中，尝试加载更多历史消息");
             loadMoreHistoryForSearch();
+            return;
+        } else if (searchLocalResultMessages.isEmpty() && loadingSearchLocal) {
+            Log.d("wd", "本地数据库搜索进行中，等待搜索结果...");
             return;
         }
         Log.d("wd", "searchLocalResultMessages size: " + searchLocalResultMessages.size());
