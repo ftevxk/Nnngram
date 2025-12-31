@@ -198,16 +198,24 @@ public class PostsSearchContainer extends FrameLayout {
     }
 
     private void load(final boolean pay) {
-        if (loading) return;
+        if (loading) {
+            Log.d("wd", "PostsSearchContainer.load: 已经在加载中，跳过");
+            return;
+        }
 
         final boolean news = TextUtils.isEmpty(lastQuery);
+        Log.d("wd", "PostsSearchContainer.load: 开始加载, news=" + news + ", lastQuery=" + lastQuery);
+        
         if (news && newsMessagesEndReached) {
+            Log.d("wd", "PostsSearchContainer.load: news模式已到达末尾");
             return;
         }
         if (!news && endReached) {
+            Log.d("wd", "PostsSearchContainer.load: 非news模式已到达末尾");
             return;
         }
         if (!news && flood == null) {
+            Log.d("wd", "PostsSearchContainer.load: flood为null，需要先获取flood");
             return;
         }
 
@@ -251,8 +259,12 @@ public class PostsSearchContainer extends FrameLayout {
             reqId = -1;
             loading = false;
             emptyButton.setLoading(false);
+            
+            Log.d("wd", "PostsSearchContainer.load: 请求回调, res=" + (res != null ? res.getClass().getSimpleName() : "null") + ", err=" + (err != null ? err.text : "null"));
+            
             if (res instanceof TLRPC.messages_Messages) {
                 final TLRPC.messages_Messages r = (TLRPC.messages_Messages) res;
+                Log.d("wd", "PostsSearchContainer.load: 收到消息响应, messages.size=" + r.messages.size());
                 messagesController.putUsers(r.users, false);
                 messagesController.putChats(r.chats, false);
 
@@ -354,23 +366,28 @@ public class PostsSearchContainer extends FrameLayout {
     private void loadLocalSearch(String query, boolean news) {
         Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始本地搜索, query=" + query + ", news=" + news);
         MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 50, 0, (localMessages, localUsers, localChats, localDocs) -> {
-            Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索完成, localMessages.size=" + (localMessages != null ? localMessages.size() : 0));
+            Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索回调, localMessages=" + (localMessages != null ? localMessages.size() : "null") + ", localUsers=" + (localUsers != null ? localUsers.size() : "null") + ", localChats=" + (localChats != null ? localChats.size() : "null"));
             AndroidUtilities.runOnUIThread(() -> {
                 if (TextUtils.isEmpty(lastQuery) && !news) {
+                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: lastQuery为空且不是news模式，跳过");
                     return;
                 }
                 
                 final ArrayList<MessageObject> targetMessages = news ? newsMessages : messages;
                 final boolean firstMessages = targetMessages.isEmpty();
                 
-                if (localMessages != null) {
+                if (localMessages != null && !localMessages.isEmpty()) {
+                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始处理 " + localMessages.size() + " 条本地消息");
                     for (MessageObject message : localMessages) {
                         if (!news) {
                             message.setQuery(query);
                         }
                         targetMessages.add(message);
+                        Log.d("wd", "PostsSearchContainer.loadLocalSearch: 添加消息, id=" + message.getId() + ", dialogId=" + message.getDialogId());
                     }
-                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 添加了 " + localMessages.size() + " 条本地消息到列表");
+                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 完成, targetMessages.size=" + targetMessages.size());
+                } else {
+                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索结果为空");
                 }
                 
                 lastRate = 0;
