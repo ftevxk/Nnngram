@@ -28,6 +28,7 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -611,6 +612,23 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         lastReqId++;
         final int currentReqId = lastReqId;
         reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+            //wd 本地搜索后备：当网络搜索因Premium限制失败时使用本地搜索
+            if (error != null && "PREMIUM_ACCOUNT_REQUIRED".equalsIgnoreCase(error.text)) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (currentReqId != lastReqId) {
+                        waitingResponseCount--;
+                        if (delegate != null) {
+                            delegate.searchStateChanged(waitingResponseCount > 0, true);
+                        }
+                        reqId = 0;
+                        return;
+                    }
+                    //wd 使用本地数据库搜索作为后备
+                    loadLocalMessagesSearch(query, searchId);
+                });
+                return;
+            }
+            
             final ArrayList<MessageObject> messageObjects = new ArrayList<>();
             if (error == null) {
                 TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
@@ -746,6 +764,53 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 });
             }
         }, ConnectionsManager.RequestFlagFailOnServerErrors);
+    }
+
+    //wd 本地搜索后备：当网络搜索因Premium限制失败时使用本地数据库搜索
+    private void loadLocalMessagesSearch(String query, int searchId) {
+        Log.d("wd", "DialogsSearchAdapter.loadLocalMessagesSearch: 开始本地搜索, query=" + query);
+        
+        MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 50, 0, (localMessages, localUsers, localChats, localDocs) -> {
+            AndroidUtilities.runOnUIThread(() -> {
+                if (searchId > 0 && searchId != lastSearchId) {
+                    waitingResponseCount--;
+                    if (delegate != null) {
+                        delegate.searchStateChanged(waitingResponseCount > 0, true);
+                    }
+                    reqId = 0;
+                    return;
+                }
+                
+                //wd 处理本地搜索结果
+                if (localMessages != null) {
+                    for (MessageObject msgObj : localMessages) {
+                        msgObj.setQuery(query);
+                        
+                        //wd 检查是否重复（使用MessageObject的equals方法）
+                        if (!searchResultMessages.contains(msgObj)) {
+                            searchResultMessages.add(msgObj);
+                        }
+                    }
+                }
+                
+                messagesSearchEndReached = true;
+                searchWas = true;
+                forceLoadingMessages = false;
+                
+                Log.d("wd", "DialogsSearchAdapter.loadLocalMessagesSearch: 本地搜索完成，找到 " + searchResultMessages.size() + " 条消息");
+                
+                waitingResponseCount--;
+                if (delegate != null) {
+                    delegate.searchStateChanged(waitingResponseCount > 0, true);
+                    delegate.runResultsEnterAnimation();
+                }
+                if (messagesEmptyLayout != null) {
+                    messagesEmptyLayout.setQuery(lastMessagesSearchString);
+                }
+                notifyDataSetChanged();
+                reqId = 0;
+            });
+        });
     }
 
     public boolean hasRecentSearch() {

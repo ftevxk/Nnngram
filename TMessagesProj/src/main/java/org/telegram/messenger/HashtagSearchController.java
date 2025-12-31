@@ -22,6 +22,7 @@ package org.telegram.messenger;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -287,6 +288,21 @@ public class HashtagSearchController {
         //wd 然后搜索网络消息
         final int[] reqId = new int[1];
         reqId[0] = search.reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(request, (res, err) -> {
+            //wd 本地搜索后备：当网络搜索失败时使用本地搜索
+            if (err != null && "PREMIUM_ACCOUNT_REQUIRED".equalsIgnoreCase(err.text)) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (reqId[0] == search.reqId) {
+                        search.reqId = -1;
+                    } else {
+                        return;
+                    }
+                    search.loading = false;
+                    //wd 使用本地数据库搜索作为后备
+                    loadLocalHashtagSearch(query, guid, searchType, search);
+                });
+                return;
+            }
+            
             if (res instanceof TLRPC.messages_Messages) {
                 TLRPC.messages_Messages messages = (TLRPC.messages_Messages) res;
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
@@ -348,6 +364,58 @@ public class HashtagSearchController {
                     NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.hashtagSearchUpdated, guid, search.count, search.endReached, search.getMask(), search.selectedIndex, 0);
                 });
             }
+        });
+    }
+
+    //wd 本地搜索后备：当网络搜索因Premium限制失败时使用本地数据库搜索
+    private void loadLocalHashtagSearch(String query, int guid, int searchType, SearchResult search) {
+        Log.d("wd", "HashtagSearchController.loadLocalHashtagSearch: 开始本地搜索, query=" + query + ", searchType=" + searchType);
+        
+        MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 100, 0, (localMessages, localUsers, localChats, localDocs) -> {
+            if (!TextUtils.equals(search.lastHashtag, query)) {
+                return;
+            }
+            
+            AndroidUtilities.runOnUIThread(() -> {
+                //wd 处理本地搜索结果，过滤包含hashtag的消息
+                for (MessageObject msg : localMessages) {
+                    //wd 检查消息是否包含搜索的hashtag
+                    boolean containsHashtag = false;
+                    String messageText = msg.messageOwner.message;
+                    if (messageText != null && messageText.toLowerCase().contains(query.toLowerCase())) {
+                        containsHashtag = true;
+                    }
+                    
+                    if (!containsHashtag && msg.messageOwner.entities != null) {
+                        for (TLRPC.MessageEntity entity : msg.messageOwner.entities) {
+                            if (entity instanceof TLRPC.TL_messageEntityHashtag) {
+                                containsHashtag = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (containsHashtag) {
+                        MessageCompositeID compositeId = new MessageCompositeID(msg.messageOwner);
+                        Integer id = search.generatedIds.get(compositeId);
+                        if (id == null) {
+                            id = search.lastGeneratedId--;
+                            search.generatedIds.put(compositeId, id);
+                            search.messages.add(msg);
+                            msg.messageOwner.realId = msg.messageOwner.id;
+                            msg.messageOwner.id = id;
+                        }
+                    }
+                }
+                
+                search.loading = false;
+                search.endReached = true;
+                search.count = search.messages.size();
+                
+                Log.d("wd", "HashtagSearchController.loadLocalHashtagSearch: 本地搜索完成，找到 " + search.messages.size() + " 条消息");
+                
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.hashtagSearchUpdated, guid, search.count, search.endReached, search.getMask(), search.selectedIndex, 0);
+            });
         });
     }
 

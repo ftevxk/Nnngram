@@ -33,6 +33,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -47,6 +48,7 @@ import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
@@ -328,8 +330,8 @@ public class PostsSearchContainer extends FrameLayout {
                     listView.adapter.update(true);
                 }
             } else if (err != null && "PREMIUM_ACCOUNT_REQUIRED".equalsIgnoreCase(err.text)) {
-                updateEmptyView();
-                listView.adapter.update(true);
+                //wd 本地搜索：当服务器要求Premium账户时，使用本地数据库搜索
+                loadLocalSearch(lastQuery, news);
             } else if (err != null && "BALANCE_TOO_LOW".equalsIgnoreCase(err.text)) {
                 updateEmptyView();
                 listView.adapter.update(true);
@@ -346,6 +348,46 @@ public class PostsSearchContainer extends FrameLayout {
 
         updateEmptyView();
         listView.adapter.update(true);
+    }
+
+    //wd 本地搜索：当服务器要求Premium账户时，使用本地数据库搜索
+    private void loadLocalSearch(String query, boolean news) {
+        Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始本地搜索, query=" + query + ", news=" + news);
+        MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 50, 0, (localMessages, localUsers, localChats, localDocs) -> {
+            Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索完成, localMessages.size=" + (localMessages != null ? localMessages.size() : 0));
+            AndroidUtilities.runOnUIThread(() -> {
+                if (TextUtils.isEmpty(lastQuery) && !news) {
+                    return;
+                }
+                
+                final ArrayList<MessageObject> targetMessages = news ? newsMessages : messages;
+                final boolean firstMessages = targetMessages.isEmpty();
+                
+                if (localMessages != null) {
+                    for (MessageObject message : localMessages) {
+                        if (!news) {
+                            message.setQuery(query);
+                        }
+                        targetMessages.add(message);
+                    }
+                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 添加了 " + localMessages.size() + " 条本地消息到列表");
+                }
+                
+                lastRate = 0;
+                endReached = true;
+                newsMessagesLastRate = 0;
+                newsMessagesEndReached = true;
+                
+                loading = false;
+                emptyButton.setLoading(false);
+                updateEmptyView();
+                
+                if (firstMessages && !targetMessages.isEmpty()) {
+                    listView.scrollToPosition(0);
+                }
+                listView.adapter.update(true);
+            });
+        });
     }
 
     private int reqId = -1;
