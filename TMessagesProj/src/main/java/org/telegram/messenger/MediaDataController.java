@@ -3681,15 +3681,8 @@ public class MediaDataController extends BaseController {
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
             if (!messageIds.contains(m.getId())) {
-                //wd 应用模糊匹配过滤
-                boolean match = false;
-                if (!TextUtils.isEmpty(lastSearchQuery)) {
-                    //wd 使用消息对象的fuzzyMatch方法进行匹配
-                    match = m.messageOwner.fuzzyMatch(lastSearchQuery);
-                } else {
-                    //wd 如果查询为空，则显示所有本地结果
-                    match = true;
-                }
+                //wd 数据库已进行文本匹配，直接使用结果
+                boolean match = true;
                 
                 //wd 应用高级过滤条件
                 if (match && lastSearchFilter != null) {
@@ -3724,7 +3717,7 @@ public class MediaDataController extends BaseController {
             for (int i = 0; i < loadedMessages.size(); ++i) {
                 MessageObject m = loadedMessages.get(i);
                 if (!messageIds.contains(m.getId())) {
-                    //wd 应用模糊匹配过滤
+                    //wd 已加载消息需要重新进行文本匹配
                     boolean match = false;
                     if (!TextUtils.isEmpty(lastSearchQuery)) {
                         //wd 使用消息对象的fuzzyMatch方法进行匹配
@@ -4295,11 +4288,20 @@ public class MediaDataController extends BaseController {
                     }
                     int dbCount = (messages != null ? messages.size() : 0);
                     Log.d("wd", "数据库搜索结果: " + dialogType + "中找到 " + dbCount + " 条匹配消息");
-                    if (messages != null) {
+                    Log.d("wd", "回调中 messages 对象: " + (messages != null ? "非空" : "空") + ", 大小: " + dbCount);
+                    
+                    //wd 确保正确设置搜索结果
+                    if (messages != null && !messages.isEmpty()) {
+                        Log.d("wd", "设置 searchLocalResultMessages: " + messages.size() + " 条消息");
                         searchLocalResultMessages = messages;
                     } else {
+                        Log.d("wd", "清空 searchLocalResultMessages");
                         searchLocalResultMessages.clear();
                     }
+                    
+                    //wd 立即检查设置结果
+                    Log.d("wd", "设置后 searchLocalResultMessages size: " + searchLocalResultMessages.size());
+                    
                     updateSearchResults();
                     int searchCount = getSearchCount();
                     
@@ -4311,6 +4313,8 @@ public class MediaDataController extends BaseController {
                     Log.d("wd", "====================================");
                     
                     getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, searchCount, true);
+                } else {
+                    Log.d("wd", "搜索请求已过期，跳过回调处理");
                 }
             });
         }
