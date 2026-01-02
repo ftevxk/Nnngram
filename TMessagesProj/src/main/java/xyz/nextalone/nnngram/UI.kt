@@ -32,8 +32,9 @@ import org.telegram.ui.ActionBar.Theme
 import org.telegram.ui.Cells.ShadowSectionCell
 import org.telegram.ui.Components.EditTextBoldCursor
 import org.telegram.ui.Components.LayoutHelper
-import xyz.nextalone.gen.Config
 import xyz.nextalone.nnngram.activity.ChatSettingActivity
+import xyz.nextalone.nnngram.config.ConfigManager
+import xyz.nextalone.nnngram.utils.Defines
 import java.util.regex.Pattern
 
 fun ChatSettingActivity.createMessageFilterSetter(context: Context, resourcesProvider: Theme.ResourcesProvider? = null) {
@@ -53,7 +54,7 @@ fun ChatSettingActivity.createMessageFilterSetter(context: Context, resourcesPro
             setHeaderHintColor(Theme.getColor(Theme.key_dialogTextBlue))
             setTransformHintToHeader(true)
 
-            setText(Config.messageFilter)
+            setText(ConfigManager.getStringOrDefault(Defines.messageFilter, ""))
             setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16f)
             setTextColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider))
 
@@ -88,13 +89,13 @@ fun ChatSettingActivity.createMessageFilterSetter(context: Context, resourcesPro
 
         setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null)
         setPositiveButton(LocaleController.getString("Save", R.string.Save)) { _, _ ->
-            runCatching {
-                if (!editText.text.isNullOrEmpty()) Pattern.compile(editText.text.toString().trim { it == '|' })
-            }.onSuccess {
-                Config.messageFilter = editText.text.toString().trim { it == '|' }
-            }.onFailure {
-                Toast.makeText(context, LocaleController.getString("InvalidPattern", R.string.InvalidPattern), Toast.LENGTH_SHORT).show()
+                runCatching {
+                    if (!editText.text.isNullOrEmpty()) Pattern.compile(editText.text.toString().trim { it == '|' })
+                }.onSuccess {
+                    ConfigManager.putString(Defines.messageFilter, editText.text.toString().trim { it == '|' })
+                }.onFailure {
+                    Toast.makeText(context, LocaleController.getString("InvalidPattern", R.string.InvalidPattern), Toast.LENGTH_SHORT).show()
+                }
             }
-        }
     }.show()
 }
