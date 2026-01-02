@@ -328,7 +328,7 @@ public class PremiumLockIconView extends ImageView {
 
     public void setLocked(boolean locked) {
         if (type != TYPE_REACTIONS) {
-            setImageResource(locked ? R.drawable.msg_mini_premiumlock : R.drawable.msg_mini_stickerstar);
+            setImageResource(locked ? R.drawable.msg_mini_stickerstar : R.drawable.msg_mini_premiumlock);
         }
     }
 }

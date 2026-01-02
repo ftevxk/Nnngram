@@ -45149,7 +45149,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 //wd 添加锁定/解锁选项
                 items.add(LocaleController.getString(selectedObject.isLocked ? "Unlock" : "Lock",
-                    selectedObject.isLocked ? R.string.Lock : R.string.Unlock));
+                    selectedObject.isLocked ? R.string.Unlock : R.string.Lock));
                 options.add(OPTION_LOCK);
                 icons.add(selectedObject.isLocked ? R.drawable.msg_filled_lockedrecord : R.drawable.msg_filled_unlockedrecord);
                 boolean canViewStats = false;
