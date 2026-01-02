@@ -6979,6 +6979,21 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 filterTabsView.finishAddingTabs(animatedUpdateItems);
                 if (updateCurrentTab) {
                     switchToCurrentSelectedMode(false);
+                } else {
+                    //wd 检查当前选中的标签页是否仍然存在于更新后的标签页列表中
+                    int currentStableId = filterTabsView.getCurrentTabStableId();
+                    boolean currentTabExists = false;
+                    try {
+                        int currentTabId = filterTabsView.getCurrentTabId();
+                        if (currentTabId >= 0) {
+                            currentTabExists = true;
+                        }
+                    } catch (Exception e) {
+                        currentTabExists = false;
+                    }
+                    if (!currentTabExists) {
+                        switchToCurrentSelectedMode(false);
+                    }
                 }
                 isFirstTab = id == filterTabsView.getFirstTabId();
                 updateDrawerSwipeEnabled();
@@ -11003,6 +11018,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
         } else if (id == NotificationCenter.dialogFiltersUpdated) {
             updateFilterTabs(true, true);
+            // 刷新当前对话列表内容
+            for (int i = 0; i < viewPages.length; i++) {
+                ViewPage page = viewPages[i];
+                if (page.dialogsAdapter != null) {
+                    page.dialogsAdapter.notifyDataSetChanged();
+                }
+            }
         } else if (id == NotificationCenter.filterSettingsUpdated) {
             showFiltersHint();
         } else if (id == NotificationCenter.newSuggestionsAvailable) {
