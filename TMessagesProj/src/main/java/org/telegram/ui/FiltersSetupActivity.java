@@ -74,6 +74,7 @@ import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
+import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FolderBottomSheet;
@@ -91,6 +92,8 @@ import org.telegram.ui.Components.UndoView;
 import java.util.ArrayList;
 
 import xyz.nextalone.nnngram.helpers.FolderIconHelper;
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines;
 
 public class FiltersSetupActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
@@ -293,6 +296,8 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
         private final LoadingDrawable shareLoadingDrawable;
         private boolean needDivider;
         float progressToLock;
+        private final ImageView visibilityImageView;
+        private final CheckBox2 autoHideCheckBox;
 
         private MessagesController.DialogFilter currentFilter;
 
@@ -397,6 +402,41 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             optionsImageView.setImageResource(R.drawable.msg_actions);
             optionsImageView.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
             addView(optionsImageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, 6, 0, 6, 0));
+
+            visibilityImageView = new ImageView(context);
+            visibilityImageView.setFocusable(false);
+            visibilityImageView.setScaleType(ImageView.ScaleType.CENTER);
+            visibilityImageView.setBackground(Theme.createSelectorDrawable(selector));
+            visibilityImageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_stickers_menu), PorterDuff.Mode.MULTIPLY));
+            visibilityImageView.setContentDescription(LocaleController.getString(R.string.FolderShow));
+            visibilityImageView.setImageResource(R.drawable.msg_show);
+            addView(visibilityImageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, LocaleController.isRTL ? 52 : 46, 0, LocaleController.isRTL ? 46 : 52, 0));
+            visibilityImageView.setOnClickListener(e -> {
+                if (currentFilter == null || currentFilter.isDefault()) {
+                    return;
+                }
+                boolean newVisibility = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + currentFilter.id, true);
+                ConfigManager.putBoolean(Defines.folderVisibilityPrefix + currentFilter.id, newVisibility);
+                updateVisibilityIcon(newVisibility);
+            });
+
+            autoHideCheckBox = new CheckBox2(context, 21, resourceProvider);
+            autoHideCheckBox.setColor(Theme.key_dialogRoundCheckBox, Theme.key_checkboxDisabled, Theme.key_checkboxCheck);
+            autoHideCheckBox.setChecked(false, false);
+            autoHideCheckBox.setVisibility(GONE);
+            addView(autoHideCheckBox, LayoutHelper.createFrame(24, 24, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, LocaleController.isRTL ? 52 : 52, 0, LocaleController.isRTL ? 52 : 52, 0));
+            autoHideCheckBox.setOnClickListener(v -> {
+                if (currentFilter == null || currentFilter.isDefault()) {
+                    return;
+                }
+                boolean newValue = !autoHideCheckBox.isChecked();
+                autoHideCheckBox.setChecked(newValue, true);
+                ConfigManager.putBoolean(Defines.autoHideFolderPrefix + currentFilter.id, newValue);
+            });
+        }
+
+        private void updateVisibilityIcon(boolean visible) {
+            visibilityImageView.setImageResource(visible ? R.drawable.msg_show : R.drawable.msg_hide);
         }
 
         @Override
@@ -514,6 +554,14 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             } else {
                 optionsImageView.setVisibility(View.VISIBLE);
             }
+            boolean isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+            updateVisibilityIcon(isVisible);
+            visibilityImageView.setVisibility(filter.isDefault() ? View.GONE : View.VISIBLE);
+
+            boolean isAutoHide = ConfigManager.getBooleanOrDefault(Defines.autoHideFolderPrefix + filter.id, false);
+            autoHideCheckBox.setChecked(isAutoHide, false);
+            autoHideCheckBox.setVisibility(filter.isDefault() ? View.GONE : View.VISIBLE);
+
             invalidate();
         }
 
@@ -607,6 +655,8 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
         items.add(ItemInner.asShadow(!getUserConfig().isPremium() ? AndroidUtilities.replaceSingleTag(LocaleController.getString(R.string.FolderShowTagsInfoPremium), Theme.key_windowBackgroundWhiteBlueHeader, AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD, () -> {
             presentFragment(new PremiumPreviewFragment("settings"));
         }) : LocaleController.getString(R.string.FolderShowTagsInfo)));
+        items.add(ItemInner.asAutoHide());
+        items.add(ItemInner.asShadow(null));
 
         if (adapter != null) {
             if (animated) {
@@ -795,6 +845,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
     private static final int VIEW_TYPE_BUTTON = 4;
     private static final int VIEW_TYPE_FILTER_SUGGESTION = 5;
     private static final int VIEW_TYPE_CHECK = 6;
+    private static final int VIEW_TYPE_AUTO_HIDE = 7;
 
     private int shiftDp = -4;
 
@@ -841,6 +892,9 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             ItemInner i = new ItemInner(VIEW_TYPE_CHECK);
             i.text = text;
             return i;
+        }
+        public static ItemInner asAutoHide() {
+            return new ItemInner(VIEW_TYPE_AUTO_HIDE);
         }
 
         @Override
@@ -990,6 +1044,10 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                     view = new TextCheckCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
+                case VIEW_TYPE_AUTO_HIDE:
+                    view = new TextCheckCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
                 case VIEW_TYPE_FILTER_SUGGESTION:
                 default:
                     SuggestedFilterCell suggestedFilterCell = new SuggestedFilterCell(mContext);
@@ -1105,6 +1163,18 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                     TextCheckCell cell = (TextCheckCell) holder.itemView;
                     cell.setTextAndCheck(item.text, getMessagesController().folderTags, divider);
                     cell.setCheckBoxIcon(!getUserConfig().isPremium() ? R.drawable.permission_locked : 0);
+                    break;
+                }
+                case VIEW_TYPE_AUTO_HIDE: {
+                    TextCheckCell cell = (TextCheckCell) holder.itemView;
+                    boolean isAutoHide = ConfigManager.getBooleanOrDefault(Defines.autoHideEmptyFolders, false);
+                    cell.setTextAndCheck(LocaleController.getString(R.string.AutoHideEmptyFolders), isAutoHide, divider);
+                    cell.setOnClickListener(v -> {
+                        boolean newValue = !isAutoHide;
+                        ConfigManager.putBoolean(Defines.autoHideEmptyFolders, newValue);
+                        cell.setChecked(newValue);
+                        getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
+                    });
                     break;
                 }
                 case VIEW_TYPE_FILTER_SUGGESTION: {

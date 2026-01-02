@@ -3714,6 +3714,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             .addIf(!defaultTab, R.drawable.msg_delete, LocaleController.getString(R.string.FilterDeleteItem), true, () -> {
                                 showDeleteAlert(dialogFilter);
                             })
+                            .addIf(!defaultTab, R.drawable.msg_settings, LocaleController.getString(R.string.FilterSettings), () -> {
+                                presentFragment(new FiltersSetupActivity());
+                            })
                             .setGravity(Gravity.LEFT)
                             .translate(dp(-8), dp(-10))
                             .show();
@@ -6939,8 +6942,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             filterTabsView.addTab(a, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats), "\uD83D\uDCAC", null, false, true, filters.get(a).locked);
                         }
                     } else {
-                        filterTabsView.addTab(a, filters.get(a).localId, filters.get(a).name, filters.get(a).emoticon == null ? "\uD83D\uDCC1" : filters.get(a).emoticon,filters.get(a).entities,
-                            filters.get(a).title_noanimate, false, filters.get(a).locked);
+                        if (ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filters.get(a).id, true)) {
+                            filterTabsView.addTab(a, filters.get(a).localId, filters.get(a).name, filters.get(a).emoticon == null ? "\uD83D\uDCC1" : filters.get(a).emoticon,filters.get(a).entities,
+                                filters.get(a).title_noanimate, false, filters.get(a).locked);
+                        }
                     }
                 }
                 if (Config.hideAllTab && stableId <= 0) {

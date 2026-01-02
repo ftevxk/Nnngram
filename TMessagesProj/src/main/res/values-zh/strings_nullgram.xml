@@ -407,4 +407,9 @@
     <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
     <string name="Lock">锁定</string>
     <string name="Unlock">解锁</string>
+    <string name="FolderShow">显示文件夹</string>
+    <string name="FilterSettings">文件夹设置</string>
+    <string name="AutoHideEmptyFolders">自动隐藏空文件夹</string>
+    <string name="AutoHideEmptyFoldersInfo">当文件夹中没有聊天时自动隐藏。</string>
+    <string name="AutoHideFolder">自动隐藏此文件夹</string>
 </resources>

@@ -59,6 +59,7 @@ import xyz.nextalone.nnngram.CrashListener;
 import xyz.nextalone.nnngram.NnngramNative;
 import xyz.nextalone.nnngram.utils.AnalyticsUtils;
 import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines;
 public class ApplicationLoader extends Application {
 
     public static ApplicationLoader applicationLoaderInstance;
@@ -349,6 +350,12 @@ public class ApplicationLoader extends Application {
                     ensureCurrentNetworkGet(true);
                 }
             }
+
+            @Override
+            public void onBecameBackground() {
+                super.onBecameBackground();
+                saveFolderVisibilityOnBackground();
+            }
         };
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("load libs time = " + (SystemClock.elapsedRealtime() - startTime));
@@ -383,6 +390,25 @@ public class ApplicationLoader extends Application {
             }
         } else {
             applicationContext.stopService(new Intent(applicationContext, NotificationsService.class));
+        }
+    }
+
+    private static void saveFolderVisibilityOnBackground() {
+        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
+            MessagesController messagesController = MessagesController.getInstance(i);
+            if (messagesController != null) {
+                ArrayList<MessagesController.DialogFilter> filters = messagesController.getDialogFilters();
+                for (MessagesController.DialogFilter filter : filters) {
+                    if (!filter.isDefault()) {
+                        boolean autoHide = ConfigManager.getBooleanOrDefault(Defines.autoHideFolderPrefix + filter.id, false);
+                        if (autoHide) {
+                            ConfigManager.putBoolean(Defines.folderVisibilityPrefix + filter.id, false);
+                        } else {
+                            ConfigManager.putBoolean(Defines.folderVisibilityPrefix + filter.id, true);
+                        }
+                    }
+                }
+            }
         }
     }
 
