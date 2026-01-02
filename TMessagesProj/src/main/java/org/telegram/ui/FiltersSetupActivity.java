@@ -297,7 +297,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
         private boolean needDivider;
         float progressToLock;
         private final ImageView visibilityImageView;
-        private final CheckBox2 autoHideCheckBox;
 
         private MessagesController.DialogFilter currentFilter;
 
@@ -412,26 +411,14 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             visibilityImageView.setImageResource(R.drawable.msg_show);
             addView(visibilityImageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, LocaleController.isRTL ? 52 : 46, 0, LocaleController.isRTL ? 46 : 52, 0));
             visibilityImageView.setOnClickListener(e -> {
-                if (currentFilter == null || currentFilter.isDefault()) {
+                if (currentFilter == null) {
                     return;
                 }
                 boolean newVisibility = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + currentFilter.id, true);
                 ConfigManager.putBoolean(Defines.folderVisibilityPrefix + currentFilter.id, newVisibility);
                 updateVisibilityIcon(newVisibility);
-            });
-
-            autoHideCheckBox = new CheckBox2(context, 21, resourceProvider);
-            autoHideCheckBox.setColor(Theme.key_dialogRoundCheckBox, Theme.key_checkboxDisabled, Theme.key_checkboxCheck);
-            autoHideCheckBox.setChecked(false, false);
-            autoHideCheckBox.setVisibility(GONE);
-            addView(autoHideCheckBox, LayoutHelper.createFrame(24, 24, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, LocaleController.isRTL ? 52 : 52, 0, LocaleController.isRTL ? 52 : 52, 0));
-            autoHideCheckBox.setOnClickListener(v -> {
-                if (currentFilter == null || currentFilter.isDefault()) {
-                    return;
-                }
-                boolean newValue = !autoHideCheckBox.isChecked();
-                autoHideCheckBox.setChecked(newValue, true);
-                ConfigManager.putBoolean(Defines.autoHideFolderPrefix + currentFilter.id, newValue);
+                // 发送通知，确保标签页和列表内容都能实时更新
+                getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
             });
         }
 
@@ -556,11 +543,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             }
             boolean isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
             updateVisibilityIcon(isVisible);
-            visibilityImageView.setVisibility(filter.isDefault() ? View.GONE : View.VISIBLE);
-
-            boolean isAutoHide = ConfigManager.getBooleanOrDefault(Defines.autoHideFolderPrefix + filter.id, false);
-            autoHideCheckBox.setChecked(isAutoHide, false);
-            autoHideCheckBox.setVisibility(filter.isDefault() ? View.GONE : View.VISIBLE);
+            visibilityImageView.setVisibility(View.VISIBLE);
 
             invalidate();
         }
@@ -1025,6 +1008,13 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                             if (button != null) {
                                 button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
                             }
+                        });
+                        // 添加自动隐藏选项
+                        boolean isAutoHide = ConfigManager.getBooleanOrDefault(Defines.autoHideFolderPrefix + filter.id, false);
+                        options.addChecked(isAutoHide, LocaleController.getString(R.string.AutoHideFolder), () -> {
+                            boolean newValue = !isAutoHide;
+                            ConfigManager.putBoolean(Defines.autoHideFolderPrefix + filter.id, newValue);
+                            getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
                         });
                         if (LocaleController.isRTL) {
                             options.setGravity(Gravity.LEFT);
