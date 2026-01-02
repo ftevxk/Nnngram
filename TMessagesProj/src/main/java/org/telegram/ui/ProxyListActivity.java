@@ -619,6 +619,37 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 if (button != null) {
                     button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
                 }
+            } else if (position == openFolderRow) {
+                //wd 获取所有文件夹
+                ArrayList<MessagesController.DialogFilter> filters = MessagesController.getInstance(currentAccount).getDialogFilters();
+                if (filters.isEmpty()) {
+                    return;
+                }
+                
+                //wd 创建文件夹选择对话框
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setTitle(LocaleController.getString(R.string.SelectFolder));
+                
+                //wd 准备文件夹名称数组
+                String[] folderNames = new String[filters.size()];
+                for (int i = 0; i < filters.size(); i++) {
+                    folderNames[i] = filters.get(i).title; //wd 使用文件夹标题作为显示名称
+                }
+                
+                //wd 设置对话框选项和点击监听器
+                builder.setItems(folderNames, (dialog, which) -> {
+                    //wd 获取选中的文件夹
+                    MessagesController.DialogFilter selectedFilter = filters.get(which);
+                    
+                    //wd 打开对应文件夹的对话列表
+                    Intent intent = new Intent(getParentActivity(), DialogsActivity.class);
+                    intent.putExtra("filter_id", selectedFilter.id); //wd 传递文件夹ID
+                    presentFragment(new DialogsActivity(selectedFilter.id));
+                });
+                
+                //wd 显示对话框
+                AlertDialog dialog = builder.create();
+                showDialog(dialog);
             }
         });
         listView.setOnItemLongClickListener((view, position) -> {

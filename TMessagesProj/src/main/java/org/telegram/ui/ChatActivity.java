@@ -45151,7 +45151,7 @@ public class ChatActivity extends BaseFragment implements
                 items.add(LocaleController.getString(selectedObject.isLocked ? "Unlock" : "Lock",
                     selectedObject.isLocked ? R.string.Unlock : R.string.Lock));
                 options.add(OPTION_LOCK);
-                icons.add(selectedObject.isLocked ? R.drawable.msg_filled_lockedrecord : R.drawable.msg_filled_unlockedrecord);
+                icons.add(selectedObject.isLocked ? R.drawable.msg_filled_unlockedrecord : R.drawable.msg_filled_lockedrecord);
                 boolean canViewStats = false;
                 if (message.messageOwner.views > 0 || message.messageOwner.forwards > 0) {
                     if (message.messageOwner.fwd_from != null && message.messageOwner.fwd_from.channel_post != 0) {
