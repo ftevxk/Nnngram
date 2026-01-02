@@ -350,13 +350,18 @@ public class ApplicationLoader extends Application {
                     ensureCurrentNetworkGet(true);
                 }
             }
+        };
+
+        ForegroundDetector.getInstance().addListener(new ForegroundDetector.Listener() {
+            @Override
+            public void onBecameForeground() {
+            }
 
             @Override
             public void onBecameBackground() {
-                super.onBecameBackground();
                 saveFolderVisibilityOnBackground();
             }
-        };
+        });
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("load libs time = " + (SystemClock.elapsedRealtime() - startTime));
         }

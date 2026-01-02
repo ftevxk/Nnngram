@@ -91,6 +91,7 @@ object Defines {
     @BooleanConfig const val hideAllTab = "hideAllTab"
     const val autoHideFolderPrefix = "autoHideFolder_"
     const val folderVisibilityPrefix = "folderVisible_"
+    @BooleanConfig const val autoHideEmptyFolders = "autoHideEmptyFolders"
     @BooleanConfig const val ignoreMutedCount = "ignoreMutedCount"
     @BooleanConfig const val alwaysSendWithoutSound = "alwaysSendWithoutSound"
     @BooleanConfig(true) const val disableSecondAddress = "disableSecondAddress"

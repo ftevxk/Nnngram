@@ -274,6 +274,7 @@ import xyz.nextalone.nnngram.ui.BackButtonRecentMenu;
 import xyz.nextalone.nnngram.ui.SendOptionsMenuLayout;
 import xyz.nextalone.nnngram.utils.APKUtils;
 import xyz.nextalone.nnngram.utils.Defines;
+import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.utils.PrivacyUtils;
 import xyz.nextalone.nnngram.utils.UpdateUtils;
 
