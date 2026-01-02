@@ -369,12 +369,9 @@ public class PostsSearchContainer extends FrameLayout {
 
     //wd 本地搜索：当服务器要求Premium账户时，使用本地数据库搜索
     private void loadLocalSearch(String query, boolean news) {
-        Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始本地搜索, query=" + query + ", news=" + news);
         MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 50, 0, (localMessages, localUsers, localChats, localDocs) -> {
-            Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索回调, localMessages=" + (localMessages != null ? localMessages.size() : "null") + ", localUsers=" + (localUsers != null ? localUsers.size() : "null") + ", localChats=" + (localChats != null ? localChats.size() : "null"));
             AndroidUtilities.runOnUIThread(() -> {
                 if (TextUtils.isEmpty(lastQuery) && !news) {
-                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: lastQuery为空且不是news模式，跳过");
                     return;
                 }
                 
@@ -382,17 +379,12 @@ public class PostsSearchContainer extends FrameLayout {
                 final boolean firstMessages = targetMessages.isEmpty();
                 
                 if (localMessages != null && !localMessages.isEmpty()) {
-                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始处理 " + localMessages.size() + " 条本地消息");
                     for (MessageObject message : localMessages) {
                         if (!news) {
                             message.setQuery(query);
                         }
                         targetMessages.add(message);
-                        Log.d("wd", "PostsSearchContainer.loadLocalSearch: 添加消息, id=" + message.getId() + ", dialogId=" + message.getDialogId());
                     }
-                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 完成, targetMessages.size=" + targetMessages.size());
-                } else {
-                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索结果为空");
                 }
                 
                 lastRate = 0;
@@ -443,9 +435,6 @@ public class PostsSearchContainer extends FrameLayout {
             queryid++;
             endReached = false;
             messages.clear();
-            
-            //wd 直接执行本地搜索，不需要等待网络结果
-            Log.d("wd", "PostsSearchContainer.search: 直接执行本地搜索, query=" + q);
             loadLocalSearch(q, false);
         }
         updateEmptyView();

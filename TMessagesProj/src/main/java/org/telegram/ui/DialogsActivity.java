@@ -7000,6 +7000,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (filterTabsView.isLocked(filterTabsView.getCurrentTabId())) {
                     filterTabsView.selectFirstTab();
                 }
+                //wd 检查是否有标签页，如果没有则显示文件夹设置
+                if (filterTabsView.getTabCount() == 0) {
+                    presentFragment(new FiltersSetupActivity());
+                }
             }
         } else {
             if (filterTabsView.getVisibility() != View.GONE) {
@@ -11022,6 +11026,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             for (int i = 0; i < viewPages.length; i++) {
                 ViewPage page = viewPages[i];
                 if (page.dialogsAdapter != null) {
+                    page.dialogsAdapter.setDialogsType(page.dialogsType);
                     page.dialogsAdapter.notifyDataSetChanged();
                 }
             }

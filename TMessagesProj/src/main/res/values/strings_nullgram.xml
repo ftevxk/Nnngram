@@ -424,5 +424,6 @@
     <string name="FilterSettings">Folder Settings</string>
     <string name="AutoHideEmptyFolders">Auto Hide Empty Folders</string>
     <string name="AutoHideEmptyFoldersInfo">Hide folders when they contain no chats.</string>
-    <string name="AutoHideFolder">Auto hide this folder</string>
+    <string name="AutoHideFolder">Auto hide folder</string>
+    <string name="OpenFolder">Open Folder</string>
 </resources>

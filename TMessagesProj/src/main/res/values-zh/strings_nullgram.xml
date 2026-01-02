@@ -412,4 +412,5 @@
     <string name="AutoHideEmptyFolders">自动隐藏空文件夹</string>
     <string name="AutoHideEmptyFoldersInfo">当文件夹中没有聊天时自动隐藏。</string>
     <string name="AutoHideFolder">自动隐藏此文件夹</string>
+    <string name="OpenFolder">打开文件夹</string>
 </resources>

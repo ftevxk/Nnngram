@@ -1420,6 +1420,10 @@ public class FilterTabsView extends FrameLayout {
         return selectedTabId;
     }
 
+    public int getTabCount() {
+        return tabs.size();
+    }
+
     public int getFirstTabId() {
         return positionToId.get(0, 0);
     }

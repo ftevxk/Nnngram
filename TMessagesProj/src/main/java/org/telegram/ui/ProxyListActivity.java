@@ -106,6 +106,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private int rotationTimeoutInfoRow;
     private int callsDetailRow;
     private int deleteAllRow;
+    private int openFolderRow;
 
     private ItemTouchHelper itemTouchHelper;
     private NumberTextView selectedCountTextView;
@@ -730,6 +731,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
 
     private void updateRows(boolean notify) {
         rowCount = 0;
+        openFolderRow = rowCount++;
         useProxyRow = rowCount++;
         if (useProxySettings && SharedConfig.currentProxy != null && SharedConfig.proxyList.size() > 1 && IS_PROXY_ROTATION_AVAILABLE) {
             rotationRow = rowCount++;
@@ -1006,6 +1008,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     } else if (position == deleteAllRow) {
                         textCell.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
                         textCell.setText(LocaleController.getString(R.string.DeleteAllProxies), false);
+                    } else if (position == openFolderRow) {
+                        textCell.setText(LocaleController.getString(R.string.OpenFolder), false);
                     }
                     break;
                 }
@@ -1115,7 +1119,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == useProxyRow || position == rotationRow || position == callsRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow;
+            return position == useProxyRow || position == rotationRow || position == callsRow || position == proxyAddRow || position == deleteAllRow || position == openFolderRow || position >= proxyStartRow && position < proxyEndRow;
         }
 
         @Override
@@ -1178,6 +1182,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return -10;
             } else if (position == rotationTimeoutInfoRow) {
                 return -11;
+            } else if (position == openFolderRow) {
+                return -12;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return proxyList.get(position - proxyStartRow).hashCode();
             } else {
@@ -1189,7 +1195,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         public int getItemViewType(int position) {
             if (position == useProxyShadowRow || position == proxyShadowRow) {
                 return VIEW_TYPE_SHADOW;
-            } else if (position == proxyAddRow || position == deleteAllRow) {
+            } else if (position == proxyAddRow || position == deleteAllRow || position == openFolderRow) {
                 return VIEW_TYPE_TEXT_SETTING;
             } else if (position == useProxyRow || position == rotationRow || position == callsRow) {
                 return VIEW_TYPE_TEXT_CHECK;
