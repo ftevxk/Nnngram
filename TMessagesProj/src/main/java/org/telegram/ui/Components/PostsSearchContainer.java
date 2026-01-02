@@ -88,6 +88,8 @@ public class PostsSearchContainer extends FrameLayout {
     private final ArrayList<MessageObject> messages = new ArrayList<MessageObject>();
     private int lastRate;
     private boolean endReached;
+    private int localSearchOffset;
+    private int localNewsSearchOffset;
 
     private boolean loading;
     private String lastQuery;
@@ -214,6 +216,14 @@ public class PostsSearchContainer extends FrameLayout {
             Log.d("wd", "PostsSearchContainer.load: 非news模式已到达末尾");
             return;
         }
+        
+        //wd 检查是否需要进行本地搜索加载更多
+        if (!news && flood == null && !TextUtils.isEmpty(lastQuery)) {
+            Log.d("wd", "PostsSearchContainer.load: 本地搜索加载更多，直接调用loadLocalSearch");
+            loadLocalSearch(lastQuery, news);
+            return;
+        }
+        
         if (!news && flood == null) {
             Log.d("wd", "PostsSearchContainer.load: flood为null，需要先获取flood");
             return;
@@ -369,14 +379,24 @@ public class PostsSearchContainer extends FrameLayout {
 
     //wd 本地搜索：当服务器要求Premium账户时，使用本地数据库搜索
     private void loadLocalSearch(String query, boolean news) {
-        MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 50, 0, (localMessages, localUsers, localChats, localDocs) -> {
+        loading = true;
+        emptyButton.setLoading(true);
+        
+        final int limit = 50;
+        final int offset = news ? localNewsSearchOffset : localSearchOffset;
+        Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始本地搜索, query=" + query + ", offset=" + offset + ", limit=" + limit);
+        
+        MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, limit, offset, (localMessages, localUsers, localChats, localDocs) -> {
             AndroidUtilities.runOnUIThread(() -> {
                 if (TextUtils.isEmpty(lastQuery) && !news) {
+                    loading = false;
+                    emptyButton.setLoading(false);
                     return;
                 }
                 
                 final ArrayList<MessageObject> targetMessages = news ? newsMessages : messages;
                 final boolean firstMessages = targetMessages.isEmpty();
+                final int previousSize = targetMessages.size();
                 
                 if (localMessages != null && !localMessages.isEmpty()) {
                     for (MessageObject message : localMessages) {
@@ -385,12 +405,23 @@ public class PostsSearchContainer extends FrameLayout {
                         }
                         targetMessages.add(message);
                     }
+                    
+                    Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索结果, 旧大小=" + previousSize + ", 新大小=" + targetMessages.size());
+                    
+                    // 更新offset为当前列表大小，用于下一次加载
+                    if (news) {
+                        localNewsSearchOffset = targetMessages.size();
+                    } else {
+                        localSearchOffset = targetMessages.size();
+                    }
                 }
                 
                 lastRate = 0;
-                endReached = true;
+                endReached = localMessages == null || localMessages.size() < limit;
                 newsMessagesLastRate = 0;
-                newsMessagesEndReached = true;
+                newsMessagesEndReached = localMessages == null || localMessages.size() < limit;
+                
+                Log.d("wd", "PostsSearchContainer.loadLocalSearch: 本地搜索结束, endReached=" + endReached + ", 总结果数=" + targetMessages.size());
                 
                 loading = false;
                 emptyButton.setLoading(false);
@@ -425,6 +456,8 @@ public class PostsSearchContainer extends FrameLayout {
             lastRate = 0;
             queryid++;
             endReached = false;
+            localSearchOffset = 0;
+            localNewsSearchOffset = 0;
             messages.clear();
 
             load(false);
@@ -434,6 +467,8 @@ public class PostsSearchContainer extends FrameLayout {
             lastRate = 0;
             queryid++;
             endReached = false;
+            localSearchOffset = 0;
+            localNewsSearchOffset = 0;
             messages.clear();
             loadLocalSearch(q, false);
         }

@@ -54,6 +54,7 @@ import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Magnifier;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.widget.NestedScrollView;
@@ -84,8 +85,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.helpers.HyperOsHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
+import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.Log;
 
 public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.SelectableView> {
@@ -1454,7 +1457,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 menus.put(TRANSLATE, index);
                 menu.add(Menu.NONE, TRANSLATE, index++, LocaleController.getString(R.string.TranslateMessage));
                 menus.put(BLOCK, index);
-                menu.add(Menu.NONE, BLOCK, index, LocaleController.getString(R.string.block));
+                menu.add(Menu.NONE, BLOCK, index, LocaleController.getString(R.string.blockKeyword));
                 return true;
             }
 
@@ -1539,9 +1542,22 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                     if (str == null) {
                         return true;
                     }
-                    String currentFilteredMessages = Config.getMessageFilter();
-                    currentFilteredMessages = currentFilteredMessages + (currentFilteredMessages.isEmpty() ? "" : "|") + str.toString();
-                    Config.setMessageFilter(currentFilteredMessages);
+                    String keyword = str.toString().trim();
+                    if (keyword.isEmpty()) {
+                        return true;
+                    }
+                    
+                    // 使用ConfigManager保存关键词到广告屏蔽列表
+                    String currentFilteredMessages = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
+                    if (!currentFilteredMessages.isEmpty() && !currentFilteredMessages.endsWith("|")) {
+                        currentFilteredMessages += "|";
+                    }
+                    currentFilteredMessages += keyword;
+                    ConfigManager.putString(Defines.messageFilter, currentFilteredMessages);
+                    
+                    // 显示提示
+                    Toast.makeText(textSelectionOverlay.getContext(), LocaleController.getString(R.string.blockKeywordAdded), Toast.LENGTH_SHORT).show();
+                    
                     hideActions();
                     clear(true);
                     return true;

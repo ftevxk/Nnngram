@@ -417,8 +417,8 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 boolean newVisibility;
                 if (currentFilter.isDefault()) {
                     //wd 对于全部对话过滤器，点击显示/隐藏按钮时，改变"隐藏全部对话"选项
-                    newVisibility = Config.hideAllTab;
-                    Config.hideAllTab = !newVisibility;
+                    newVisibility = ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false);
+                    ConfigManager.putBoolean(Defines.hideAllTab, !newVisibility);
                     //wd 同时确保folderVisibilityPrefix设置与newVisibility一致
                     ConfigManager.putBoolean(Defines.folderVisibilityPrefix + currentFilter.id, newVisibility);
                 } else {
@@ -555,8 +555,8 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             //wd 对于全部对话过滤器，可见性由Config.hideAllTab和folderVisibilityPrefix共同决定
             boolean isVisible;
             if (filter.isDefault()) {
-                //wd 全部对话的可见性 = !Config.hideAllTab && folderVisibilityPrefix设置
-                boolean hideFromGeneral = Config.hideAllTab;
+                //wd 全部对话的可见性 = !ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false) && folderVisibilityPrefix设置
+                boolean hideFromGeneral = ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false);
                 boolean hideFromFolderSettings = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
                 isVisible = !hideFromGeneral && !hideFromFolderSettings;
             } else {

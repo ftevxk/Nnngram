@@ -413,4 +413,12 @@
     <string name="AutoHideEmptyFoldersInfo">当文件夹中没有聊天时自动隐藏。</string>
     <string name="AutoHideFolder">自动隐藏此文件夹</string>
     <string name="OpenFolder">打开文件夹</string>
+    <string name="blockKeyword">屏蔽关键词</string>
+    <string name="blockKeywordConfirm">将此关键词添加到广告屏蔽列表？</string>
+    <string name="blockKeywordAdded">关键词已添加到广告屏蔽列表</string>
+    <string name="blockKeywords">屏蔽关键词</string>
+    <string name="manageBlockKeywords">管理屏蔽关键词</string>
+    <string name="noBlockKeywords">没有屏蔽的关键词</string>
+    <string name="removeBlockKeyword">移除</string>
+    <string name="removeBlockKeywordConfirm">从屏蔽列表中移除该关键词？</string>
 </resources>

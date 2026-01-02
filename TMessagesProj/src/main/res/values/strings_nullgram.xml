@@ -426,4 +426,12 @@
     <string name="AutoHideEmptyFoldersInfo">Hide folders when they contain no chats.</string>
     <string name="AutoHideFolder">Auto hide folder</string>
     <string name="OpenFolder">Open Folder</string>
+    <string name="blockKeyword">Block Keyword</string>
+    <string name="blockKeywordConfirm">Add this keyword to ad block list?</string>
+    <string name="blockKeywordAdded">Keyword added to ad block list</string>
+    <string name="blockKeywords">Block Keywords</string>
+    <string name="manageBlockKeywords">Manage Block Keywords</string>
+    <string name="noBlockKeywords">No blocked keywords</string>
+    <string name="removeBlockKeyword">Remove</string>
+    <string name="removeBlockKeywordConfirm">Remove this keyword from block list?</string>
 </resources>
