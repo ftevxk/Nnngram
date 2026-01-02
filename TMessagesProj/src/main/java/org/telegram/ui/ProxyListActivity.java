@@ -628,12 +628,12 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 
                 //wd 创建文件夹选择对话框
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString(R.string.SelectFolder));
+                builder.setTitle(LocaleController.getString(R.string.FilterChoose));
                 
                 //wd 准备文件夹名称数组
                 String[] folderNames = new String[filters.size()];
                 for (int i = 0; i < filters.size(); i++) {
-                    folderNames[i] = filters.get(i).title; //wd 使用文件夹标题作为显示名称
+                    folderNames[i] = filters.get(i).name; //wd 使用文件夹名称作为显示名称
                 }
                 
                 //wd 设置对话框选项和点击监听器
@@ -642,9 +642,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     MessagesController.DialogFilter selectedFilter = filters.get(which);
                     
                     //wd 打开对应文件夹的对话列表
-                    Intent intent = new Intent(getParentActivity(), DialogsActivity.class);
-                    intent.putExtra("filter_id", selectedFilter.id); //wd 传递文件夹ID
-                    presentFragment(new DialogsActivity(selectedFilter.id));
+                    Bundle args = new Bundle();
+                    args.putInt("folderId", selectedFilter.id); //wd 传递文件夹ID
+                    presentFragment(new DialogsActivity(args));
                 });
                 
                 //wd 显示对话框
