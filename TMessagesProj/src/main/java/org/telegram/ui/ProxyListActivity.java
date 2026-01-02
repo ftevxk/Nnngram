@@ -623,7 +623,17 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
             } else if (position == openFolderRow) {
                 //wd 获取所有文件夹
                 ArrayList<MessagesController.DialogFilter> filters = MessagesController.getInstance(currentAccount).getDialogFilters();
-                if (filters.isEmpty()) {
+                
+                //wd 过滤掉name为空的文件夹
+                ArrayList<MessagesController.DialogFilter> filteredFilters = new ArrayList<>();
+                for (MessagesController.DialogFilter filter : filters) {
+                    if (filter.name != null && !filter.name.isEmpty()) {
+                        filteredFilters.add(filter);
+                    }
+                }
+                
+                //wd 如果过滤后没有文件夹，直接返回
+                if (filteredFilters.isEmpty()) {
                     return;
                 }
                 
@@ -631,16 +641,16 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
                 builder.setTitle(LocaleController.getString(R.string.FilterChoose));
                 
-                //wd 准备文件夹名称数组
-                String[] folderNames = new String[filters.size()];
-                for (int i = 0; i < filters.size(); i++) {
-                    folderNames[i] = filters.get(i).name; //wd 使用文件夹名称作为显示名称
+                //wd 为过滤后的文件夹准备名称数组
+                String[] folderNames = new String[filteredFilters.size()];
+                for (int i = 0; i < filteredFilters.size(); i++) {
+                    folderNames[i] = filteredFilters.get(i).name; //wd 使用文件夹名称作为显示名称
                 }
                 
                 //wd 设置对话框选项和点击监听器
                 builder.setItems(folderNames, (dialog, which) -> {
                     //wd 获取选中的文件夹
-                    MessagesController.DialogFilter selectedFilter = filters.get(which);
+                    MessagesController.DialogFilter selectedFilter = filteredFilters.get(which);
                     MessagesController messagesController = MessagesController.getInstance(currentAccount);
                     
                     //wd 设置选中的过滤器到selectedDialogFilter数组

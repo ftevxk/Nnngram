@@ -6938,12 +6938,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 filterTabsView.removeTabs();
                 for (int a = 0, N = filters.size(); a < N; a++) {
-                    if (filters.get(a).isDefault()) {
-                        if (!Config.hideAllTab) {
+                    //wd 检查文件夹可见性，包括默认的"全部对话"文件夹
+                    boolean isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filters.get(a).id, true);
+                    if ((filters.get(a).isDefault() && !Config.hideAllTab && isVisible) ||
+                        (!filters.get(a).isDefault() && isVisible)) {
+                        if (filters.get(a).isDefault()) {
                             filterTabsView.addTab(a, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats), "\uD83D\uDCAC", null, false, true, filters.get(a).locked);
-                        }
-                    } else {
-                        if (ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filters.get(a).id, true)) {
+                        } else {
                             filterTabsView.addTab(a, filters.get(a).localId, filters.get(a).name, filters.get(a).emoticon == null ? "\uD83D\uDCC1" : filters.get(a).emoticon,filters.get(a).entities,
                                 filters.get(a).title_noanimate, false, filters.get(a).locked);
                         }
