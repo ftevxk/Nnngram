@@ -4906,12 +4906,32 @@ public class MessagesStorage extends BaseController {
             SQLitePreparedStatement state = null;
             SQLiteCursor cursor = null;
             try {
-                android.util.Log.d("wd", "searchMessagesByText开始执行: dialogId=" + dialogId + ", query=" + query + ", limit=" + limit + ", offset=" + offset);
+                Log.d("wd", "searchMessagesByText开始执行: dialogId=" + dialogId + ", query=" + query + ", limit=" + limit + ", offset=" + offset);
                 //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
-                //wd 增加查询范围以确保能找到匹配的消息，使用uid字段作为对话ID过滤
+                //wd 增加查询范围以确保能找到匹配的消息
                 String querySQL;
-                querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
-                state = database.executeFast(querySQL);
+                int pointer = 1;
+                
+                //wd 根据dialogId决定查询条件
+                if (dialogId == 0) {
+                    //wd 全局搜索：查询所有对话
+                    querySQL = "SELECT data, replydata FROM messages_v2 WHERE 1=1 ORDER BY mid DESC LIMIT ? OFFSET ?";
+                    state = database.executeFast(querySQL);
+                    Log.d("wd", "执行全局搜索查询: 1=1");
+                } else {
+                    //wd 特定对话搜索：查询指定uid的对话
+                    querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
+                    state = database.executeFast(querySQL);
+                    
+                    long uidToSearch;
+                    if (dialogId == getUserConfig().getClientUserId()) {
+                        uidToSearch = getUserConfig().getClientUserId();
+                    } else {
+                        uidToSearch = dialogId;
+                    }
+                    state.bindLong(pointer++, uidToSearch);
+                    Log.d("wd", "执行特定对话搜索: uid=" + uidToSearch);
+                }
 
                 ArrayList<TLRPC.User> users = new ArrayList<>();
                 ArrayList<TLRPC.Chat> chats = new ArrayList<>();
@@ -4920,19 +4940,10 @@ public class MessagesStorage extends BaseController {
                 ArrayList<Long> chatsToLoad = new ArrayList<>();
                 ArrayList<TLRPC.Document> animatedEmoji = new ArrayList<>();
 
-                int pointer = 1;
-                //wd 根据对话类型正确设置uid
-                long uidToSearch;
-                if (dialogId == getUserConfig().getClientUserId()) {
-                    uidToSearch = getUserConfig().getClientUserId();
-                } else {
-                    uidToSearch = dialogId;
-                }
-                state.bindLong(pointer++, uidToSearch);
                 int scanLimit = limit * 10;
                 state.bindInteger(pointer++, scanLimit);
                 state.bindInteger(pointer++, offset);
-                android.util.Log.d("wd", "数据库查询: dialogId=" + dialogId + ", uid=" + uidToSearch + ", scanLimit=" + scanLimit + ", offset=" + offset);
+                Log.d("wd", "数据库查询: scanLimit=" + scanLimit + ", offset=" + offset);
 
                 cursor = state.query(new Object[]{});
                 state = null;
