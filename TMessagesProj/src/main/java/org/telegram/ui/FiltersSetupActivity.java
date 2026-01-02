@@ -414,10 +414,21 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 if (currentFilter == null) {
                     return;
                 }
-                boolean newVisibility = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + currentFilter.id, true);
-                ConfigManager.putBoolean(Defines.folderVisibilityPrefix + currentFilter.id, newVisibility);
+                boolean newVisibility;
+                if (currentFilter.isDefault()) {
+                    //wd 对于全部对话过滤器，点击显示/隐藏按钮时，改变"隐藏全部对话"选项
+                    newVisibility = Config.hideAllTab;
+                    Config.hideAllTab = !newVisibility;
+                    //wd 同时确保folderVisibilityPrefix设置与newVisibility一致
+                    ConfigManager.putBoolean(Defines.folderVisibilityPrefix + currentFilter.id, newVisibility);
+                } else {
+                    //wd 对于普通过滤器，只改变folderVisibilityPrefix设置
+                    newVisibility = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + currentFilter.id, true);
+                    ConfigManager.putBoolean(Defines.folderVisibilityPrefix + currentFilter.id, newVisibility);
+                }
+                //wd 更新UI图标
                 updateVisibilityIcon(newVisibility);
-                // 发送通知，确保标签页和列表内容都能实时更新
+                //wd 发送通知，确保标签页和列表内容都能实时更新
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
             });
         }
@@ -541,7 +552,16 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             } else {
                 optionsImageView.setVisibility(View.VISIBLE);
             }
-            boolean isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+            //wd 对于全部对话过滤器，可见性由Config.hideAllTab和folderVisibilityPrefix共同决定
+            boolean isVisible;
+            if (filter.isDefault()) {
+                //wd 全部对话的可见性 = !Config.hideAllTab && folderVisibilityPrefix设置
+                boolean hideFromGeneral = Config.hideAllTab;
+                boolean hideFromFolderSettings = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+                isVisible = !hideFromGeneral && !hideFromFolderSettings;
+            } else {
+                isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+            }
             updateVisibilityIcon(isVisible);
             visibilityImageView.setVisibility(View.VISIBLE);
 

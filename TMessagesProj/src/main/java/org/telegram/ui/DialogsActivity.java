@@ -7001,9 +7001,32 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (filterTabsView.isLocked(filterTabsView.getCurrentTabId())) {
                     filterTabsView.selectFirstTab();
                 }
-                //wd 检查是否有标签页，如果没有则显示文件夹设置
+                //wd 检查是否有标签页，如果没有则将全部对话标签页强制显示
                 if (filterTabsView.getTabCount() == 0) {
-                    presentFragment(new FiltersSetupActivity());
+                    //wd 强制显示全部对话标签页
+                    Config.hideAllTab = false;
+                    //wd 重新加载过滤器
+                    filterTabsView.removeTabs();
+                    for (int a = 0, N = filters.size(); a < N; a++) {
+                        MessagesController.DialogFilter filter = filters.get(a);
+                        if (filter.isDefault()) {
+                            //wd 强制设置全部对话可见
+                            ConfigManager.putBoolean(Defines.folderVisibilityPrefix + filter.id, true);
+                            filterTabsView.addTab(a, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats), "\uD83D\uDCAC", null, false, true, filter.locked);
+                            break;
+                        }
+                    }
+                    filterTabsView.finishAddingTabs(false);
+                    //wd 刷新当前选中的标签页
+                    switchToCurrentSelectedMode(false);
+                    //wd 刷新列表内容
+                    for (int i = 0; i < viewPages.length; i++) {
+                        ViewPage page = viewPages[i];
+                        if (page.dialogsAdapter != null) {
+                            page.dialogsAdapter.setDialogsType(page.dialogsType);
+                            page.dialogsAdapter.notifyDataSetChanged();
+                        }
+                    }
                 }
             }
         } else {
