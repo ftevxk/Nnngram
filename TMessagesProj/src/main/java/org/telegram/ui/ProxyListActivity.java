@@ -641,10 +641,19 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 builder.setItems(folderNames, (dialog, which) -> {
                     //wd 获取选中的文件夹
                     MessagesController.DialogFilter selectedFilter = filters.get(which);
+                    MessagesController messagesController = MessagesController.getInstance(currentAccount);
+                    
+                    //wd 设置选中的过滤器到selectedDialogFilter数组
+                    //wd 0对应DIALOGS_TYPE_FOLDER1，1对应DIALOGS_TYPE_FOLDER2
+                    int filterIndex = 0; //wd 默认使用第一个文件夹位置
+                    if (messagesController.selectedDialogFilter[0] != null) {
+                        filterIndex = 1; //wd 如果第一个位置已有过滤器，使用第二个位置
+                    }
+                    messagesController.selectedDialogFilter[filterIndex] = selectedFilter;
                     
                     //wd 打开对应文件夹的对话列表
                     Bundle args = new Bundle();
-                    args.putInt("folderId", selectedFilter.id); //wd 传递文件夹ID
+                    args.putInt("dialogsType", 7 + filterIndex); //wd 7是DIALOGS_TYPE_FOLDER1，8是DIALOGS_TYPE_FOLDER2
                     presentFragment(new DialogsActivity(args));
                 });
                 
