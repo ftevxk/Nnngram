@@ -273,7 +273,10 @@ public class PostsSearchContainer extends FrameLayout {
                 }
 
                 final ArrayList<MessageObject> messages = news ? newsMessages : this.messages;
-                final boolean firstMessages = messages.isEmpty();
+                final int networkResultsCount = r.messages.size();
+                final int existingCount = messages.size();
+                
+                //wd 处理网络搜索结果，添加到现有列表中（不覆盖本地结果）
                 for (TLRPC.Message message : r.messages) {
                     final MessageObject msg = new MessageObject(currentAccount, message, false, false);
                     if (!news) {
@@ -306,8 +309,10 @@ public class PostsSearchContainer extends FrameLayout {
                     }
                 }
 
+                Log.d("wd", "PostsSearchContainer.load: 合并搜索结果, 本地结果=" + existingCount + ", 网络结果=" + networkResultsCount + ", 总结果=" + messages.size());
+                
                 updateEmptyView();
-                if (firstMessages) {
+                if (existingCount == 0) {
                     listView.scrollToPosition(0);
                 }
                 listView.adapter.update(true);
@@ -438,6 +443,10 @@ public class PostsSearchContainer extends FrameLayout {
             queryid++;
             endReached = false;
             messages.clear();
+            
+            //wd 直接执行本地搜索，不需要等待网络结果
+            Log.d("wd", "PostsSearchContainer.search: 直接执行本地搜索, query=" + q);
+            loadLocalSearch(q, false);
         }
         updateEmptyView();
         listView.scrollToPosition(0);
