@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
@@ -52,6 +53,7 @@ import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.EditTextBoldCursor;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.function.Function;
 
 import kotlin.jvm.functions.Function2;
@@ -105,9 +107,6 @@ public class ExperimentSettingActivity extends BaseActivity {
     private int playerDecoderRow;
 
     private int experiment2Row;
-
-    //wd 直接打开媒体对话
-    private int openTheMediaConversationDirectlyRow;
 
     private boolean sensitiveEnabled;
     private final boolean sensitiveCanChange;
@@ -282,12 +281,6 @@ public class ExperimentSettingActivity extends BaseActivity {
                 listAdapter.notifyItemChanged(playerDecoderRow, PARTIAL);
             });
         }
-
-        //wd 直接打开媒体对话
-        else if (position == openTheMediaConversationDirectlyRow) {
-            setOpenTheMediaConversationDirectly(view, position);
-            listAdapter.notifyItemChanged(position, PARTIAL);
-        }
     }
 
     @Override
@@ -312,9 +305,6 @@ public class ExperimentSettingActivity extends BaseActivity {
         enchantAudioRow = addRow("enchantAudio");
         linkedUserRow = addRow("linkedUser");
         alwaysSendWithoutSoundRow = addRow();
-        //wd 直接打开媒体对话
-        openTheMediaConversationDirectlyRow = addRow();
-
         playerDecoderRow = addRow();
         if (Config.linkedUser && Config.labelChannelUser) {
             overrideChannelAliasRow = addRow("overrideChannelAlias");
@@ -421,10 +411,7 @@ public class ExperimentSettingActivity extends BaseActivity {
                             value, payload, false);
                     }
 
-                    //wd 直接打开媒体对话
-                    else if (position == openTheMediaConversationDirectlyRow){
-                        textCell.setTextAndValue(LocaleController.getString("openTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), String.valueOf(Config.getOpenTheMediaConversationDirectly()), payload, true);
-                    }
+
                     break;
                 }
                 case TYPE_CHECK: {
@@ -541,39 +528,12 @@ public class ExperimentSettingActivity extends BaseActivity {
             } else if (position == pangu3Row) {
                 return TYPE_INFO_PRIVACY;
             }
-            //wd 直接打开媒体对话
-            else if (position == openTheMediaConversationDirectlyRow) {
-                return TYPE_SETTINGS;
-            }
+
             return TYPE_CHECK;
         }
     }
 
-    //wd 设置直接打开媒体对话
-    private void setOpenTheMediaConversationDirectly(View view, int pos) {
-        showCustomInputDialog(this, (builder, editText) -> {
-            builder.setTitle(LocaleController.getString("openTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly));
-            editText.setSingleLine(true);
-            editText.setText(String.valueOf(Config.getOpenTheMediaConversationDirectly()));
-            return null;
-        }, (editText -> {
-            String str = editText.getText().toString().trim();
-            if (str.isEmpty()) {
-                Config.setOpenTheMediaConversationDirectly("");
-            } else {
-                if (str.contains("，")) {
-                    str = str.replaceAll("，", ",");
-                }
-                if (str.charAt(str.length() - 1) != ',') {
-                    Config.setOpenTheMediaConversationDirectly(str + ',');
-                } else {
-                    Config.setOpenTheMediaConversationDirectly(str);
-                }
-            }
-            listAdapter.notifyItemChanged(pos, PARTIAL);
-            return null;
-        }));
-    }
+
 
     //wd 显示设置自定义输入弹框
     @SuppressLint("SetTextI18n")

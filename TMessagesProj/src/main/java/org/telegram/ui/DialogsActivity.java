@@ -98,6 +98,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines; //wd 添加配置管理相关导入
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BirthdayController;
@@ -126,6 +128,8 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
+
+import xyz.nextalone.nnngram.utils.Defines; //wd 添加配置管理相关导入
 import org.telegram.messenger.XiaomiUtilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
@@ -651,6 +655,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private final static int pin2 = 108;
     private final static int add_to_folder = 109;
     private final static int remove_from_folder = 110;
+    private final static int open_media_conversation = 111; //wd 直接打开媒体对话操作ID
 
     private final static int ARCHIVE_ITEM_STATE_PINNED = 0;
     private final static int ARCHIVE_ITEM_STATE_SHOWED = 1;
@@ -6818,6 +6823,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         readItem = otherItem.addSubItem(read, R.drawable.msg_markread, LocaleController.getString(R.string.MarkAsRead));
         clearItem = otherItem.addSubItem(clear, R.drawable.msg_clear, LocaleController.getString(R.string.ClearHistory));
         blockItem = otherItem.addSubItem(block, R.drawable.msg_block, LocaleController.getString(R.string.BlockUser));
+        //wd 添加直接打开媒体对话菜单项
+        otherItem.addSubItem(open_media_conversation, R.drawable.msg_media, LocaleController.getString(R.string.OpenTheMediaConversationDirectly)); //wd 添加直接打开媒体对话菜单项
 
         muteItem.setOnLongClickListener(e -> {
             performSelectedDialogsAction(selectedDialogs, mute, true, true);
@@ -9404,6 +9411,40 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (getParentActivity() == null) {
             return;
         }
+        //wd 处理直接打开媒体对话操作
+        if (action == open_media_conversation) {
+            // 获取当前配置的对话ID列表
+            String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+            HashSet<Long> selectedDialogsList = new HashSet<>();
+            if (!currentConfig.isEmpty()) {
+                String[] dialogIds = currentConfig.split(",");
+                for (String dialogId : dialogIds) {
+                    if (!dialogId.isEmpty()) {
+                        selectedDialogsList.add(Long.parseLong(dialogId));
+                    }
+                }
+            }
+            
+            // 处理选中的对话ID
+            long dialogId = selectedDialogs.get(0);
+            if (selectedDialogsList.contains(dialogId)) {
+                selectedDialogsList.remove(dialogId);
+            } else {
+                selectedDialogsList.add(dialogId);
+            }
+            
+            // 保存更新后的配置
+            StringBuilder sb = new StringBuilder();
+            for (Long id : selectedDialogsList) {
+                sb.append(id).append(",");
+            }
+            ConfigManager.putString(Defines.openTheMediaConversationDirectly, sb.toString());
+            
+            // 关闭操作模式
+            hideActionMode(false);
+            return;
+        }
+        
         MessagesController.DialogFilter filter;
         boolean containsFilter = (viewPages[0].dialogsType == 7 || viewPages[0].dialogsType == 8) && (!actionBar.isActionModeShowed() || actionBar.isActionModeShowed(null));
         if (containsFilter) {

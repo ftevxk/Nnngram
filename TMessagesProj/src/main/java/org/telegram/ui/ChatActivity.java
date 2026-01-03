@@ -3088,7 +3088,8 @@ public class ChatActivity extends BaseFragment implements
             gotChatInfo();
 
             //wd 直接打开媒体对话
-            if (chatInfo != null && Config.getOpenTheMediaConversationDirectly().contains(dialog_id + ",")) {
+            String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+            if (chatInfo != null && openMediaConfig.contains(dialog_id + ",")) {
                 Bundle args = new Bundle();
                 args.putLong("dialog_id", dialog_id);
                 MediaActivity mediaActivity = new MediaActivity(args, null);
