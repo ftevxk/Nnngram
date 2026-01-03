@@ -26,6 +26,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -117,6 +118,8 @@ public abstract class BaseActivity extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
+        //wd 当前Activity
+        Log.d("wd", "当前Activity: " + getClass().getSimpleName());
         if (listAdapter != null) {
             listAdapter.notifyDataSetChanged();
         }

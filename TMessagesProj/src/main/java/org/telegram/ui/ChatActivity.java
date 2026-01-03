@@ -2693,6 +2693,7 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public boolean onFragmentCreate() {
+        Log.d("wd", "ChatActivity.onFragmentCreate()");
         final long chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
@@ -3090,7 +3091,9 @@ public class ChatActivity extends BaseFragment implements
             //wd 直接打开媒体对话
             String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
             boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
+            Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
             if (isEnabled) {
+                Log.d("wd", "ChatActivity: 直接打开媒体对话，dialog_id=" + dialog_id);
                 Bundle args = new Bundle();
                 args.putInt("type", MediaActivity.TYPE_MEDIA);
                 args.putLong("dialog_id", dialog_id);
@@ -3702,6 +3705,7 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public View createView(Context context) {
+        Log.d("wd", "ChatActivity.createView()");
         Timer t = Timer.create("ChatActivity.createView");
 
         blurredBackgroundColorProvider = new BlurredBackgroundColorProviderThemed(themeDelegate, Theme.key_chat_messagePanelBackground);
