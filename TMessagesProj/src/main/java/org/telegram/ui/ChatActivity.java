@@ -3089,7 +3089,7 @@ public class ChatActivity extends BaseFragment implements
 
             //wd 直接打开媒体对话
             String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-            boolean isEnabled = openMediaConfig.contains("," + dialog_id + ",") || openMediaConfig.equals(String.valueOf(dialog_id));
+            boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
             if (isEnabled) {
                 Bundle args = new Bundle();
                 args.putInt("type", MediaActivity.TYPE_MEDIA);

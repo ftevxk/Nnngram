@@ -93,6 +93,7 @@ import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.JoinCallAlert;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.MediaActivity;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
@@ -21299,11 +21300,27 @@ public class MessagesController extends BaseController implements NotificationCe
             showCantOpenAlert(fragment, reason);
         } else {
             Bundle args = new Bundle();
+            long dialogId = 0;
             if (chat != null) {
                 args.putLong("chat_id", chat.id);
+                dialogId = -chat.id; // 群组/频道的dialogId是负数
             } else {
                 args.putLong("user_id", user.id);
+                dialogId = user.id; // 用户的dialogId是正数
             }
+            
+            //wd 检查是否需要直接打开媒体页面
+            String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+            boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
+            if (isEnabled && type != 0) {
+                //wd 直接打开媒体页面
+                Bundle mediaArgs = new Bundle();
+                mediaArgs.putInt("type", MediaActivity.TYPE_MEDIA);
+                mediaArgs.putLong("dialog_id", dialogId);
+                fragment.presentFragment(new MediaActivity(mediaArgs, null), closeLast && !doNotCloseLast, true);
+                return;
+            }
+            
             if (type == 0) {
                 fragment.presentFragment(new ProfileActivity(args));
             } else if (type == 2) {

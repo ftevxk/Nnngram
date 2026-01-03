@@ -360,7 +360,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                     92, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
                 //wd 检查当前对话是否已设置直接打开媒体对话
                 String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                boolean isEnabled = openMediaConfig.contains("," + dialogId + ",") || openMediaConfig.equals(String.valueOf(dialogId));
+                boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
                 openMediaDirectlyItem.setChecked(isEnabled);
                 openMediaDirectlyItem.setOnClickListener(e -> {
                     //wd 切换直接打开媒体对话设置

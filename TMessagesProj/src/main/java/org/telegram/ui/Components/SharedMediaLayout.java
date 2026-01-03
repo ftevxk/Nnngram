@@ -2113,7 +2113,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 openMediaDirectlyItem.setTextAndIcon(getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), 0);
                 //wd 检查当前对话是否已设置直接打开媒体对话
                 String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                boolean isEnabled = openMediaConfig.contains("," + dialog_id + ",") || openMediaConfig.equals(String.valueOf(dialog_id));
+                boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
                 openMediaDirectlyItem.setChecked(isEnabled);
                 openMediaDirectlyItem.setOnClickListener(v -> {
                     //wd 切换直接打开媒体对话设置
