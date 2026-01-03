@@ -318,8 +318,8 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             optionsItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
             optionsItem.setIcon(R.drawable.ic_ab_other);
             optionsItem.setOnClickListener(v -> optionsItem.toggleSubMenu());
-            optionsItem.setVisibility(type == TYPE_MEDIA ? View.VISIBLE : View.GONE);
-            optionsItem.setAlpha(type == TYPE_MEDIA ? 1f : 0f);
+            optionsItem.setVisibility(View.VISIBLE);
+            optionsItem.setAlpha(1f);
             menu.addView(optionsItem);
             
             if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
@@ -355,32 +355,33 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 calendarItem.setEnabled(false);
                 calendarItem.setAlpha(.5f);
                 optionsItem.addColoredGap();
-                showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
-                showPhotosItem.setChecked(filterPhotos);
-                showPhotosItem.setOnClickListener(e -> {
-                    if (filterPhotos && !filterVideos) {
-                        BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                        AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
-                        return;
-                    }
-                    showPhotosItem.setChecked(filterPhotos = !filterPhotos);
-                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-                });
-                showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
-                showVideosItem.setChecked(filterVideos);
-                showVideosItem.setOnClickListener(e -> {
-                    if (filterVideos && !filterPhotos) {
-                        BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                        AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
-                        return;
-                    }
-                    showVideosItem.setChecked(filterVideos = !filterVideos);
-                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-                });
-                optionsItem.addColoredGap(); //wd 移除最小时长设置菜单项
             }
+            showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
+            showPhotosItem.setChecked(filterPhotos);
+            showPhotosItem.setOnClickListener(e -> {
+                if (filterPhotos && !filterVideos) {
+                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                    AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
+                    return;
+                }
+                showPhotosItem.setChecked(filterPhotos = !filterPhotos);
+                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+            });
+            showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
+            showVideosItem.setChecked(filterVideos);
+            showVideosItem.setOnClickListener(e -> {
+                if (filterVideos && !filterPhotos) {
+                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                    AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
+                    return;
+                }
+                showVideosItem.setChecked(filterVideos = !filterVideos);
+                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+            });
             
-            //wd 添加直接打开媒体对话设置选项
+            optionsItem.addColoredGap();
+            
+            //wd 添加直接打开媒体对话设置选项到显示图片、显示视频选项下面
             ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(12, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
             //wd 检查当前对话是否已设置直接打开媒体对话
             String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");

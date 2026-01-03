@@ -76,7 +76,9 @@ import java.util.Collections;
 import java.util.List;
 
 import xyz.nextalone.nnngram.activity.WsSettingsActivity;
+import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.helpers.WebSocketHelper;
+import xyz.nextalone.nnngram.utils.Defines;
 
 public class ProxyListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     private final static boolean IS_PROXY_ROTATION_AVAILABLE = true;
@@ -624,10 +626,16 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 //wd 获取所有文件夹
                 ArrayList<MessagesController.DialogFilter> filters = MessagesController.getInstance(currentAccount).getDialogFilters();
                 
-                //wd 过滤掉name为空的文件夹
+                //wd 过滤掉name为空的文件夹和隐藏状态的文件夹
                 ArrayList<MessagesController.DialogFilter> filteredFilters = new ArrayList<>();
                 for (MessagesController.DialogFilter filter : filters) {
-                    if (filter.name != null && !filter.name.isEmpty()) {
+                    //wd 检查文件夹是否可见
+                    boolean isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+                    //wd 对于全部对话文件夹，还要检查hideAllTab配置
+                    if (filter.isDefault()) {
+                        isVisible = !ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false);
+                    }
+                    if (filter.name != null && !filter.name.isEmpty() && isVisible) {
                         filteredFilters.add(filter);
                     }
                 }
