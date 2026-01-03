@@ -372,9 +372,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
             });
 
-            optionsItem.addColoredGap();
-            ActionBarMenuSubItem searchVideoMinDurationItem = optionsItem.addSubItem(11, 0, LocaleController.getString(R.string.SearchVideoMinDuration), false);
-            searchVideoMinDurationItem.setOnClickListener(e -> showSearchVideoMinDurationDialog());
+            optionsItem.addColoredGap(); //wd 移除最小时长设置菜单项
         }
 
         boolean hasAvatar = type == TYPE_MEDIA;
@@ -1149,57 +1147,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         );
     }
 
-    private void showSearchVideoMinDurationDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-        EditTextBoldCursor editText = new EditTextBoldCursor(getParentActivity()) {
-            @Override
-            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(64), MeasureSpec.EXACTLY));
-            }
-        };
-        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        editText.setTextColor(getThemedColor(Theme.key_dialogTextBlack));
-        editText.setHeaderHintColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueHeader));
-        editText.setTransformHintToHeader(true);
-        editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField),
-            getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated),
-            getThemedColor(Theme.key_text_RedRegular));
-        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        editText.setBackgroundDrawable(null);
-        editText.requestFocus();
-        editText.setPadding(0, 0, 0, 0);
-        editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
-        builder.setTitle(LocaleController.getString("searchVideoMinDuration", R.string.SearchVideoMinDuration));
-        builder.setView(editText);
-        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> {
-            String str = editText.getText().toString().trim();
-            if (str.isEmpty()) {
-                Config.setSearchVideoMinDuration(0);
-            } else {
-                if (!InlinesKt.isNumber(str)) {
-                    Toast.makeText(getParentActivity(), LocaleController.getString("notANumber", R.string.notANumber), Toast.LENGTH_SHORT).show();
-                } else {
-                    int targetNum = Integer.parseInt(str);
-                    Config.setSearchVideoMinDuration(Math.max(0, targetNum));
-                }
-            }
-        });
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        builder.show().setOnShowListener(dialog -> {
-            editText.requestFocus();
-            AndroidUtilities.showKeyboard(editText);
-        });
-        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) editText.getLayoutParams();
-        if (layoutParams != null) {
-            if (layoutParams instanceof FrameLayout.LayoutParams) {
-                ((FrameLayout.LayoutParams) layoutParams).gravity = Gravity.CENTER_HORIZONTAL;
-            }
-            layoutParams.rightMargin = layoutParams.leftMargin = AndroidUtilities.dp(24);
-            layoutParams.height = AndroidUtilities.dp(36);
-            editText.setLayoutParams(layoutParams);
-        }
-        editText.setSelection(0, editText.getText().length());
-    }
+
 
     private class StoriesTabsView extends BottomPagerTabs {
         public StoriesTabsView(Context context, Theme.ResourcesProvider resourcesProvider) {

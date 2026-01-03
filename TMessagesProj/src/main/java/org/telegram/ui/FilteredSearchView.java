@@ -48,6 +48,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AccountInstance;
+import xyz.nextalone.gen.Config;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
@@ -761,9 +762,33 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 //                        if (PhotoViewer.getInstance().isVisible()) {
 //                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
 //                        }
-                        //wd 全局搜索-媒体默认只显示长视频
-                        if (messageObject.isLongVideo(currentSearchFilter == null ||
-                            currentSearchFilter.filterType != FiltersView.FILTER_TYPE_MEDIA)) {
+                        //wd 全局搜索-媒体只显示视频，尊重最小时长设置
+                        if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
+                            if (messageObject.isVideo()) {
+                                //wd 应用最小时长筛选
+                                long minDuration = Config.getSearchVideoMinDuration();
+                                if (minDuration == 0 || messageObject.isLongVideo(false, minDuration)) {
+                                    ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
+                                    if (messageObjectsByDate == null) {
+                                        messageObjectsByDate = new ArrayList<>();
+                                        sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
+                                        sections.add(messageObject.monthKey);
+                                    }
+                                    messageObjectsByDate.add(messageObject);
+                                    messages.add(messageObject);
+                                    messagesById.put(messageObject.getId(), messageObject);
+
+                                    if (PhotoViewer.getInstance().isVisible()) {
+                                        PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
+                                    }
+                                } else {
+                                    removeCount++;
+                                }
+                            } else {
+                                removeCount++;
+                            }
+                        } else {
+                            //wd 非媒体类型搜索，保持原有逻辑
                             ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
                             if (messageObjectsByDate == null) {
                                 messageObjectsByDate = new ArrayList<>();
@@ -777,8 +802,6 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             if (PhotoViewer.getInstance().isVisible()) {
                                 PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
                             }
-                        } else {
-                            removeCount++;
                         }
                     }
                     totalCount -= removeCount;

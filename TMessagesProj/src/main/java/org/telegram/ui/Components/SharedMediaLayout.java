@@ -969,8 +969,15 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         if (type == -1) {
                             continue;
                         }
-                        if (type == 0 && sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY && !obj.isVideo()) {
-                            continue;
+                        if (type == 0 && sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                            if (!obj.isVideo()) {
+                                continue;
+                            }
+                            //wd 添加最小时长筛选
+                            long minDuration = Config.getSearchVideoMinDuration();
+                            if (minDuration > 0 && !obj.isLongVideo(false, minDuration)) {
+                                continue;
+                            }
                         }
                         if (type == 0 && sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY && obj.isVideo()) {
                             continue;
