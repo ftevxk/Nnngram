@@ -401,8 +401,9 @@ public class SharedPhotoVideoCell extends FrameLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int itemWidth;
+        int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
         if (type == VIEW_TYPE_GLOBAL_SEARCH) {
-            itemWidth = (MeasureSpec.getSize(widthMeasureSpec) - (itemsCount - 1) * AndroidUtilities.dp(2)) / itemsCount;
+            itemWidth = (parentWidth - (itemsCount - 1) * AndroidUtilities.dp(2)) / itemsCount;
         } else {
             itemWidth = getItemSize(itemsCount);
         }
@@ -413,10 +414,15 @@ public class SharedPhotoVideoCell extends FrameLayout {
             layoutParams.topMargin = isFirst ? 0 : AndroidUtilities.dp(2);
             layoutParams.leftMargin = (itemWidth + AndroidUtilities.dp(2)) * a;
             if (a == itemsCount - 1) {
-                if (AndroidUtilities.isTablet()) {
-                    layoutParams.width = AndroidUtilities.dp(490) - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
+                if (type == VIEW_TYPE_GLOBAL_SEARCH) {
+                    //wd 修复全局搜索时最后一个项目的宽度计算，使用实际测量宽度而不是屏幕宽度
+                    layoutParams.width = parentWidth - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
                 } else {
-                    layoutParams.width = AndroidUtilities.displaySize.x - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
+                    if (AndroidUtilities.isTablet()) {
+                        layoutParams.width = AndroidUtilities.dp(490) - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
+                    } else {
+                        layoutParams.width = AndroidUtilities.displaySize.x - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
+                    }
                 }
             } else {
                 layoutParams.width = itemWidth;

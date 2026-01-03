@@ -2108,6 +2108,49 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
 
+                //wd 添加直接打开媒体对话设置选项，在所有类型下都显示
+                ActionBarMenuSubItem openMediaDirectlyItem = new ActionBarMenuSubItem(context, true, false, true, resourcesProvider);
+                openMediaDirectlyItem.setTextAndIcon(getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), 0);
+                //wd 检查当前对话是否已设置直接打开媒体对话
+                String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+                boolean isEnabled = openMediaConfig.contains("," + dialog_id + ",") || openMediaConfig.equals(String.valueOf(dialog_id));
+                openMediaDirectlyItem.setChecked(isEnabled);
+                openMediaDirectlyItem.setOnClickListener(v -> {
+                    //wd 切换直接打开媒体对话设置
+                    String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+                    StringBuilder newConfig = new StringBuilder();
+                    boolean wasEnabled = currentConfig.contains("," + dialog_id + ",") || currentConfig.equals(String.valueOf(dialog_id));
+                    
+                    if (wasEnabled) {
+                        //wd 移除当前对话ID
+                        if (currentConfig.equals(String.valueOf(dialog_id))) {
+                            newConfig.append("");
+                        } else {
+                            newConfig.append(currentConfig.replace("," + dialog_id + ",", ","));
+                            //wd 处理开头和结尾的逗号
+                            if (newConfig.toString().startsWith(",")) {
+                                newConfig.deleteCharAt(0);
+                            }
+                            if (newConfig.toString().endsWith(",")) {
+                                newConfig.deleteCharAt(newConfig.length() - 1);
+                            }
+                        }
+                    } else {
+                        //wd 添加当前对话ID
+                        if (currentConfig.isEmpty()) {
+                            newConfig.append(dialog_id);
+                        } else {
+                            newConfig.append(currentConfig).append(",").append(dialog_id);
+                        }
+                    }
+                    
+                    //wd 保存更新后的配置
+                    ConfigManager.putString(Defines.openTheMediaConversationDirectly, newConfig.toString());
+                    //wd 更新菜单项状态
+                    openMediaDirectlyItem.setChecked(!wasEnabled);
+                });
+                options.getLayout().addView(openMediaDirectlyItem);
+                
                 options
                     .setDismissWithButtons(false)
                     .setOnTopOfScrim()

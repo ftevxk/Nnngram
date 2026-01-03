@@ -354,6 +354,49 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 calendarItem = optionsItem.addSubItem(10, R.drawable.msg_calendar2, LocaleController.getString(R.string.Calendar));
                 calendarItem.setEnabled(false);
                 calendarItem.setAlpha(.5f);
+                
+                //wd 添加直接打开媒体对话设置选项
+                ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(
+                    92, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
+                //wd 检查当前对话是否已设置直接打开媒体对话
+                String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+                boolean isEnabled = openMediaConfig.contains("," + dialogId + ",") || openMediaConfig.equals(String.valueOf(dialogId));
+                openMediaDirectlyItem.setChecked(isEnabled);
+                openMediaDirectlyItem.setOnClickListener(e -> {
+                    //wd 切换直接打开媒体对话设置
+                    String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+                    StringBuilder newConfig = new StringBuilder();
+                    boolean wasEnabled = currentConfig.contains("," + dialogId + ",") || currentConfig.equals(String.valueOf(dialogId));
+                    
+                    if (wasEnabled) {
+                        //wd 移除当前对话ID
+                        if (currentConfig.equals(String.valueOf(dialogId))) {
+                            newConfig.append("");
+                        } else {
+                            newConfig.append(currentConfig.replace("," + dialogId + ",", ","));
+                            //wd 处理开头和结尾的逗号
+                            if (newConfig.toString().startsWith(",")) {
+                                newConfig.deleteCharAt(0);
+                            }
+                            if (newConfig.toString().endsWith(",")) {
+                                newConfig.deleteCharAt(newConfig.length() - 1);
+                            }
+                        }
+                    } else {
+                        //wd 添加当前对话ID
+                        if (currentConfig.isEmpty()) {
+                            newConfig.append(dialogId);
+                        } else {
+                            newConfig.append(currentConfig).append(",").append(dialogId);
+                        }
+                    }
+                    
+                    //wd 保存更新后的配置
+                    ConfigManager.putString(Defines.openTheMediaConversationDirectly, newConfig.toString());
+                    //wd 更新菜单项状态
+                    openMediaDirectlyItem.setChecked(!wasEnabled);
+                });
+                
                 optionsItem.addColoredGap();
             }
             showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
@@ -380,47 +423,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             });
             
             optionsItem.addColoredGap();
-            
-            //wd 添加直接打开媒体对话设置选项到显示图片、显示视频选项下面
-            ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(12, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
-            //wd 检查当前对话是否已设置直接打开媒体对话
-            String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-            boolean isEnabled = openMediaConfig.contains("," + dialogId + ",") || openMediaConfig.equals(String.valueOf(dialogId));
-            openMediaDirectlyItem.setChecked(isEnabled);
-            openMediaDirectlyItem.setOnClickListener(e -> {
-                //wd 切换直接打开媒体对话设置
-                String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                StringBuilder newConfig = new StringBuilder();
-                boolean wasEnabled = currentConfig.contains("," + dialogId + ",") || currentConfig.equals(String.valueOf(dialogId));
-                
-                if (wasEnabled) {
-                    //wd 移除当前对话ID
-                    if (currentConfig.equals(String.valueOf(dialogId))) {
-                        newConfig.append("");
-                    } else {
-                        newConfig.append(currentConfig.replace("," + dialogId + ",", ","));
-                        //wd 处理开头和结尾的逗号
-                        if (newConfig.toString().startsWith(",")) {
-                            newConfig.deleteCharAt(0);
-                        }
-                        if (newConfig.toString().endsWith(",")) {
-                            newConfig.deleteCharAt(newConfig.length() - 1);
-                        }
-                    }
-                } else {
-                    //wd 添加当前对话ID
-                    if (currentConfig.isEmpty()) {
-                        newConfig.append(dialogId);
-                    } else {
-                        newConfig.append(currentConfig).append(",").append(dialogId);
-                    }
-                }
-                
-                //wd 保存更新后的配置
-                ConfigManager.putString(Defines.openTheMediaConversationDirectly, newConfig.toString());
-                //wd 更新菜单项状态
-                openMediaDirectlyItem.setChecked(!wasEnabled);
-            });
         }
 
         boolean hasAvatar = type == TYPE_MEDIA;
