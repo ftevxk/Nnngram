@@ -404,7 +404,7 @@
     <string name="PhotoViewerEdgeToEdge">启用 PhotoViewer 边到边</string>
     <!-- //wd 补充翻译 -->
     <string name="SearchVideoMinDuration">搜索视频最小时长(秒)</string>
-    <string name="OpenTheMediaConversationDirectly">直接打开媒体对话(英文逗号隔开)</string>
+    <string name="OpenTheMediaConversationDirectly">直接打开媒体对话</string>
     <string name="Lock">锁定</string>
     <string name="Unlock">解锁</string>
     <string name="FolderShow">显示文件夹</string>

@@ -418,7 +418,7 @@
     <string name="PhotoViewerEdgeToEdge">Enable PhotoViewer edgeToEdge</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
-    <string name="OpenTheMediaConversationDirectly">Open the media conversation directly(Separated by commas)</string>
+    <string name="OpenTheMediaConversationDirectly">Open the media conversation directly</string>
     <string name="Lock">Lock</string>
     <string name="FolderShow">Show folder</string>
     <string name="FilterSettings">Folder Settings</string>

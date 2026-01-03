@@ -131,10 +131,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
-import xyz.nextalone.gen.Config;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
