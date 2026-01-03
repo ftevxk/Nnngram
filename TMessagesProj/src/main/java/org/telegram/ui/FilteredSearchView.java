@@ -1117,19 +1117,6 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     }
                 }
                 cell.requestLayout();
-            } else if (holder.getItemViewType() == 3) {
-                DialogCell cell = (DialogCell) holder.itemView;
-                cell.useSeparator = (position != getItemCount() - 1);
-                MessageObject messageObject = messages.get(position);
-                boolean animated = cell.getMessage() != null && cell.getMessage().getId() == messageObject.getId();
-                cell.useFromUserAsAvatar = useFromUserAsAvatar;
-                cell.setDialog(messageObject.getDialogId(), messageObject, messageObject.messageOwner.date, false, false);
-                if (uiCallback.actionModeShowing()) {
-                    messageHashIdTmp.set(messageObject.getId(), messageObject.getDialogId());
-                    cell.setChecked(uiCallback.isSelected(messageHashIdTmp), animated);
-                } else {
-                    cell.setChecked(false, animated);
-                }
             } else if (holder.getItemViewType() == 1) {
                 FlickerLoadingView flickerLoadingView = (FlickerLoadingView) holder.itemView;
                 int count = (int) Math.ceil(messages.size() / (float) columnsCount);

@@ -302,79 +302,84 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         this.fragmentView = fragmentView;
 
         ActionBarMenu menu2 = actionBar.createMenu();
-        if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
+        if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES || type == TYPE_MEDIA) {
             FrameLayout menu = new FrameLayout(context);
             actionBar.addView(menu, LayoutHelper.createFrame(56, 56, Gravity.RIGHT | Gravity.BOTTOM));
 
-            deleteItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
-            deleteItem.setIcon(R.drawable.msg_delete);
-            deleteItem.setVisibility(View.GONE);
-            deleteItem.setAlpha(0f);
-            deleteItem.setOnClickListener(v -> menu2.onItemClick(2));
-            menu.addView(deleteItem);
+            if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
+                deleteItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+                deleteItem.setIcon(R.drawable.msg_delete);
+                deleteItem.setVisibility(View.GONE);
+                deleteItem.setAlpha(0f);
+                deleteItem.setOnClickListener(v -> menu2.onItemClick(2));
+                menu.addView(deleteItem);
+            }
 
             optionsItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
             optionsItem.setIcon(R.drawable.ic_ab_other);
             optionsItem.setOnClickListener(v -> optionsItem.toggleSubMenu());
-            optionsItem.setVisibility(View.GONE);
-            optionsItem.setAlpha(0f);
+            optionsItem.setVisibility(type == TYPE_MEDIA ? View.VISIBLE : View.GONE);
+            optionsItem.setAlpha(type == TYPE_MEDIA ? 1f : 0f);
             menu.addView(optionsItem);
-            zoomInItem = optionsItem.addSubItem(8, R.drawable.msg_zoomin, LocaleController.getString(R.string.MediaZoomIn));
-            zoomInItem.setOnClickListener(v -> {
-                boolean canZoomOut, canZoomIn;
-                canZoomOut = true;
-                Boolean r = sharedMediaLayout.zoomIn();
-                if (r == null) {
-                    return;
-                }
-                canZoomIn = r;
-                zoomOutItem.setEnabled(canZoomOut);
-                zoomOutItem.animate().alpha(zoomOutItem.isEnabled() ? 1f : .5f).start();
-                zoomInItem.setEnabled(canZoomIn);
-                zoomInItem.animate().alpha(zoomInItem.isEnabled() ? 1f : .5f).start();
-            });
-            zoomOutItem = optionsItem.addSubItem(9, R.drawable.msg_zoomout, LocaleController.getString(R.string.MediaZoomOut));
-            zoomOutItem.setOnClickListener(v -> {
-                boolean canZoomOut, canZoomIn;
-                canZoomIn = true;
-                Boolean r = sharedMediaLayout.zoomOut();
-                if (r == null) {
-                    return;
-                }
-                canZoomOut = r;
-                zoomOutItem.setEnabled(canZoomOut);
-                zoomOutItem.animate().alpha(zoomOutItem.isEnabled() ? 1f : .5f).start();
-                zoomInItem.setEnabled(canZoomIn);
-                zoomInItem.animate().alpha(zoomInItem.isEnabled() ? 1f : .5f).start();
-            });
-            calendarItem = optionsItem.addSubItem(10, R.drawable.msg_calendar2, LocaleController.getString(R.string.Calendar));
-            calendarItem.setEnabled(false);
-            calendarItem.setAlpha(.5f);
-            optionsItem.addColoredGap();
-            showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
-            showPhotosItem.setChecked(filterPhotos);
-            showPhotosItem.setOnClickListener(e -> {
-                if (filterPhotos && !filterVideos) {
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
-                    return;
-                }
-                showPhotosItem.setChecked(filterPhotos = !filterPhotos);
-                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-            });
-            showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
-            showVideosItem.setChecked(filterVideos);
-            showVideosItem.setOnClickListener(e -> {
-                if (filterVideos && !filterPhotos) {
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
-                    return;
-                }
-                showVideosItem.setChecked(filterVideos = !filterVideos);
-                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-            });
-
-            optionsItem.addColoredGap(); //wd 移除最小时长设置菜单项
+            
+            if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
+                zoomInItem = optionsItem.addSubItem(8, R.drawable.msg_zoomin, LocaleController.getString(R.string.MediaZoomIn));
+                zoomInItem.setOnClickListener(v -> {
+                    boolean canZoomOut, canZoomIn;
+                    canZoomOut = true;
+                    Boolean r = sharedMediaLayout.zoomIn();
+                    if (r == null) {
+                        return;
+                    }
+                    canZoomIn = r;
+                    zoomOutItem.setEnabled(canZoomOut);
+                    zoomOutItem.animate().alpha(zoomOutItem.isEnabled() ? 1f : .5f).start();
+                    zoomInItem.setEnabled(canZoomIn);
+                    zoomInItem.animate().alpha(zoomInItem.isEnabled() ? 1f : .5f).start();
+                });
+                zoomOutItem = optionsItem.addSubItem(9, R.drawable.msg_zoomout, LocaleController.getString(R.string.MediaZoomOut));
+                zoomOutItem.setOnClickListener(v -> {
+                    boolean canZoomOut, canZoomIn;
+                    canZoomIn = true;
+                    Boolean r = sharedMediaLayout.zoomOut();
+                    if (r == null) {
+                        return;
+                    }
+                    canZoomOut = r;
+                    zoomOutItem.setEnabled(canZoomOut);
+                    zoomOutItem.animate().alpha(zoomOutItem.isEnabled() ? 1f : .5f).start();
+                    zoomInItem.setEnabled(canZoomIn);
+                    zoomInItem.animate().alpha(zoomInItem.isEnabled() ? 1f : .5f).start();
+                });
+                calendarItem = optionsItem.addSubItem(10, R.drawable.msg_calendar2, LocaleController.getString(R.string.Calendar));
+                calendarItem.setEnabled(false);
+                calendarItem.setAlpha(.5f);
+                optionsItem.addColoredGap();
+                showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
+                showPhotosItem.setChecked(filterPhotos);
+                showPhotosItem.setOnClickListener(e -> {
+                    if (filterPhotos && !filterVideos) {
+                        BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                        AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
+                        return;
+                    }
+                    showPhotosItem.setChecked(filterPhotos = !filterPhotos);
+                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+                });
+                showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
+                showVideosItem.setChecked(filterVideos);
+                showVideosItem.setOnClickListener(e -> {
+                    if (filterVideos && !filterPhotos) {
+                        BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                        AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
+                        return;
+                    }
+                    showVideosItem.setChecked(filterVideos = !filterVideos);
+                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+                });
+                optionsItem.addColoredGap(); //wd 移除最小时长设置菜单项
+            }
+            
             //wd 添加直接打开媒体对话设置选项
             ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(12, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
             //wd 检查当前对话是否已设置直接打开媒体对话
