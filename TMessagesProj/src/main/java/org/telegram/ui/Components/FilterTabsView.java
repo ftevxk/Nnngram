@@ -76,6 +76,7 @@ import java.util.ArrayList;
 
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.helpers.FolderIconHelper;
+import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.utils.Defines;
 
 public class FilterTabsView extends FrameLayout {
@@ -1208,7 +1209,7 @@ public class FilterTabsView extends FrameLayout {
             }
             TabView tabView = (TabView) view;
             if (isEditing) {
-                if (position != 0 || Config.hideAllTab) {
+                if (position != 0 || ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false)) {
                     int side = AndroidUtilities.dp(6);
                     if (tabView.rect.left - side < x && tabView.rect.right + side > x) {
                         delegate.onDeletePressed(tabView.currentTab.id);
@@ -1555,7 +1556,7 @@ public class FilterTabsView extends FrameLayout {
             int width = MeasureSpec.getSize(widthMeasureSpec) - AndroidUtilities.dp(7) - AndroidUtilities.dp(7);
             int trueTabsWidth;
             Tab firstTab = findDefaultTab();
-            if (!Config.hideAllTab && firstTab != null) {
+            if (!ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false) && firstTab != null) {
                 firstTab.setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats), null, false);
                 int tabWith = firstTab.getWidth(false);
                 firstTab.setTitle(allTabsWidth > width ?
@@ -1727,7 +1728,7 @@ public class FilterTabsView extends FrameLayout {
                 invalidated = true;
                 requestLayout();
                 allTabsWidth = 0;
-                if (!Config.hideAllTab) {
+                if (!ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false)) {
                     findDefaultTab().setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats), null, false);
                 }
                 for (int b = 0; b < N; b++) {
@@ -1760,7 +1761,7 @@ public class FilterTabsView extends FrameLayout {
             listView.setItemAnimator(itemAnimator);
             adapter.notifyDataSetChanged();
             allTabsWidth = 0;
-            if (!Config.hideAllTab) {
+            if (!ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false)) {
                 findDefaultTab().setTitle(LocaleController.getString("FilterAllChats", R.string.FilterAllChats), null, false);
             }
             for (int b = 0, N = tabs.size(); b < N; b++) {
@@ -1820,7 +1821,7 @@ public class FilterTabsView extends FrameLayout {
                 return;
             }
             ArrayList<MessagesController.DialogFilter> filters = MessagesController.getInstance(UserConfig.selectedAccount).getDialogFilters();
-            if (Config.hideAllTab) {
+            if (ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false)) {
                 int defaultPosition = 0;
                 for (int i = 0; i < filters.size(); i++) {
                     if (filters.get(i).isDefault()) {
@@ -1933,7 +1934,7 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-            if (!Config.hideAllTab && MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked() && (!isEditing || (viewHolder.getAdapterPosition() == 0 && tabs.get(0).isDefault && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium()))) {
+            if (!ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false) && MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked() && (!isEditing || (viewHolder.getAdapterPosition() == 0 && tabs.get(0).isDefault && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium()))) {
                 return makeMovementFlags(0, 0);
             }
             return makeMovementFlags(ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT, 0);
@@ -1941,7 +1942,7 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder source, RecyclerView.ViewHolder target) {
-            if (!Config.hideAllTab && MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked() && ((source.getAdapterPosition() == 0 || target.getAdapterPosition() == 0) && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium())) {
+            if (!ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false) && MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked() && ((source.getAdapterPosition() == 0 || target.getAdapterPosition() == 0) && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium())) {
                 return false;
             }
             adapter.swapElements(source.getAdapterPosition(), target.getAdapterPosition());

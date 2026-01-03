@@ -276,9 +276,10 @@ public class GeneralSettingActivity extends BaseActivity {
                 ((TextCheckCell) view).setChecked(Config.openArchiveOnPull);
             }
         } else if (position == hideAllTabRow) {
-            Config.toggleHideAllTab();
+            boolean currentValue = ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false);
+            ConfigManager.putBoolean(Defines.hideAllTab, !currentValue);
             if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(Config.hideAllTab);
+                ((TextCheckCell) view).setChecked(!currentValue);
             }
         } else if (position == ignoreMutedCountRow) {
             Config.toggleIgnoreMutedCount();
@@ -728,7 +729,7 @@ public class GeneralSettingActivity extends BaseActivity {
                     } else if (position == openArchiveOnPullRow) {
                         textCell.setTextAndCheck(LocaleController.getString("openArchiveOnPull", R.string.openArchiveOnPull), Config.openArchiveOnPull, true);
                     } else if (position == hideAllTabRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("hideAllTab", R.string.hideAllTab), Config.hideAllTab, true);
+                        textCell.setTextAndCheck(LocaleController.getString("hideAllTab", R.string.hideAllTab), ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false), true);
                     } else if (position == ignoreMutedCountRow) {
                         textCell.setTextAndCheck(LocaleController.getString("ignoreMutedCount", R.string.ignoreMutedCount),
                             Config.ignoreMutedCount, true);

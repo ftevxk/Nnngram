@@ -6947,7 +6947,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 for (int a = 0, N = filters.size(); a < N; a++) {
                     //wd 检查文件夹可见性，包括默认的"全部对话"文件夹
                     boolean isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filters.get(a).id, true);
-                    if ((filters.get(a).isDefault() && !Config.hideAllTab && isVisible) ||
+                    //wd 使用账号级别的hideAllTab配置
+                    if ((filters.get(a).isDefault() && !ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false) && isVisible) ||
                         (!filters.get(a).isDefault() && isVisible)) {
                         if (filters.get(a).isDefault()) {
                             filterTabsView.addTab(a, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats), "\uD83D\uDCAC", null, false, true, filters.get(a).locked);
@@ -6957,7 +6958,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
                 }
-                if (Config.hideAllTab && stableId <= 0) {
+                if (ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false) && stableId <= 0) {
                     id = filterTabsView.getFirstTabId();
                     updateCurrentTab = true;
                     viewPages[0].selectedType = id;
@@ -7011,7 +7012,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 //wd 检查是否有标签页，如果没有则将全部对话标签页强制显示
                 if (filterTabsView.getTabCount() == 0) {
                     //wd 强制显示全部对话标签页
-                    Config.hideAllTab = false;
+                    ConfigManager.putBoolean(Defines.hideAllTab, false);
                     //wd 重新加载过滤器
                     filterTabsView.removeTabs();
                     for (int a = 0, N = filters.size(); a < N; a++) {
