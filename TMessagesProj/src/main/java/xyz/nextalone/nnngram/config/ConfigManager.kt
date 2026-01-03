@@ -24,15 +24,19 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import org.json.JSONException
 import org.json.JSONObject
+import android.content.SharedPreferences
 import org.telegram.messenger.ApplicationLoader
+import org.telegram.messenger.UserConfig
 import xyz.nextalone.nnngram.utils.Log
 import java.util.function.Function
 
 object ConfigManager {
-    private val preferences = ApplicationLoader.applicationContext.getSharedPreferences(
-        "globalConfig",
-        Activity.MODE_PRIVATE
-    )
+    private fun getPreferences(account: Int = UserConfig.selectedAccount): SharedPreferences {
+        return ApplicationLoader.applicationContext.getSharedPreferences(
+            "globalConfig$account",
+            Activity.MODE_PRIVATE
+        )
+    }
 
     /**
      * 获取Int值
@@ -42,8 +46,9 @@ object ConfigManager {
      * @return key所对应值
      */
     @JvmStatic
-    fun getIntOrDefault(key: String, def: Int): Int {
-        return preferences.getInt(key, def)
+    @JvmOverloads
+    fun getIntOrDefault(key: String, def: Int, account: Int = UserConfig.selectedAccount): Int {
+        return getPreferences(account).getInt(key, def)
     }
 
     /**
@@ -53,8 +58,9 @@ object ConfigManager {
      * @param def 默认值
      */
     @JvmStatic
-    fun getLongOrDefault(key: String, def: Long): Long {
-        return preferences.getLong(key, def)
+    @JvmOverloads
+    fun getLongOrDefault(key: String, def: Long, account: Int = UserConfig.selectedAccount): Long {
+        return getPreferences(account).getLong(key, def)
     }
 
     /**
@@ -65,8 +71,9 @@ object ConfigManager {
      * @return key所对应值
      */
     @JvmStatic
-    fun getBooleanOrDefault(key: String, def: Boolean): Boolean {
-        return preferences.getBoolean(key, def)
+    @JvmOverloads
+    fun getBooleanOrDefault(key: String, def: Boolean, account: Int = UserConfig.selectedAccount): Boolean {
+        return getPreferences(account).getBoolean(key, def)
     }
 
     /**
@@ -76,8 +83,9 @@ object ConfigManager {
      * @return key所对应值 默认为false
      */
     @JvmStatic
-    fun getBooleanOrFalse(key: String): Boolean {
-        return preferences.getBoolean(key, false)
+    @JvmOverloads
+    fun getBooleanOrFalse(key: String, account: Int = UserConfig.selectedAccount): Boolean {
+        return getPreferences(account).getBoolean(key, false)
     }
 
     /**
@@ -88,8 +96,9 @@ object ConfigManager {
      * @return key所对应值
      */
     @JvmStatic
-    fun getStringOrDefault(key: String, def: String?): String? {
-        return preferences.getString(key, def)
+    @JvmOverloads
+    fun getStringOrDefault(key: String, def: String?, account: Int = UserConfig.selectedAccount): String? {
+        return getPreferences(account).getString(key, def)
     }
 
     /**
@@ -100,8 +109,9 @@ object ConfigManager {
      * @return key所对应值
      */
     @JvmStatic
-    fun getFloatOrDefault(key: String, def: Float): Float {
-        return preferences.getFloat(key, def)
+    @JvmOverloads
+    fun getFloatOrDefault(key: String, def: Float, account: Int = UserConfig.selectedAccount): Float {
+        return getPreferences(account).getFloat(key, def)
     }
 
     /**
@@ -111,8 +121,9 @@ object ConfigManager {
      * @param def 默认值
      * @return key对应值
      */
-    fun getStringSetOrDefault(key: String, def: Set<String?>?): Set<String>? = runCatching {
-        preferences.getStringSet(key, def)
+    @JvmOverloads
+    fun getStringSetOrDefault(key: String, def: Set<String?>?, account: Int = UserConfig.selectedAccount): Set<String>? = runCatching {
+        getPreferences(account).getStringSet(key, def)
     }.getOrDefault(setOf())
 
     /**
@@ -122,10 +133,12 @@ object ConfigManager {
      * @param value 值
      */
     @JvmStatic
-    fun putInt(key: String, value: Int) {
-        synchronized(preferences) {
+    @JvmOverloads
+    fun putInt(key: String, value: Int, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
-                preferences.edit().putInt(key, value).apply()
+                prefs.edit().putInt(key, value).apply()
             } catch (thr: Throwable) {
                 Log.e("putInt: ", thr)
             }
@@ -139,10 +152,12 @@ object ConfigManager {
      * @param value 值
      */
     @JvmStatic
-    fun putLong(key: String, value: Long) {
-        synchronized(preferences) {
+    @JvmOverloads
+    fun putLong(key: String, value: Long, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
-                preferences.edit().putLong(key, value).apply()
+                prefs.edit().putLong(key, value).apply()
             } catch (thr: Throwable) {
                 Log.e("putLong: ", thr)
             }
@@ -156,10 +171,12 @@ object ConfigManager {
      * @param value 值
      */
     @JvmStatic
-    fun putBoolean(key: String, value: Boolean) {
-        synchronized(preferences) {
+    @JvmOverloads
+    fun putBoolean(key: String, value: Boolean, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
-                preferences.edit().putBoolean(key, value).apply()
+                prefs.edit().putBoolean(key, value).apply()
             } catch (thr: Throwable) {
                 Log.e("putBoolean: ", thr)
             }
@@ -173,13 +190,15 @@ object ConfigManager {
      * @param value 值
      */
     @JvmStatic
-    fun putString(key: String, value: String) {
-        synchronized(preferences) {
+    @JvmOverloads
+    fun putString(key: String, value: String, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
                 if (value == "") {
-                    preferences.edit().remove(key).apply()
+                    prefs.edit().remove(key).apply()
                 }
-                preferences.edit().putString(key, value).apply()
+                prefs.edit().putString(key, value).apply()
             } catch (thr: Throwable) {
                 Log.e("putString: ", thr)
             }
@@ -193,10 +212,12 @@ object ConfigManager {
      * @param value 值
      */
     @JvmStatic
-    fun putFloat(key: String, value: Float) {
-        synchronized(preferences) {
+    @JvmOverloads
+    fun putFloat(key: String, value: Float, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
-                preferences.edit().putFloat(key, value).apply()
+                prefs.edit().putFloat(key, value).apply()
             } catch (thr: Throwable) {
                 Log.e("putFloat: ", thr)
             }
@@ -209,10 +230,12 @@ object ConfigManager {
      * @param key   key
      * @param value 值
      */
-    fun putStringSet(key: String, value: Set<String?>) {
-        synchronized(preferences) {
+    @JvmOverloads
+    fun putStringSet(key: String, value: Set<String?>, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
-                preferences.edit().putStringSet(key, value).apply()
+                prefs.edit().putStringSet(key, value).apply()
             } catch (thr: Throwable) {
                 Log.e("putStringSet: ", thr)
             }
@@ -227,12 +250,14 @@ object ConfigManager {
      * @deprecated 使用Config.toggleXXX代替
      */
     @JvmStatic
+    @JvmOverloads
     @Deprecated("使用Config.toggleXXX代替")
-    fun toggleBoolean(key: String) {
-        synchronized(preferences) {
+    fun toggleBoolean(key: String, account: Int = UserConfig.selectedAccount) {
+        val prefs = getPreferences(account)
+        synchronized(prefs) {
             try {
-                val originValue = preferences.getBoolean(key, false)
-                preferences.edit().putBoolean(key, !originValue).apply()
+                val originValue = prefs.getBoolean(key, false)
+                prefs.edit().putBoolean(key, !originValue).apply()
             } catch (thr: Throwable) {
                 Log.e(thr)
             }
@@ -245,9 +270,10 @@ object ConfigManager {
      * @param key key
      */
     @JvmStatic
-    fun deleteValue(key: String) = synchronized(preferences) {
+    @JvmOverloads
+    fun deleteValue(key: String, account: Int = UserConfig.selectedAccount) = synchronized(getPreferences(account)) {
         try {
-            preferences.edit().remove(key).apply()
+            getPreferences(account).edit().remove(key).apply()
         } catch (thr: Throwable) {
             Log.e(thr)
         }
