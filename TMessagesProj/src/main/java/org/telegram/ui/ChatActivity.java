@@ -3087,28 +3087,28 @@ public class ChatActivity extends BaseFragment implements
             loadInfo = chatInfo == null;
             checkGroupCallJoin(false);
             gotChatInfo();
-
-            //wd 直接打开媒体对话
-            String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-            boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
-            Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
-            if (isEnabled) {
-                Log.d("wd", "ChatActivity: 直接打开媒体对话，dialog_id=" + dialog_id);
-                Bundle args = new Bundle();
-                args.putInt("type", MediaActivity.TYPE_MEDIA);
-                args.putLong("dialog_id", dialog_id);
-                args.putLong("topic_id", getTopicId());
-                MediaActivity mediaActivity = new MediaActivity(args, null);
-                if (chatInfo != null) {
-                    mediaActivity.setChatInfo(chatInfo);
-                }
-                presentFragment(mediaActivity);
-            }
         } else if (currentUser != null) {
             if (chatMode != MODE_PINNED) {
                 getMessagesController().loadUserInfo(currentUser, true, classGuid, startLoadFromMessageId);
             }
             loadInfo = userInfo == null;
+        }
+        
+        //wd 直接打开媒体对话，无论currentChat是否为null，只要dialog_id不为0且配置了直接打开媒体页面，就执行该逻辑
+        String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+        boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
+        Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
+        if (isEnabled && dialog_id != 0) {
+            Log.d("wd", "ChatActivity: 直接打开媒体对话，dialog_id=" + dialog_id);
+            Bundle args = new Bundle();
+            args.putInt("type", MediaActivity.TYPE_MEDIA);
+            args.putLong("dialog_id", dialog_id);
+            args.putLong("topic_id", getTopicId());
+            MediaActivity mediaActivity = new MediaActivity(args, null);
+            if (chatInfo != null) {
+                mediaActivity.setChatInfo(chatInfo);
+            }
+            presentFragment(mediaActivity);
         }
 
         if (forceHistoryEmpty) {

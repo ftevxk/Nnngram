@@ -896,6 +896,240 @@ public class MessagesStorage extends BaseController {
         }
     }
 
+    private boolean isValidMessageMagic(int magic) {
+        switch (magic) {
+            case 0x1be7d3d6:
+            case 0x1cb5c415:
+            case 0x5a75c7e6:
+            case 0x8094776a:
+            case 0x22e3e7c5:
+            case 0xbb06295f:
+            case 0x23e2a4bc:
+            case 0x2f4df64d:
+            case 0x3c6d1d7c:
+            case 0x20011b00:
+            case 0x20011b01:
+            case 0x20011b02:
+            case 0x20011b03:
+            case 0x20011b04:
+            case 0x20011b05:
+            case 0x20011b06:
+            case 0x20011b07:
+            case 0x20011b08:
+            case 0x20011b09:
+            case 0x20011b0a:
+            case 0x20011b0b:
+            case 0x20011b0c:
+            case 0x20011b0d:
+            case 0x20011b0e:
+            case 0x20011b0f:
+            case 0x20011b10:
+            case 0x20011b11:
+            case 0x20011b12:
+            case 0x20011b13:
+            case 0x20011b14:
+            case 0x20011b15:
+            case 0x20011b16:
+            case 0x20011b17:
+            case 0x20011b18:
+            case 0x20011b19:
+            case 0x20011b1a:
+            case 0x20011b1b:
+            case 0x20011b1c:
+            case 0x20011b1d:
+            case 0x20011b1e:
+            case 0x20011b1f:
+            case 0x20011b20:
+            case 0x20011b21:
+            case 0x20011b22:
+            case 0x20011b23:
+            case 0x20011b24:
+            case 0x20011b25:
+            case 0x20011b26:
+            case 0x20011b27:
+            case 0x20011b28:
+            case 0x20011b29:
+            case 0x20011b2a:
+            case 0x20011b2b:
+            case 0x20011b2c:
+            case 0x20011b2d:
+            case 0x20011b2e:
+            case 0x20011b2f:
+            case 0x20011b30:
+            case 0x20011b31:
+            case 0x20011b32:
+            case 0x20011b33:
+            case 0x20011b34:
+            case 0x20011b35:
+            case 0x20011b36:
+            case 0x20011b37:
+            case 0x20011b38:
+            case 0x20011b39:
+            case 0x20011b3a:
+            case 0x20011b3b:
+            case 0x20011b3c:
+            case 0x20011b3d:
+            case 0x20011b3e:
+            case 0x20011b3f:
+            case 0x20011b40:
+            case 0x20011b41:
+            case 0x20011b42:
+            case 0x20011b43:
+            case 0x20011b44:
+            case 0x20011b45:
+            case 0x20011b46:
+            case 0x20011b47:
+            case 0x20011b48:
+            case 0x20011b49:
+            case 0x20011b4a:
+            case 0x20011b4b:
+            case 0x20011b4c:
+            case 0x20011b4d:
+            case 0x20011b4e:
+            case 0x20011b4f:
+            case 0x20011b50:
+            case 0x20011b51:
+            case 0x20011b52:
+            case 0x20011b53:
+            case 0x20011b54:
+            case 0x20011b55:
+            case 0x20011b56:
+            case 0x20011b57:
+            case 0x20011b58:
+            case 0x20011b59:
+            case 0x20011b5a:
+            case 0x20011b5b:
+            case 0x20011b5c:
+            case 0x20011b5d:
+            case 0x20011b5e:
+            case 0x20011b5f:
+            case 0x20011b60:
+            case 0x20011b61:
+            case 0x20011b62:
+            case 0x20011b63:
+            case 0x20011b64:
+            case 0x20011b65:
+            case 0x20011b66:
+            case 0x20011b67:
+            case 0x20011b68:
+            case 0x20011b69:
+            case 0x20011b6a:
+            case 0x20011b6b:
+            case 0x20011b6c:
+            case 0x20011b6d:
+            case 0x20011b6e:
+            case 0x20011b6f:
+            case 0x20011b70:
+            case 0x20011b71:
+            case 0x20011b72:
+            case 0x20011b73:
+            case 0x20011b74:
+            case 0x20011b75:
+            case 0x20011b76:
+            case 0x20011b77:
+            case 0x20011b78:
+            case 0x20011b79:
+            case 0x20011b7a:
+            case 0x20011b7b:
+            case 0x20011b7c:
+            case 0x20011b7d:
+            case 0x20011b7e:
+            case 0x20011b7f:
+            case 0x20011b80:
+            case 0x20011b81:
+            case 0x20011b82:
+            case 0x20011b83:
+            case 0x20011b84:
+            case 0x20011b85:
+            case 0x20011b86:
+            case 0x20011b87:
+            case 0x20011b88:
+            case 0x20011b89:
+            case 0x20011b8a:
+            case 0x20011b8b:
+            case 0x20011b8c:
+            case 0x20011b8d:
+            case 0x20011b8e:
+            case 0x20011b8f:
+            case 0x20011b90:
+            case 0x20011b91:
+            case 0x20011b92:
+            case 0x20011b93:
+            case 0x20011b94:
+            case 0x20011b95:
+            case 0x20011b96:
+            case 0x20011b97:
+            case 0x20011b98:
+            case 0x20011b99:
+            case 0x20011b9a:
+            case 0x20011b9b:
+            case 0x20011b9c:
+            case 0x20011b9d:
+            case 0x20011b9e:
+            case 0x20011b9f:
+            case 0x20011ba0:
+            case 0x20011ba1:
+            case 0x20011ba2:
+            case 0x20011ba3:
+            case 0x20011ba4:
+            case 0x20011ba5:
+            case 0x20011ba6:
+            case 0x20011ba7:
+            case 0x20011ba8:
+            case 0x20011ba9:
+            case 0x20011baa:
+            case 0x20011bab:
+            case 0x20011bac:
+            case 0x20011bad:
+            case 0x20011bae:
+            case 0x20011baf:
+            case 0x20011bb0:
+            case 0x20011bb1:
+            case 0x20011bb2:
+            case 0x20011bb3:
+            case 0x20011bb4:
+            case 0x20011bb5:
+            case 0x20011bb6:
+            case 0x20011bb7:
+            case 0x20011bb8:
+            case 0x20011bb9:
+            case 0x20011bba:
+            case 0x20011bbb:
+            case 0x20011bbc:
+            case 0x20011bbd:
+            case 0x20011bbe:
+            case 0x20011bbf:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void markMessageAsCorrupted(int messageId) {
+        if (messageId == 0) {
+            return;
+        }
+        corruptedMessages.add(messageId);
+        if (corruptedMessages.size() >= 10) {
+            cleanupCorruptedMessages();
+        }
+    }
+
+    private void cleanupCorruptedMessages() {
+        if (corruptedMessages.isEmpty()) {
+            return;
+        }
+        String ids = TextUtils.join(",", corruptedMessages);
+        corruptedMessages.clear();
+        try {
+            database.executeFast("DELETE FROM messages_v2 WHERE mid IN (" + ids + ")").stepThis().dispose();
+            database.executeFast("DELETE FROM media_v4 WHERE mid IN (" + ids + ")").stepThis().dispose();
+            FileLog.d("wd", "Cleaned up " + ids.split(",").length + " corrupted messages");
+        } catch (Exception e) {
+            FileLog.e("wd", "Failed to cleanup corrupted messages", e);
+        }
+    }
+
     public void fixNotificationSettings() {
         storageQueue.postRunnable(() -> {
             try {
@@ -2671,6 +2905,7 @@ public class MessagesStorage extends BaseController {
     private int[] mentionGroups = new int[2];
     private LongSparseArray<Integer> dialogsWithMentions = new LongSparseArray<>();
     private LongSparseArray<Integer> dialogsWithUnread = new LongSparseArray<>();
+    private HashSet<Integer> corruptedMessages = new HashSet<>();
 
     private void calcUnreadCounters(boolean apply) {
         SQLiteCursor cursor = null;
@@ -14298,20 +14533,43 @@ public class MessagesStorage extends BaseController {
 
                 NativeByteBuffer data = cursor.byteBufferValue(4);
                 if (data != null) {
-                    TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                    message.readAttachPath(data, getUserConfig().clientUserId);
-                    data.reuse();
-                    MessageObject.setUnreadFlags(message, cursor.intValue(5));
-                    message.id = cursor.intValue(6);
-                    message.send_state = cursor.intValue(7);
-                    int date = cursor.intValue(8);
-                    if (date != 0) {
-                        dialog.last_message_date = date;
-                    }
-                    message.dialog_id = dialog.id;
-                    dialogs.messages.add(message);
+                    try {
+                        if (data.remaining() < 4) {
+                            Log.w("wd", "Corrupted message data detected for dialog " + dialogId + ", skipping");
+                            data.reuse();
+                        } else {
+                            int magic = data.readInt32(false);
+                            if (!isValidMessageMagic(magic)) {
+                                Log.w("wd", "Invalid message magic " + Integer.toHexString(magic) + " for dialog " + dialogId + ", skipping");
+                                data.reuse();
+                            } else {
+                                data.position(0);
+                                TLRPC.Message message = TLRPC.Message.TLdeserialize(data, magic, false);
+                                message.readAttachPath(data, getUserConfig().clientUserId);
+                                data.reuse();
+                                MessageObject.setUnreadFlags(message, cursor.intValue(5));
+                                message.id = cursor.intValue(6);
+                                message.send_state = cursor.intValue(7);
+                                int date = cursor.intValue(8);
+                                if (date != 0) {
+                                    dialog.last_message_date = date;
+                                }
+                                message.dialog_id = dialog.id;
+                                dialogs.messages.add(message);
 
-                    addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
+                                addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e("wd", "Failed to parse message from database for dialog " + dialogId, e);
+                        markMessageAsCorrupted(cursor.intValue(6));
+                        if (data != null) {
+                            try {
+                                data.reuse();
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
                 }
                 if (!DialogObject.isEncryptedDialog(dialogId)) {
                     if (dialog.read_inbox_max_id > dialog.top_message) {
@@ -14360,20 +14618,43 @@ public class MessagesStorage extends BaseController {
                     }
                     NativeByteBuffer data = cursor.byteBufferValue(1);
                     if (data != null) {
-                        TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                        message.readAttachPath(data, getUserConfig().clientUserId);
-                        data.reuse();
-                        MessageObject.setUnreadFlags(message, cursor.intValue(2));
-                        message.id = cursor.intValue(3);
-                        message.send_state = cursor.intValue(4);
-                        int date = cursor.intValue(5);
-                        if (date != 0) {
-                            dialog.last_message_date = date;
-                        }
-                        message.dialog_id = dialog.id;
-                        dialogs.messages.add(message);
+                        try {
+                            if (data.remaining() < 4) {
+                                Log.w("wd", "Corrupted group message data detected for dialog " + dialogId + ", skipping");
+                                data.reuse();
+                            } else {
+                                int magic = data.readInt32(false);
+                                if (!isValidMessageMagic(magic)) {
+                                    Log.w("wd", "Invalid group message magic " + Integer.toHexString(magic) + " for dialog " + dialogId + ", skipping");
+                                    data.reuse();
+                                } else {
+                                    data.position(0);
+                                    TLRPC.Message message = TLRPC.Message.TLdeserialize(data, magic, false);
+                                    message.readAttachPath(data, getUserConfig().clientUserId);
+                                    data.reuse();
+                                    MessageObject.setUnreadFlags(message, cursor.intValue(2));
+                                    message.id = cursor.intValue(3);
+                                    message.send_state = cursor.intValue(4);
+                                    int date = cursor.intValue(5);
+                                    if (date != 0) {
+                                        dialog.last_message_date = date;
+                                    }
+                                    message.dialog_id = dialog.id;
+                                    dialogs.messages.add(message);
 
-                        addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
+                                    addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e("wd", "Failed to parse group message from database for dialog " + dialogId, e);
+                            markMessageAsCorrupted(cursor.intValue(3));
+                            if (data != null) {
+                                try {
+                                    data.reuse();
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
                     }
                 }
                 cursor.dispose();
