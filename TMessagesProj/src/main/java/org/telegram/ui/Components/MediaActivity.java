@@ -124,7 +124,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
     private ActionBarMenuItem deleteItem;
     private SparseArray<MessageObject> actionModeMessageObjects;
     private ActionBarMenuSubItem showPhotosItem, showVideosItem;
-    private boolean filterPhotos = true, filterVideos = true;
+    private boolean filterPhotos = false, filterVideos = true;
     private int shiftDp = -12;
     private ActionBarMenuSubItem calendarItem, zoomInItem, zoomOutItem;
 
@@ -406,31 +406,63 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 });
                 
                 optionsItem.addColoredGap();
+        }
+        showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
+        showPhotosItem.setChecked(filterPhotos);
+        showPhotosItem.setOnClickListener(e -> {
+            if (filterPhotos && !filterVideos) {
+                BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
+                return;
             }
-            showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
-            showPhotosItem.setChecked(filterPhotos);
-            showPhotosItem.setOnClickListener(e -> {
-                if (filterPhotos && !filterVideos) {
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
-                    return;
+            showPhotosItem.setChecked(filterPhotos = !filterPhotos);
+            sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+        });
+        showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
+        showVideosItem.setChecked(filterVideos);
+        showVideosItem.setOnClickListener(e -> {
+            if (filterVideos && !filterPhotos) {
+                BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
+                return;
+            }
+            showVideosItem.setChecked(filterVideos = !filterVideos);
+            sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+        });
+        
+        //wd 添加视频最小时长设置选项
+        optionsItem.addColoredGap();
+        ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(12, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
+        videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
+        videoMinDurationItem.setOnClickListener(e -> {
+            //wd 弹出对话框设置视频最小时长
+            final EditText editText = new EditTextBoldCursor(getContext());
+            editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
+            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+            editText.setHint("秒");
+            editText.setSingleLine(true);
+            editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+            editText.setPadding(dp(16), dp(8), dp(16), dp(8));
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
+            builder.setTitle(LocaleController.getString(R.string.MediaShowPhotos));
+            builder.setView(editText);
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                String text = editText.getText().toString();
+                int duration;
+                try {
+                    duration = Integer.parseInt(text);
+                } catch (NumberFormatException ex) {
+                    duration = 0;
                 }
-                showPhotosItem.setChecked(filterPhotos = !filterPhotos);
+                Config.setSearchVideoMinDuration(duration);
+                videoMinDurationItem.setChecked(duration > 0);
                 sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
             });
-            showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
-            showVideosItem.setChecked(filterVideos);
-            showVideosItem.setOnClickListener(e -> {
-                if (filterVideos && !filterPhotos) {
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
-                    return;
-                }
-                showVideosItem.setChecked(filterVideos = !filterVideos);
-                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-            });
-            
-            optionsItem.addColoredGap();
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            builder.show();
+        });
+        
+        optionsItem.addColoredGap();
         }
 
         boolean hasAvatar = type == TYPE_MEDIA;
