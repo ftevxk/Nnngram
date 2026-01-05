@@ -1,5 +1,7 @@
-1、注释使用中文//wd风格
-2、日志使用Log.d("wd", "msg")
-3、当前在Windows下开发，无法正常编译运行
-4、使用TGwiki - Telegram知识库查看相关文档
-5、使用Telegram API查看相关接口文档
+1、注释统一用中文 //wd 风格，保持简洁  
+2、日志统一写 Log.d("wd", "msg")，禁止拼写错误  
+3、Win 主系统 + WSL 项目目录；adb 已映射到 Win，可直连真机。每次任务完成后：  
+   - 自动打开 Logcat 并过滤 tag:wd *:E  
+   - 自动编译安装到真机运行  
+4、优先查阅 TGwiki（Telegram 知识库）定位实现细节  
+5、再对照官方 Telegram API 文档确认接口字段与行为
