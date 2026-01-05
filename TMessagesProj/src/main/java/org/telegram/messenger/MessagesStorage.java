@@ -1115,6 +1115,7 @@ public class MessagesStorage extends BaseController {
         }
     }
 
+    // 清理损坏的消息
     private void cleanupCorruptedMessages() {
         if (corruptedMessages.isEmpty()) {
             return;
@@ -1124,9 +1125,9 @@ public class MessagesStorage extends BaseController {
         try {
             database.executeFast("DELETE FROM messages_v2 WHERE mid IN (" + ids + ")").stepThis().dispose();
             database.executeFast("DELETE FROM media_v4 WHERE mid IN (" + ids + ")").stepThis().dispose();
-            FileLog.d("wd", "Cleaned up " + ids.split(",").length + " corrupted messages");
+            android.util.Log.d("wd", "Cleaned up " + ids.split(",").length + " corrupted messages");
         } catch (Exception e) {
-            FileLog.e("wd", "Failed to cleanup corrupted messages", e);
+            android.util.Log.e("wd", "Failed to cleanup corrupted messages", e);
         }
     }
 

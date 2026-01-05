@@ -146,6 +146,11 @@ android {
             path = File(projectDir, "jni/CMakeLists.txt")
         }
     }
+    
+    // Native构建缓存配置
+    buildFeatures {
+        prefab = false
+    }
 
     lint {
         checkReleaseBuilds = true
@@ -214,11 +219,17 @@ android {
                 arguments += listOf(
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_PLATFORM=android-27",
-                    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
                 )
             }
         }
         buildConfigField("String", "BUILD_TIME", "\"${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}\"")
+    }
+    
+    // 配置Kotlin编译选项
+    kotlinOptions {
+        // 使用编译器选项DSL
+        freeCompilerArgs += listOf("-Xparallel-compile")
     }
 
     splits {

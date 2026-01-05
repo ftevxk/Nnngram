@@ -390,6 +390,7 @@ public class ChatActivity extends BaseFragment implements
     protected TLRPC.User currentUser;
     protected TLRPC.EncryptedChat currentEncryptedChat;
     private boolean userBlocked;
+    private boolean needOpenMediaDirectly;
 
     private long chatInviterId;
 
@@ -3094,21 +3095,13 @@ public class ChatActivity extends BaseFragment implements
             loadInfo = userInfo == null;
         }
         
-        //wd 直接打开媒体对话，无论currentChat是否为null，只要dialog_id不为0且配置了直接打开媒体页面，就执行该逻辑
+        //wd 直接打开媒体对话，检查配置并设置标志位
         String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
         boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
         Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
         if (isEnabled && dialog_id != 0) {
-            Log.d("wd", "ChatActivity: 直接打开媒体对话，dialog_id=" + dialog_id);
-            Bundle args = new Bundle();
-            args.putInt("type", MediaActivity.TYPE_MEDIA);
-            args.putLong("dialog_id", dialog_id);
-            args.putLong("topic_id", getTopicId());
-            MediaActivity mediaActivity = new MediaActivity(args, null);
-            if (chatInfo != null) {
-                mediaActivity.setChatInfo(chatInfo);
-            }
-            presentFragment(mediaActivity);
+            Log.d("wd", "ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
+            needOpenMediaDirectly = true;
         }
 
         if (forceHistoryEmpty) {
@@ -29599,6 +29592,22 @@ public class ChatActivity extends BaseFragment implements
         });
 
         checkActionBarMenu(false);
+        
+        //wd 处理直接打开媒体对话
+        if (needOpenMediaDirectly) {
+            Log.d("wd", "ChatActivity.onResume: 执行直接打开媒体对话，dialog_id=" + dialog_id);
+            Bundle args = new Bundle();
+            args.putInt("type", MediaActivity.TYPE_MEDIA);
+            args.putLong("dialog_id", dialog_id);
+            args.putLong("topic_id", getTopicId());
+            MediaActivity mediaActivity = new MediaActivity(args, null);
+            if (chatInfo != null) {
+                mediaActivity.setChatInfo(chatInfo);
+            }
+            presentFragment(mediaActivity);
+            needOpenMediaDirectly = false;
+        }
+        
         if (replyImageLocation != null && replyImageView != null) {
             replyImageView.setImage(ImageLocation.getForObject(replyImageLocation, replyImageLocationObject), "50_50", ImageLocation.getForObject(replyImageThumbLocation, replyImageLocationObject), "50_50_b", null, replyImageSize, replyImageCacheType, replyingMessageObject);
         }
