@@ -142,6 +142,9 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         this.sharedMediaPreloader = sharedMediaPreloader;
     }
 
+    private boolean isFolderMedia = false;
+    private long[] folderDialogIds = new long[0];
+
     @Override
     public boolean onFragmentCreate() {
         type = getArguments().getInt("type", TYPE_MEDIA);
@@ -150,6 +153,11 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         hashtag = getArguments().getString("hashtag", "");
         username = getArguments().getString("username", "");
         storiesCount = getArguments().getInt("storiesCount", -1);
+        
+        // 检查是否为文件夹媒体
+        isFolderMedia = getArguments().getBoolean("folder_media", false);
+        folderDialogIds = getArguments().getLongArray("folder_dialog_ids") != null ? getArguments().getLongArray("folder_dialog_ids") : new long[0];
+        
         int defaultTab = SharedMediaLayout.TAB_PHOTOVIDEO;
         if (type == TYPE_ARCHIVED_CHANNEL_STORIES) {
             defaultTab = SharedMediaLayout.TAB_ARCHIVED_STORIES;

@@ -764,6 +764,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         private BaseFragment parentFragment;
         private ArrayList<SharedMediaPreloaderDelegate> delegates = new ArrayList<>();
         private boolean mediaWasLoaded;
+        // wd 文件夹媒体支持
+        private boolean isFolderMedia = false;
+        private long[] folderDialogIds = new long[0];
+        private ArrayList<Long> folderDialogIdList = new ArrayList<>();
+        private HashMap<Long, int[]> folderMediaCounts = new HashMap<>();
 
         public long getTopicId() {
             return topicId;
@@ -827,6 +832,18 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             } else if (fragment instanceof MediaActivity) {
                 MediaActivity mediaActivity = (MediaActivity) fragment;
                 dialogId = mediaActivity.getDialogId();
+                // wd 处理文件夹媒体
+                Bundle args = mediaActivity.getArguments();
+                if (args != null) {
+                    isFolderMedia = args.getBoolean("folder_media", false);
+                    folderDialogIds = args.getLongArray("folder_dialog_ids") != null ? args.getLongArray("folder_dialog_ids") : new long[0];
+                    if (isFolderMedia && folderDialogIds.length > 0) {
+                        for (long id : folderDialogIds) {
+                            folderDialogIdList.add(id);
+                            folderMediaCounts.put(id, new int[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1});
+                        }
+                    }
+                }
             } else if (fragment instanceof DialogsActivity) {
                 dialogId = fragment.getUserConfig().getClientUserId();
             }
@@ -894,32 +911,70 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (id == NotificationCenter.mediaCountsDidLoad) {
                 long did = (Long) args[0];
                 long topicId = (Long) args[1];
-                if (this.topicId == topicId && (did == dialogId || did == mergeDialogId)) {
+                if (this.topicId == topicId) {
                     int[] counts = (int[]) args[2];
-                    if (did == dialogId) {
-                        mediaCount = counts;
-                    } else {
-                        mediaMergeCount = counts;
-                    }
-                    for (int a = 0; a < counts.length; a++) {
-                        if (mediaCount[a] >= 0 && mediaMergeCount[a] >= 0) {
-                            lastMediaCount[a] = mediaCount[a] + mediaMergeCount[a];
-                        } else if (mediaCount[a] >= 0) {
-                            lastMediaCount[a] = mediaCount[a];
-                        } else {
-                            lastMediaCount[a] = Math.max(mediaMergeCount[a], 0);
+                    boolean isFolderDialog = isFolderMedia && folderDialogIdList.contains(did);
+                    
+                    if (isFolderMedia) {
+                        // wd 处理文件夹媒体计数
+                        if (isFolderDialog) {
+                            folderMediaCounts.put(did, counts);
                         }
-                        if (did == dialogId && lastMediaCount[a] != 0 && lastLoadMediaCount[a] != mediaCount[a]) {
-                            int type = a;
-                            if (type == 0) {
-                                if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY) {
-                                    type = MediaDataController.MEDIA_PHOTOS_ONLY;
-                                } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
-                                    type = MediaDataController.MEDIA_VIDEOS_ONLY;
+                        // 计算总计数
+                        Arrays.fill(lastMediaCount, 0);
+                        for (int[] dialogCounts : folderMediaCounts.values()) {
+                            for (int a = 0; a < dialogCounts.length; a++) {
+                                if (dialogCounts[a] >= 0) {
+                                    lastMediaCount[a] += dialogCounts[a];
                                 }
                             }
-                            parentFragment.getMediaDataController().loadMedia(did, lastLoadMediaCount[a] == -1 ? 30 : 20, 0, 0, type, topicId, 1, parentFragment.getClassGuid(), 0, null, null);
-                            lastLoadMediaCount[a] = mediaCount[a];
+                        }
+                        // 为每个文件夹对话加载媒体数据
+                        for (long dialogId : folderDialogIdList) {
+                            int[] dialogCounts = folderMediaCounts.get(dialogId);
+                            if (dialogCounts != null) {
+                                for (int a = 0; a < dialogCounts.length; a++) {
+                                    if (dialogCounts[a] > 0) {
+                                        int type = a;
+                                        if (type == 0) {
+                                            if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY) {
+                                                type = MediaDataController.MEDIA_PHOTOS_ONLY;
+                                            } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                                                type = MediaDataController.MEDIA_VIDEOS_ONLY;
+                                            }
+                                        }
+                                        parentFragment.getMediaDataController().loadMedia(dialogId, dialogCounts[a] > 30 ? 30 : dialogCounts[a], 0, 0, type, topicId, 1, parentFragment.getClassGuid(), 0, null, null);
+                                    }
+                                }
+                            }
+                        }
+                    } else if (did == dialogId || did == mergeDialogId) {
+                        // 原有逻辑
+                        if (did == dialogId) {
+                            mediaCount = counts;
+                        } else {
+                            mediaMergeCount = counts;
+                        }
+                        for (int a = 0; a < counts.length; a++) {
+                            if (mediaCount[a] >= 0 && mediaMergeCount[a] >= 0) {
+                                lastMediaCount[a] = mediaCount[a] + mediaMergeCount[a];
+                            } else if (mediaCount[a] >= 0) {
+                                lastMediaCount[a] = mediaCount[a];
+                            } else {
+                                lastMediaCount[a] = Math.max(mediaMergeCount[a], 0);
+                            }
+                            if (did == dialogId && lastMediaCount[a] != 0 && lastLoadMediaCount[a] != mediaCount[a]) {
+                                int type = a;
+                                if (type == 0) {
+                                    if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY) {
+                                        type = MediaDataController.MEDIA_PHOTOS_ONLY;
+                                    } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                                        type = MediaDataController.MEDIA_VIDEOS_ONLY;
+                                    }
+                                }
+                                parentFragment.getMediaDataController().loadMedia(did, lastLoadMediaCount[a] == -1 ? 30 : 20, 0, 0, type, topicId, 1, parentFragment.getClassGuid(), 0, null, null);
+                                lastLoadMediaCount[a] = mediaCount[a];
+                            }
                         }
                     }
                     mediaWasLoaded = true;
@@ -1009,25 +1064,28 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 long did = (Long) args[0];
                 int guid = (Integer) args[3];
                 if (guid == parentFragment.getClassGuid()) {
-                    int type = (Integer) args[4];
-                    if (type != 0 && type != 6 && type != 7 && type != 1 && type != 2 && type != 4) {
-                        sharedMediaData[type].setTotalCount((Integer) args[1]);
-                    }
-                    ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[2];
-                    boolean enc = DialogObject.isEncryptedDialog(did);
-                    int loadIndex = did == dialogId ? 0 : 1;
-                    if (type == 0 || type == 6 || type == 7) {
-                        if (type != sharedMediaData[0].filterType) {
-                            return;
+                    boolean isFolderDialog = isFolderMedia && folderDialogIdList.contains(did);
+                    if (isFolderMedia || did == dialogId || did == mergeDialogId) {
+                        int type = (Integer) args[4];
+                        if (type != 0 && type != 6 && type != 7 && type != 1 && type != 2 && type != 4) {
+                            sharedMediaData[type].setTotalCount((Integer) args[1]);
                         }
-                        type = 0;
-                    }
-                    if (!arr.isEmpty()) {
-                        sharedMediaData[type].setEndReached(loadIndex, (Boolean) args[5]);
-                    }
-                    for (int a = 0; a < arr.size(); a++) {
-                        MessageObject message = arr.get(a);
-                        sharedMediaData[type].addMessage(message, loadIndex, false, enc);
+                        ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[2];
+                        boolean enc = DialogObject.isEncryptedDialog(did);
+                        int loadIndex = isFolderMedia ? 0 : (did == dialogId ? 0 : 1);
+                        if (type == 0 || type == 6 || type == 7) {
+                            if (type != sharedMediaData[0].filterType) {
+                                return;
+                            }
+                            type = 0;
+                        }
+                        if (!arr.isEmpty()) {
+                            sharedMediaData[type].setEndReached(loadIndex, (Boolean) args[5]);
+                        }
+                        for (int a = 0; a < arr.size(); a++) {
+                            MessageObject message = arr.get(a);
+                            sharedMediaData[type].addMessage(message, loadIndex, false, enc);
+                        }
                     }
                 }
             } else if (id == NotificationCenter.messagesDeleted) {
@@ -1168,9 +1226,16 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         private void loadMediaCounts() {
             if (parentFragment == null) return;
-            parentFragment.getMediaDataController().getMediaCounts(dialogId, topicId, parentFragment.getClassGuid());
-            if (mergeDialogId != 0) {
-                parentFragment.getMediaDataController().getMediaCounts(mergeDialogId, topicId, parentFragment.getClassGuid());
+            if (isFolderMedia) {
+                // wd 为每个文件夹对话加载媒体计数
+                for (long id : folderDialogIdList) {
+                    parentFragment.getMediaDataController().getMediaCounts(id, topicId, parentFragment.getClassGuid());
+                }
+            } else {
+                parentFragment.getMediaDataController().getMediaCounts(dialogId, topicId, parentFragment.getClassGuid());
+                if (mergeDialogId != 0) {
+                    parentFragment.getMediaDataController().getMediaCounts(mergeDialogId, topicId, parentFragment.getClassGuid());
+                }
             }
         }
 

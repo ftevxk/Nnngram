@@ -346,7 +346,24 @@
     <string name="StickerPackNotFound">Sticker pack not found.</string>
     <string name="MessageFilter">Message Filter</string>
     <string name="Pattern">Pattern</string>
-    <string name="MessageFilterDesc">Use regular expressions to match messages, and the matched messages will be hidden.\nLeave it blank to disable it</string>
+    <string name="MessageFilterDesc">Use regular expressions to match messages, and the matched messages will be hidden.
+Leave it blank to disable it
+
+Regex Rules Examples:
+1. Multiple keywords separated by | (e.g.: ad|promotion|marketing)
+2. Case insensitive (default)
+3. Support .* for wildcard matching (e.g.: https?://.*\.com)
+4. Support ^ for start matching (e.g.: ^pinned)
+5. Support $ for end matching (e.g.: thanks$)
+6. Support \d+ for digit matching (e.g.: price\d+yuan)
+7. Support \w+ for word matching (e.g.: user\w+)
+
+Usage Notes:
+- Use | between keywords for OR logic
+- . matches any single character
+- * matches 0 or more of the preceding character
+- + matches 1 or more of the preceding character
+- ? matches 0 or 1 of the preceding character</string>
     <string name="SaveToDownloadCount_zero">Saving %1$d files to Download</string>
     <string name="SaveToDownloadCount_one">Saving %1$d file to Download</string>
     <string name="SaveToDownloadCount_two">Saving %1$d files to Download</string>

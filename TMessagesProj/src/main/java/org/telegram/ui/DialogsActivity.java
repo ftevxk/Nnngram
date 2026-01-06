@@ -1724,6 +1724,56 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    //wd 获取指定文件夹下的所有会话数据，整合去重
+    public ArrayList<TLRPC.Dialog> getFolderAllDialogs(int folderId) {
+        ArrayList<TLRPC.Dialog> allDialogs = new ArrayList<>();
+        HashSet<Long> dialogIds = new HashSet<>();
+        
+        // 获取指定文件夹下的所有对话
+        ArrayList<TLRPC.Dialog> folderDialogs = getMessagesController().getDialogs(folderId);
+        
+        // 遍历所有对话，添加到结果列表中，去重
+        for (TLRPC.Dialog dialog : folderDialogs) {
+            if (!dialogIds.contains(dialog.id)) {
+                dialogIds.add(dialog.id);
+                allDialogs.add(dialog);
+            }
+        }
+        
+        return allDialogs;
+    }
+
+    //wd 获取指定文件夹下的所有会话ID，整合去重
+    public ArrayList<Long> getFolderAllDialogIds(int folderId) {
+        ArrayList<Long> allDialogIds = new ArrayList<>();
+        HashSet<Long> dialogIds = new HashSet<>();
+        
+        // 获取指定文件夹下的所有对话
+        ArrayList<TLRPC.Dialog> folderDialogs = getMessagesController().getDialogs(folderId);
+        
+        // 遍历所有对话，提取ID并去重
+        for (TLRPC.Dialog dialog : folderDialogs) {
+            if (!dialogIds.contains(dialog.id)) {
+                dialogIds.add(dialog.id);
+                allDialogIds.add(dialog.id);
+            }
+        }
+        
+        return allDialogIds;
+    }
+    
+    //wd 更新文件夹媒体按钮显示状态
+    private ActionBarMenuItem mediaFolderItem;
+    private void updateMediaFolderButtonVisibility() {
+        if (mediaFolderItem != null) {
+            if (folderId != 0) {
+                mediaFolderItem.setVisibility(View.VISIBLE);
+            } else {
+                mediaFolderItem.setVisibility(View.GONE);
+            }
+        }
+    }
+
     private void updateStoriesViewAlpha(float alpha) {
         dialogStoriesCell.setAlpha((1f - progressToActionMode) * alpha * progressToDialogStoriesCell * (1f - Utilities.clamp(searchAnimationProgress / 0.5f, 1f, 0f)));
         float containersAlpha;
@@ -4685,9 +4735,29 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         floatingButtonContainer = new FrameLayout(context);
-        floatingButtonContainer.setVisibility(onlySelect && initialDialogsType != 10 || folderId != 0 ? View.GONE : View.VISIBLE);
+        floatingButtonContainer.setVisibility(onlySelect && initialDialogsType != 10 ? View.GONE : View.VISIBLE);
         contentView.addView(floatingButtonContainer, LayoutHelper.createFrame(56, 56, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 14 : 0, 0, LocaleController.isRTL ? 0 : 14, 14));
         floatingButtonContainer.setOnClickListener(v -> {
+            //wd 获取当前文件夹下的所有会话数据
+            ArrayList<TLRPC.Dialog> allDialogs = getFolderAllDialogs(folderId);
+
+            // 跳转到MediaActivity
+            Bundle args = new Bundle();
+            args.putInt("type", MediaActivity.TYPE_MEDIA);
+            args.putLong("dialog_id", folderId);
+            args.putBoolean("folder_media", true);
+
+            // 将文件夹下的所有对话ID传递给MediaActivity
+            ArrayList<Long> dialogIds = getFolderAllDialogIds(folderId);
+            long[] dialogIdsArray = new long[dialogIds.size()];
+            for (int i = 0; i < dialogIds.size(); i++) {
+                dialogIdsArray[i] = dialogIds.get(i);
+            }
+            args.putLongArray("folder_dialog_ids", dialogIdsArray);
+            MediaActivity mediaActivity = new MediaActivity(args, null);
+            presentFragment(mediaActivity);
+            return;
+            
 //            if (parentLayout != null && parentLayout.isInPreviewMode()) {
 //                finishPreviewFragment();
 //                return;
