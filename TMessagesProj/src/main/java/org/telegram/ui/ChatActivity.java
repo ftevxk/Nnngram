@@ -3103,7 +3103,7 @@ public class ChatActivity extends BaseFragment implements
             Log.d("wd", "ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
             needOpenMediaDirectly = true;
             //wd 主动触发媒体数据加载，确保能收到mediaCountsDidLoad通知
-            getMediaDataController().loadMediaCounts(dialog_id, getTopicId());
+            getMediaDataController().getMediaCounts(dialog_id, getTopicId(), classGuid);
         }
 
         if (forceHistoryEmpty) {
