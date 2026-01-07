@@ -1403,7 +1403,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         public boolean loadingAfterFastScroll;
         public int requestIndex;
 
-        public int filterType = FILTER_PHOTOS_AND_VIDEOS;
+        public int filterType = FILTER_VIDEOS_ONLY;
         public boolean isFrozen;
         public ArrayList<MessageObject> frozenMessages = new ArrayList<>();
         public int frozenStartOffset;

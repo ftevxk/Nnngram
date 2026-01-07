@@ -447,6 +447,38 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             
             optionsItem.addColoredGap();
         }
+        
+        //wd 添加视频最小时长设置选项，在所有类型下都显示
+        ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
+            93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), true);
+        videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
+        videoMinDurationItem.setOnClickListener(e -> {
+            //wd 弹出对话框设置视频最小时长
+            final EditText editText = new EditTextBoldCursor(getContext());
+            editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
+            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+            editText.setHint(LocaleController.getString(R.string.Second));
+            editText.setSingleLine(true);
+            editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+            editText.setPadding(dp(16), dp(8), dp(16), dp(8));
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
+            builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
+            builder.setView(editText);
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                String text = editText.getText().toString();
+                int duration;
+                try {
+                    duration = Integer.parseInt(text);
+                } catch (NumberFormatException ex) {
+                    duration = 0;
+                }
+                Config.setSearchVideoMinDuration(duration);
+                videoMinDurationItem.setChecked(duration > 0);
+                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+            });
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            builder.show();
+        });
         showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
         showPhotosItem.setChecked(filterPhotos);
         showPhotosItem.setOnClickListener(e -> {
