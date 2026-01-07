@@ -20250,7 +20250,22 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
-        if (id == NotificationCenter.messagesDidLoad) {
+        if (id == NotificationCenter.mediaCountsDidLoad) {
+            //wd 媒体数据加载完成，检查是否需要直接打开媒体页面
+            if (needOpenMediaDirectly) {
+                Log.d("wd", "ChatActivity.didReceivedNotification: 媒体数据加载完成，执行直接打开媒体对话，dialog_id=" + dialog_id);
+                Bundle args = new Bundle();
+                args.putInt("type", MediaActivity.TYPE_MEDIA);
+                args.putLong("dialog_id", dialog_id);
+                args.putLong("topic_id", getTopicId());
+                MediaActivity mediaActivity = new MediaActivity(args, null);
+                if (chatInfo != null) {
+                    mediaActivity.setChatInfo(chatInfo);
+                }
+                presentFragment(mediaActivity);
+                needOpenMediaDirectly = false;
+            }
+        } else if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid != classGuid) {
                 return;
