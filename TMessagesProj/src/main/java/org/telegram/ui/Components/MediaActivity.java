@@ -330,7 +330,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             optionsItem.setVisibility(View.VISIBLE);
             optionsItem.setAlpha(1f);
             menu.addView(optionsItem);
-            
+
             if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
                 zoomInItem = optionsItem.addSubItem(8, R.drawable.msg_zoomin, LocaleController.getString(R.string.MediaZoomIn));
                 zoomInItem.setOnClickListener(v -> {
@@ -363,7 +363,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 calendarItem = optionsItem.addSubItem(10, R.drawable.msg_calendar2, LocaleController.getString(R.string.Calendar));
                 calendarItem.setEnabled(false);
                 calendarItem.setAlpha(.5f);
-                
+
                 //wd 添加直接打开媒体对话设置选项
                 ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(
                     92, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
@@ -379,7 +379,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                     StringBuilder newConfig = new StringBuilder();
                     boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialogId + ",");
                     Log.d("wd", "MediaActivity: wasEnabled=" + wasEnabled);
-                    
+
                     if (wasEnabled) {
                         //wd 移除当前对话ID
                         Log.d("wd", "MediaActivity: 移除对话ID=" + dialogId);
@@ -404,75 +404,75 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                             newConfig.append(currentConfig).append(",").append(dialogId);
                         }
                     }
-                    
+
                     //wd 保存更新后的配置
                     String finalConfig = newConfig.toString();
                     Log.d("wd", "MediaActivity: 保存配置，finalConfig=" + finalConfig);
                     ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
                     //wd 更新菜单项状态
                     openMediaDirectlyItem.setChecked(!wasEnabled);
-            });
-            
-            optionsItem.addColoredGap();
-        }
-        
-        showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
-        showPhotosItem.setChecked(filterPhotos);
-        showPhotosItem.setOnClickListener(e -> {
-            if (filterPhotos && !filterVideos) {
-                BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
-                return;
+                });
+
+                optionsItem.addColoredGap();
             }
-            showPhotosItem.setChecked(filterPhotos = !filterPhotos);
-            sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-        });
-        showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
-        showVideosItem.setChecked(filterVideos);
-        showVideosItem.setOnClickListener(e -> {
-            if (filterVideos && !filterPhotos) {
-                BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
-                return;
-            }
-            showVideosItem.setChecked(filterVideos = !filterVideos);
-            sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-        });
-        
-        //wd 添加视频最小时长设置选项，在所有类型下都显示
-        ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
-            93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), true);
-        videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
-        videoMinDurationItem.setOnClickListener(e -> {
-            //wd 弹出对话框设置视频最小时长
-            final EditText editText = new EditTextBoldCursor(getContext());
-            editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
-            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
-            editText.setHint(LocaleController.getString(R.string.Second));
-            editText.setSingleLine(true);
-            editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-            editText.setPadding(dp(16), dp(8), dp(16), dp(8));
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
-            builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
-            builder.setView(editText);
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
-                String text = editText.getText().toString();
-                int duration;
-                try {
-                    duration = Integer.parseInt(text);
-                } catch (NumberFormatException ex) {
-                    duration = 0;
+
+            showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
+            showPhotosItem.setChecked(filterPhotos);
+            showPhotosItem.setOnClickListener(e -> {
+                if (filterPhotos && !filterVideos) {
+                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                    AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
+                    return;
                 }
-                Config.setSearchVideoMinDuration(duration);
-                videoMinDurationItem.setChecked(duration > 0);
+                showPhotosItem.setChecked(filterPhotos = !filterPhotos);
                 sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
             });
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            builder.show();
-        });
-        
-        optionsItem.addColoredGap();
-        
+            showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
+            showVideosItem.setChecked(filterVideos);
+            showVideosItem.setOnClickListener(e -> {
+                if (filterVideos && !filterPhotos) {
+                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                    AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
+                    return;
+                }
+                showVideosItem.setChecked(filterVideos = !filterVideos);
+                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+            });
+
+            //wd 添加视频最小时长设置选项，在所有类型下都显示
+            ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
+                93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), true);
+            videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
+            videoMinDurationItem.setOnClickListener(e -> {
+                //wd 弹出对话框设置视频最小时长
+                final EditText editText = new EditTextBoldCursor(getContext());
+                editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
+                editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+                editText.setHint(LocaleController.getString(R.string.Second));
+                editText.setSingleLine(true);
+                editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+                editText.setPadding(dp(16), dp(8), dp(16), dp(8));
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
+                builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
+                builder.setView(editText);
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                    String text = editText.getText().toString();
+                    int duration;
+                    try {
+                        duration = Integer.parseInt(text);
+                    } catch (NumberFormatException ex) {
+                        duration = 0;
+                    }
+                    Config.setSearchVideoMinDuration(duration);
+                    videoMinDurationItem.setChecked(duration > 0);
+                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+                });
+                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                builder.show();
+            });
+
+            optionsItem.addColoredGap();
+        }
         //wd 初始化时就设置过滤条件，确保默认不显示图片
         sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
 
