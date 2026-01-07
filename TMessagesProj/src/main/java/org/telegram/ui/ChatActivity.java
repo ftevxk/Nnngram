@@ -29634,21 +29634,6 @@ public class ChatActivity extends BaseFragment implements
 
         checkActionBarMenu(false);
         
-        //wd 处理直接打开媒体对话
-        if (needOpenMediaDirectly) {
-            Log.d("wd", "ChatActivity.onResume: 执行直接打开媒体对话，dialog_id=" + dialog_id);
-            Bundle args = new Bundle();
-            args.putInt("type", MediaActivity.TYPE_MEDIA);
-            args.putLong("dialog_id", dialog_id);
-            args.putLong("topic_id", getTopicId());
-            MediaActivity mediaActivity = new MediaActivity(args, null);
-            if (chatInfo != null) {
-                mediaActivity.setChatInfo(chatInfo);
-            }
-            presentFragment(mediaActivity);
-            needOpenMediaDirectly = false;
-        }
-        
         if (replyImageLocation != null && replyImageView != null) {
             replyImageView.setImage(ImageLocation.getForObject(replyImageLocation, replyImageLocationObject), "50_50", ImageLocation.getForObject(replyImageThumbLocation, replyImageLocationObject), "50_50_b", null, replyImageSize, replyImageCacheType, replyingMessageObject);
         }
