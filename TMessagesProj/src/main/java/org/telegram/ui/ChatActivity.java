@@ -3102,6 +3102,8 @@ public class ChatActivity extends BaseFragment implements
         if (isEnabled && dialog_id != 0) {
             Log.d("wd", "ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
             needOpenMediaDirectly = true;
+            //wd 主动触发媒体数据加载，确保能收到mediaCountsDidLoad通知
+            getMediaDataController().loadMediaCounts(dialog_id, getTopicId());
         }
 
         if (forceHistoryEmpty) {
@@ -20252,8 +20254,9 @@ public class ChatActivity extends BaseFragment implements
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.mediaCountsDidLoad) {
             //wd 媒体数据加载完成，检查是否需要直接打开媒体页面
+            Log.d("wd", "ChatActivity.didReceivedNotification: 收到mediaCountsDidLoad通知，dialog_id=" + dialog_id + ", needOpenMediaDirectly=" + needOpenMediaDirectly);
             if (needOpenMediaDirectly) {
-                Log.d("wd", "ChatActivity.didReceivedNotification: 媒体数据加载完成，执行直接打开媒体对话，dialog_id=" + dialog_id);
+                Log.d("wd", "ChatActivity.didReceivedNotification: 执行直接打开媒体对话，dialog_id=" + dialog_id);
                 Bundle bundle = new Bundle();
                 bundle.putInt("type", MediaActivity.TYPE_MEDIA);
                 bundle.putLong("dialog_id", dialog_id);
