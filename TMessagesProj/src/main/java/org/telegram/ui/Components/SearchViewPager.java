@@ -1418,7 +1418,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     }
 
     public void showDownloads() {
-        setPosition((expandedPublicPosts ? 1 : 0) + 5);
+        setPosition((expandedPublicPosts ? 1 : 0) + 4);
     }
 
     public int getPositionForType(int initialSearchType) {
