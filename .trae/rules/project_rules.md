@@ -1,5 +1,5 @@
 // 1. 注释统一用中文 //wd 风格，保持简洁
-// 2. 新增字符串统一写入 strings_nullgram.xml
+// 2. 新增字符串统一写入 strings_nullgram.xml，英文和中文是必须的
 // 3. 普通日志：android.util.Log.d("wd", "msg")，禁止拼写错误
 // 4. 错误日志：android.util.Log.e("wd", "带堆栈信息的错误描述")
 // 5. 开发环境：Win + WSL；adb 已映射，直连真机
