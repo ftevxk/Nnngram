@@ -20254,11 +20254,11 @@ public class ChatActivity extends BaseFragment implements
             //wd 媒体数据加载完成，检查是否需要直接打开媒体页面
             if (needOpenMediaDirectly) {
                 Log.d("wd", "ChatActivity.didReceivedNotification: 媒体数据加载完成，执行直接打开媒体对话，dialog_id=" + dialog_id);
-                Bundle args = new Bundle();
-                args.putInt("type", MediaActivity.TYPE_MEDIA);
-                args.putLong("dialog_id", dialog_id);
-                args.putLong("topic_id", getTopicId());
-                MediaActivity mediaActivity = new MediaActivity(args, null);
+                Bundle bundle = new Bundle();
+                bundle.putInt("type", MediaActivity.TYPE_MEDIA);
+                bundle.putLong("dialog_id", dialog_id);
+                bundle.putLong("topic_id", getTopicId());
+                MediaActivity mediaActivity = new MediaActivity(bundle, null);
                 if (chatInfo != null) {
                     mediaActivity.setChatInfo(chatInfo);
                 }
