@@ -24,6 +24,8 @@ import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.OutputSerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MessageCustomParamsHelper {
 
@@ -42,7 +44,8 @@ public class MessageCustomParamsHelper {
             message.translatedPoll == null &&
             message.translatedText == null &&
             message.errorAllowedPriceStars == 0 &&
-            message.errorNewPriceStars == 0
+            message.errorNewPriceStars == 0 &&
+            message.params == null
         );
     }
 
@@ -116,12 +119,14 @@ public class MessageCustomParamsHelper {
             flags |= message.errorNewPriceStars != 0 ? 128 : 0;
 
             flags |= message.translatedVoiceTranscription != null ? 256 : 0;
+            flags |= message.params != null ? 512 : 0;
         }
 
         @Override
         public void serializeToStream(OutputSerializedData stream) {
             stream.writeInt32(VERSION);
             flags = message.voiceTranscriptionForce ? (flags | 2) : (flags &~ 2);
+            flags = message.params != null ? (flags | 512) : (flags &~ 512);
             stream.writeInt32(flags);
             if ((flags & 1) != 0) {
                 stream.writeString(message.voiceTranscription);
@@ -154,6 +159,17 @@ public class MessageCustomParamsHelper {
             }
             if ((flags & 256) != 0) {
                 message.translatedVoiceTranscription.serializeToStream(stream);
+            }
+            if ((flags & 512) != 0) {
+                if (message.params != null) {
+                    stream.writeInt32(message.params.size());
+                    for (Map.Entry<String, String> entry : message.params.entrySet()) {
+                        stream.writeString(entry.getKey());
+                        stream.writeString(entry.getValue());
+                    }
+                } else {
+                    stream.writeInt32(0);
+                }
             }
         }
 
@@ -191,6 +207,19 @@ public class MessageCustomParamsHelper {
             }
             if ((flags & 256) != 0) {
                 message.translatedVoiceTranscription = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if ((flags & 512) != 0) {
+                int size = stream.readInt32(exception);
+                if (size > 0) {
+                    message.params = new HashMap<>(size);
+                    for (int i = 0; i < size; i++) {
+                        String key = stream.readString(exception);
+                        String value = stream.readString(exception);
+                        message.params.put(key, value);
+                    }
+                } else {
+                    message.params = null;
+                }
             }
         }
 
