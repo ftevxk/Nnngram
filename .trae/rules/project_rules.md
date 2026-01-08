@@ -16,16 +16,11 @@
    - 调试日志应在发布前清理或使用条件编译
    - 敏感信息（如用户数据、密钥）禁止写入日志
 
-4. 开发环境配置：
-   - 推荐环境：Win + WSL
+4. 开发环境配置与任务验证流程：
+   - 运行环境：Win + WSL
    - 仅在编译运行时启动 WSL，通过映射的 ADB 运行到真机
-   - 确保 Android SDK 路径正确配置在 local.properties 中
-
-5. 任务完成验证流程：
-   - 必须运行：./gradlew :TMessagesProj:lintDebug 检查代码质量
-   - 修复所有 lint 错误，警告根据情况处理
-   - 电脑配置不足时，禁止直接执行编译运行验证
-   - 仅在明确要求时执行：./gradlew :TMessagesProj:assembleDebug 安装到真机
+   - 编译运行完成后及时关闭 WSL，避免资源占用过多
+   - 编译运行Debug包：./gradlew :TMessagesProj:assembleDebug 安装到真机
    - 代码提交前必须确保本地编译通过
 
 6. 文档查阅规范：
