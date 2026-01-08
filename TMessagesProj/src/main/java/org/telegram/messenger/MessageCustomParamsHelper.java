@@ -64,6 +64,12 @@ public class MessageCustomParamsHelper {
         toMessage.errorAllowedPriceStars = fromMessage.errorAllowedPriceStars;
         toMessage.errorNewPriceStars = fromMessage.errorNewPriceStars;
         toMessage.translatedVoiceTranscription = fromMessage.translatedVoiceTranscription;
+        //wd 复制params以支持锁定状态等自定义参数
+        if (fromMessage.params != null) {
+            toMessage.params = new HashMap<>(fromMessage.params);
+        } else {
+            toMessage.params = null;
+        }
     }
 
 

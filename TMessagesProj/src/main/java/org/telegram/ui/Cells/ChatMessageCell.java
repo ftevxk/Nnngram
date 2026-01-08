@@ -22535,9 +22535,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             Drawable lockIcon = ContextCompat.getDrawable(getContext(), R.drawable.msg_filled_lockedrecord);
             if (lockIcon != null) {
                 float lockX, lockY;
+                //wd 根据文字大小调整锁定图标大小
+                float iconSize = Theme.chat_timePaint.getTextSize() * 0.6f;
                 if (shouldDrawTimeOnMedia()) {
-                    lockX = timeX - dp(16);
-                    lockY = getPhotoBottom() + additionalTimeOffsetY - dp(9);
+                    lockX = timeX - iconSize - dp(2);
+                    lockY = getPhotoBottom() + additionalTimeOffsetY - iconSize / 2 - dp(2);
                 } else {
                     // 重新计算additionalX值，与时间绘制逻辑保持一致
                     float additionalX = -timeLayout.getLineLeft(0);
@@ -22550,10 +22552,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             additionalX -= reactionsLayoutInBubble.width;
                         }
                     }
-                    lockX = timeTitleTimeX + additionalX - dp(16);
-                    lockY = layoutHeight - dp(pinnedBottom || pinnedTop ? 9.5f : 8.5f) + timeYOffset;
+                    lockX = timeTitleTimeX + additionalX - iconSize - dp(2);
+                    lockY = layoutHeight - dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) + timeYOffset - iconSize / 2;
                 }
-                setDrawableBounds(lockIcon, (int) lockX, (int) lockY - dp(14));
+                setDrawableBounds(lockIcon, (int) lockX, (int) lockY, iconSize, iconSize);
                 lockIcon.setAlpha((int) (255 * alpha));
                 lockIcon.draw(canvas);
                 lockIcon.setAlpha(255);

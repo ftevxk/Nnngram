@@ -26662,19 +26662,24 @@ public class ChatActivity extends BaseFragment implements
             if (!fragmentOpened) {
                 fragmentOpened = true;
                 updateMessagesVisiblePart(false);
-                //wd 检查是否需要直接打开媒体页
+                //wd 检查是否需要直接打开媒体页（使用延迟执行避免阻塞 UI）
                 if (needOpenMediaDirectly && dialog_id != 0) {
                     Log.d("wd", "ChatActivity: 在fragmentOpened后打开媒体页，dialog_id=" + dialog_id);
                     needOpenMediaDirectly = false;
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("type", MediaActivity.TYPE_MEDIA);
-                    bundle.putLong("dialog_id", dialog_id);
-                    bundle.putLong("topic_id", getTopicId());
-                    MediaActivity mediaActivity = new MediaActivity(bundle, null);
-                    if (chatInfo != null) {
-                        mediaActivity.setChatInfo(chatInfo);
-                    }
-                    presentFragment(mediaActivity);
+                    AndroidUtilities.runOnUIThread(() -> {
+                        if (!fragmentOpened || getParentActivity() == null) {
+                            return;
+                        }
+                        Bundle bundle = new Bundle();
+                        bundle.putInt("type", MediaActivity.TYPE_MEDIA);
+                        bundle.putLong("dialog_id", dialog_id);
+                        bundle.putLong("topic_id", getTopicId());
+                        MediaActivity mediaActivity = new MediaActivity(bundle, null);
+                        if (chatInfo != null) {
+                            mediaActivity.setChatInfo(chatInfo);
+                        }
+                        presentFragment(mediaActivity, false);
+                    }, 100);
                 }
             }
             if (transitionAnimationIndex == 0) {
@@ -33914,8 +33919,22 @@ public class ChatActivity extends BaseFragment implements
                 //wd 切换锁定状态
                 if (selectedObject != null) {
                     selectedObject.setLocked(!selectedObject.isLocked);
-                    //wd 保存锁定状态到数据库
+                    //wd 保存锁定状态到数据库（异步保存，但先刷新UI）
                     getMessagesStorage().updateMessageCustomParams(dialog_id, selectedObject.messageOwner);
+                    // 强制更新单元格以确保UI显示正确
+                    if (chatListView != null) {
+                        for (int i = 0; i < chatListView.getChildCount(); i++) {
+                            View child = chatListView.getChildAt(i);
+                            if (child instanceof ChatMessageCell) {
+                                ChatMessageCell cell = (ChatMessageCell) child;
+                                if (cell.getMessageObject() != null && cell.getMessageObject().getId() == selectedObject.getId()) {
+                                    cell.getMessageObject().forceUpdate = true;
+                                    cell.update();
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     // 更新UI显示
                     updateVisibleRows();
                 }

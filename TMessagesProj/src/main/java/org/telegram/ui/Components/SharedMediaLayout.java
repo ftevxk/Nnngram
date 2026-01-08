@@ -2226,8 +2226,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 });
                 options.getLayout().addView(openMediaDirectlyItem);
                 
-                //wd 添加视频最小时长设置选项，在所有类型下都显示
-                ActionBarMenuSubItem videoMinDurationItem = new ActionBarMenuSubItem(context, true, false, true, resourcesProvider);
+                //wd 添加视频最小时长设置选项，在所有类型下都显示（不需要勾选图标）
+                ActionBarMenuSubItem videoMinDurationItem = new ActionBarMenuSubItem(context, false, false, true, resourcesProvider);
                 videoMinDurationItem.setTextAndIcon(getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration), 0);
                 videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
                 videoMinDurationItem.setOnClickListener(v -> {
@@ -3768,6 +3768,17 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
         if (archivedStoriesAdapter != null && archivedStoriesAdapter.storiesList != null) {
             archivedStoriesAdapter.storiesList.updateFilters(photos, videos);
+        }
+        //wd 同步更新媒体过滤（包括最小时长）
+        if (sharedMediaData != null && sharedMediaData[0] != null) {
+            if (photos && videos) {
+                sharedMediaData[0].filterType = FILTER_PHOTOS_AND_VIDEOS;
+            } else if (photos) {
+                sharedMediaData[0].filterType = FILTER_PHOTOS_ONLY;
+            } else {
+                sharedMediaData[0].filterType = FILTER_VIDEOS_ONLY;
+            }
+            changeMediaFilterType();
         }
     }
 
