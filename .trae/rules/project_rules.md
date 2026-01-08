@@ -18,7 +18,7 @@
 
 4. 开发环境配置：
    - 推荐环境：Win + WSL
-   - ADB 已映射，直接连接真机调试
+   - 仅在编译运行时启动 WSL，通过映射的 ADB 运行到真机
    - 确保 Android SDK 路径正确配置在 local.properties 中
 
 5. 任务完成验证流程：
