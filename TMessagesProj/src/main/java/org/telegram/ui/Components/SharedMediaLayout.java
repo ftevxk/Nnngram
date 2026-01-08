@@ -1084,8 +1084,20 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         if (!arr.isEmpty()) {
                             sharedMediaData[type].setEndReached(loadIndex, (Boolean) args[5]);
                         }
+                        long minDuration = Config.getSearchVideoMinDuration();
                         for (int a = 0; a < arr.size(); a++) {
                             MessageObject message = arr.get(a);
+                            if (type == 0) {
+                                if (sharedMediaData[0].filterType == FILTER_PHOTOS_AND_VIDEOS) {
+                                    if (minDuration > 0 && message.isVideo() && !message.isLongVideo(false, minDuration)) {
+                                        continue;
+                                    }
+                                } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                                    if (minDuration > 0 && !message.isLongVideo(false, minDuration)) {
+                                        continue;
+                                    }
+                                }
+                            }
                             sharedMediaData[type].addMessage(message, loadIndex, false, enc);
                         }
                     }

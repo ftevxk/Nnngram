@@ -411,6 +411,8 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                     ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
                     //wd 更新菜单项状态
                     openMediaDirectlyItem.setChecked(!wasEnabled);
+                    //wd 关闭菜单
+                    optionsItem.closeSubMenu();
                 });
 
                 optionsItem.addColoredGap();
