@@ -20251,21 +20251,8 @@ public class ChatActivity extends BaseFragment implements
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.mediaCountsDidLoad) {
-            //wd 媒体数据加载完成，检查是否需要直接打开媒体页面
-            Log.d("wd", "ChatActivity.didReceivedNotification: 收到mediaCountsDidLoad通知，dialog_id=" + dialog_id + ", needOpenMediaDirectly=" + needOpenMediaDirectly);
-            if (needOpenMediaDirectly) {
-                Log.d("wd", "ChatActivity.didReceivedNotification: 执行直接打开媒体对话，dialog_id=" + dialog_id);
-                Bundle bundle = new Bundle();
-                bundle.putInt("type", MediaActivity.TYPE_MEDIA);
-                bundle.putLong("dialog_id", dialog_id);
-                bundle.putLong("topic_id", getTopicId());
-                MediaActivity mediaActivity = new MediaActivity(bundle, null);
-                if (chatInfo != null) {
-                    mediaActivity.setChatInfo(chatInfo);
-                }
-                presentFragment(mediaActivity);
-                needOpenMediaDirectly = false;
-            }
+            //wd 媒体数据加载完成，标记需要直接打开媒体页面（在onTransitionAnimationStart中处理）
+            Log.d("wd", "ChatActivity.didReceivedNotification: 收到mediaCountsDidLoad通知，needOpenMediaDirectly=" + needOpenMediaDirectly);
         } else if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid != classGuid) {
@@ -26667,7 +26654,7 @@ public class ChatActivity extends BaseFragment implements
                     Log.d("wd", "ChatActivity: 在fragmentOpened后打开媒体页，dialog_id=" + dialog_id);
                     needOpenMediaDirectly = false;
                     AndroidUtilities.runOnUIThread(() -> {
-                        if (!fragmentOpened || getParentActivity() == null) {
+                        if (getParentActivity() == null || getParentLayout() == null) {
                             return;
                         }
                         Bundle bundle = new Bundle();
@@ -26678,8 +26665,9 @@ public class ChatActivity extends BaseFragment implements
                         if (chatInfo != null) {
                             mediaActivity.setChatInfo(chatInfo);
                         }
-                        presentFragment(mediaActivity, false);
-                    }, 100);
+                        // 使用无参方法避免阻塞 UI
+                        presentFragment(mediaActivity);
+                    }, 150);
                 }
             }
             if (transitionAnimationIndex == 0) {

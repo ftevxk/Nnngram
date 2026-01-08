@@ -467,8 +467,11 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 }
                 Config.setSearchVideoMinDuration(duration);
                 videoMinDurationItem.setChecked(duration > 0);
+                //wd 最小时长改变时重新加载数据
                 if (sharedMediaLayout != null) {
-                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+                    // 清除现有数据并重新加载以应用最小时长过滤
+                    sharedMediaLayout.clearMediaData();
+                    sharedMediaLayout.changeMediaFilterType();
                 }
             });
             builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);

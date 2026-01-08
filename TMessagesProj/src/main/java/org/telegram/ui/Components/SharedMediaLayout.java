@@ -2252,8 +2252,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         }
                         Config.setSearchVideoMinDuration(duration);
                         videoMinDurationItem.setChecked(duration > 0);
-                        //wd 更新媒体过滤
+                        //wd 最小时长改变时重新加载数据
                         if (!isStories) {
+                            clearMediaData();
                             changeMediaFilterType();
                         } else {
                             StoriesAdapter adapter = storyAlbums_getStoriesAdapterByTabType(tab);
@@ -3769,8 +3770,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         if (archivedStoriesAdapter != null && archivedStoriesAdapter.storiesList != null) {
             archivedStoriesAdapter.storiesList.updateFilters(photos, videos);
         }
-        //wd 同步更新媒体过滤（包括最小时长）
+        //wd 只更新过滤类型，不调用changeMediaFilterType（最小时长在加载时过滤）
         if (sharedMediaData != null && sharedMediaData[0] != null) {
+            int oldFilterType = sharedMediaData[0].filterType;
             if (photos && videos) {
                 sharedMediaData[0].filterType = FILTER_PHOTOS_AND_VIDEOS;
             } else if (photos) {
@@ -3778,7 +3780,49 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             } else {
                 sharedMediaData[0].filterType = FILTER_VIDEOS_ONLY;
             }
-            changeMediaFilterType();
+            // 只有在过滤类型改变时才重新加载
+            if (oldFilterType != sharedMediaData[0].filterType) {
+                reloadMediaData();
+            }
+        }
+    }
+    
+    //wd 重新加载媒体数据（包含最小时长过滤）
+    private void reloadMediaData() {
+        // 清除现有数据并重新加载
+        if (sharedMediaData != null && sharedMediaData[0] != null) {
+            sharedMediaData[0].messages.clear();
+            sharedMediaData[0].messagesDict[0].clear();
+            sharedMediaData[0].messagesDict[1].clear();
+            sharedMediaData[0].sections.clear();
+            sharedMediaData[0].sectionArrays.clear();
+            sharedMediaData[0].endReached[0] = false;
+            sharedMediaData[0].endReached[1] = true;
+            sharedMediaData[0].fastScrollDataLoaded = false;
+        }
+        // 重新加载数据
+        if (sharedMediaPreloader != null && sharedMediaPreloader.parentFragment != null) {
+            int type = MediaDataController.MEDIA_PHOTOVIDEO;
+            if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY) {
+                type = MediaDataController.MEDIA_PHOTOS_ONLY;
+            } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                type = MediaDataController.MEDIA_VIDEOS_ONLY;
+            }
+            sharedMediaPreloader.parentFragment.getMediaDataController().loadMedia(sharedMediaPreloader.dialogId, 50, 0, 0, type, sharedMediaPreloader.topicId, 1, sharedMediaPreloader.parentFragment.getClassGuid(), sharedMediaData[0].requestIndex, null, null);
+        }
+    }
+
+    //wd 清除媒体数据以重新加载
+    public void clearMediaData() {
+        if (sharedMediaData != null && sharedMediaData[0] != null) {
+            sharedMediaData[0].messages.clear();
+            sharedMediaData[0].messagesDict[0].clear();
+            sharedMediaData[0].messagesDict[1].clear();
+            sharedMediaData[0].sections.clear();
+            sharedMediaData[0].sectionArrays.clear();
+            sharedMediaData[0].endReached[0] = false;
+            sharedMediaData[0].endReached[1] = true;
+            sharedMediaData[0].fastScrollDataLoaded = false;
         }
     }
 
@@ -3849,7 +3893,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     private boolean changeTypeAnimation;
 
-    private void changeMediaFilterType() {
+    public void changeMediaFilterType() {
         MediaPage mediaPage = getMediaPage(0);
         if (mediaPage != null && mediaPage.getMeasuredHeight() > 0 && mediaPage.getMeasuredWidth() > 0) {
             Bitmap bitmap = null;
