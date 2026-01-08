@@ -33929,7 +33929,6 @@ public class ChatActivity extends BaseFragment implements
                                 ChatMessageCell cell = (ChatMessageCell) child;
                                 if (cell.getMessageObject() != null && cell.getMessageObject().getId() == selectedObject.getId()) {
                                     cell.getMessageObject().forceUpdate = true;
-                                    cell.update();
                                     break;
                                 }
                             }

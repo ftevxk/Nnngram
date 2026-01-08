@@ -16,11 +16,12 @@
    - 调试日志应在发布前清理或使用条件编译
    - 敏感信息（如用户数据、密钥）禁止写入日志
 
-4. 开发环境配置与任务验证流程：
-   - 运行环境：Win + WSL
+4. 编译运行：
+   - 项目需要通过WSL的gradlew脚本编译运行
    - 仅在编译运行时启动 WSL，通过映射的 ADB 运行到真机
    - 编译运行完成后及时关闭 WSL，避免资源占用过多
-   - 编译运行Debug包：./gradlew :TMessagesProj:assembleDebug 安装到真机
+   - 编译运行Debug包：./gradlew :TMessagesProj:assembleDebug
+   - 安装Debug包到真机：./gradlew :TMessagesProj:installDebug
    - 代码提交前必须确保本地编译通过
 
 6. 文档查阅规范：

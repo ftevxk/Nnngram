@@ -22555,7 +22555,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     lockX = timeTitleTimeX + additionalX - iconSize - dp(2);
                     lockY = layoutHeight - dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) + timeYOffset - iconSize / 2;
                 }
-                setDrawableBounds(lockIcon, (int) lockX, (int) lockY, iconSize, iconSize);
+                setDrawableBounds(lockIcon, (int) lockX, (int) lockY, (int) iconSize, (int) iconSize);
                 lockIcon.setAlpha((int) (255 * alpha));
                 lockIcon.draw(canvas);
                 lockIcon.setAlpha(255);
