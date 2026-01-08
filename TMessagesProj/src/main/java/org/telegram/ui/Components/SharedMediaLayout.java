@@ -3789,27 +3789,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     
     //wd 重新加载媒体数据（包含最小时长过滤）
     private void reloadMediaData() {
-        // 清除现有数据并重新加载
-        if (sharedMediaData != null && sharedMediaData[0] != null) {
-            sharedMediaData[0].messages.clear();
-            sharedMediaData[0].messagesDict[0].clear();
-            sharedMediaData[0].messagesDict[1].clear();
-            sharedMediaData[0].sections.clear();
-            sharedMediaData[0].sectionArrays.clear();
-            sharedMediaData[0].endReached[0] = false;
-            sharedMediaData[0].endReached[1] = true;
-            sharedMediaData[0].fastScrollDataLoaded = false;
-        }
-        // 重新加载数据
-        if (sharedMediaPreloader != null && sharedMediaPreloader.parentFragment != null) {
-            int type = MediaDataController.MEDIA_PHOTOVIDEO;
-            if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY) {
-                type = MediaDataController.MEDIA_PHOTOS_ONLY;
-            } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
-                type = MediaDataController.MEDIA_VIDEOS_ONLY;
-            }
-            sharedMediaPreloader.parentFragment.getMediaDataController().loadMedia(sharedMediaPreloader.dialogId, 50, 0, 0, type, sharedMediaPreloader.topicId, 1, sharedMediaPreloader.parentFragment.getClassGuid(), sharedMediaData[0].requestIndex, null, null);
-        }
+        changeMediaFilterType();
     }
 
     //wd 清除媒体数据以重新加载
@@ -3924,6 +3904,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 mediaPage.listView.animate().alpha(1f).setDuration(200).start();
             }
         }
+
+        //wd 清除现有数据以避免重复添加
+        sharedMediaData[0].messages.clear();
+        sharedMediaData[0].messagesDict[0].clear();
+        sharedMediaData[0].messagesDict[1].clear();
+        sharedMediaData[0].sections.clear();
+        sharedMediaData[0].sectionArrays.clear();
 
         int[] counts = sharedMediaPreloader.getLastMediaCount();
         ArrayList<MessageObject> messages = sharedMediaPreloader.getSharedMediaData()[0].messages;

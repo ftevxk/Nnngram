@@ -414,38 +414,38 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 });
 
                 optionsItem.addColoredGap();
+
+                showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
+                showPhotosItem.setChecked(filterPhotos);
+                showPhotosItem.setOnClickListener(e -> {
+                    if (filterPhotos && !filterVideos) {
+                        BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                        AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
+                        return;
+                    }
+                    showPhotosItem.setChecked(filterPhotos = !filterPhotos);
+                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+                });
+                showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
+                showVideosItem.setChecked(filterVideos);
+                showVideosItem.setOnClickListener(e -> {
+                    if (filterVideos && !filterPhotos) {
+                        BotWebViewVibrationEffect.APP_ERROR.vibrate();
+                        AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
+                        return;
+                    }
+                    showVideosItem.setChecked(filterVideos = !filterVideos);
+                    sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
+                });
+
+                optionsItem.addColoredGap();
             }
-
-            showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
-            showPhotosItem.setChecked(filterPhotos);
-            showPhotosItem.setOnClickListener(e -> {
-                if (filterPhotos && !filterVideos) {
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    AndroidUtilities.shakeViewSpring(showPhotosItem, shiftDp = -shiftDp);
-                    return;
-                }
-                showPhotosItem.setChecked(filterPhotos = !filterPhotos);
-                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-            });
-            showVideosItem = optionsItem.addSubItem(7, 0, LocaleController.getString(R.string.MediaShowVideos), true);
-            showVideosItem.setChecked(filterVideos);
-            showVideosItem.setOnClickListener(e -> {
-                if (filterVideos && !filterPhotos) {
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    AndroidUtilities.shakeViewSpring(showVideosItem, shiftDp = -shiftDp);
-                    return;
-                }
-                showVideosItem.setChecked(filterVideos = !filterVideos);
-                sharedMediaLayout.setStoriesFilter(filterPhotos, filterVideos);
-            });
-
-            optionsItem.addColoredGap();
         }
-        
-        //wd 添加视频最小时长设置选项，在所有类型下都显示
-        ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
-            93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), false);
-        videoMinDurationItem.setOnClickListener(e -> {
+
+            //wd 添加视频最小时长设置选项，在所有类型下都显示
+            ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
+                93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), true);
+            videoMinDurationItem.setOnClickListener(e -> {
             //wd 弹出对话框设置视频最小时长
             final EditText editText = new EditTextBoldCursor(getContext());
             editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
