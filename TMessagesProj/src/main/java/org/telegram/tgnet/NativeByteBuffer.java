@@ -5,6 +5,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.Utilities;
 
 import java.nio.ByteBuffer;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
 
@@ -398,6 +399,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public byte readByte(boolean exception) {
         try {
+            if (buffer.remaining() < 1) {
+                throw new BufferUnderflowException();
+            }
             return buffer.get();
         } catch (Exception e) {
             if (exception) {
@@ -414,6 +418,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public int readInt32(boolean exception) {
         try {
+            if (buffer.remaining() < 4) {
+                throw new BufferUnderflowException();
+            }
             return buffer.getInt();
         } catch (Exception e) {
             if (exception) {
@@ -430,6 +437,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public float readFloat(boolean exception) {
         try {
+            if (buffer.remaining() < 4) {
+                throw new BufferUnderflowException();
+            }
             return Float.intBitsToFloat(buffer.getInt());
         } catch (Exception e) {
             if (exception) {
@@ -463,6 +473,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public long readInt64(boolean exception) {
         try {
+            if (buffer.remaining() < 8) {
+                throw new BufferUnderflowException();
+            }
             return buffer.getLong();
         } catch (Exception e) {
             if (exception) {
@@ -479,6 +492,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public void readBytes(byte[] b, boolean exception) {
         try {
+            if (buffer.remaining() < b.length) {
+                throw new BufferUnderflowException();
+            }
             buffer.get(b);
         } catch (Exception e) {
             if (exception) {
@@ -494,6 +510,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public void readBytes(byte[] b, int offset, int count, boolean exception) {
         try {
+            if (buffer.remaining() < count) {
+                throw new BufferUnderflowException();
+            }
             buffer.get(b, offset, count);
         } catch (Exception e) {
             if (exception) {
@@ -526,16 +545,28 @@ public class NativeByteBuffer extends AbstractSerializedData {
     public String readString(boolean exception) {
         int startReadPosition = getPosition();
         try {
+            if (buffer.remaining() < 1) {
+                throw new BufferUnderflowException();
+            }
             int sl = 1;
             int l = getIntFromByte(buffer.get());
             if (l >= 254) {
+                if (buffer.remaining() < 3) {
+                    throw new BufferUnderflowException();
+                }
                 l = getIntFromByte(buffer.get()) | (getIntFromByte(buffer.get()) << 8) | (getIntFromByte(buffer.get()) << 16);
                 sl = 4;
+            }
+            if (buffer.remaining() < l) {
+                throw new BufferUnderflowException();
             }
             byte[] b = new byte[l];
             buffer.get(b);
             int i = sl;
             while ((l + i) % 4 != 0) {
+                if (buffer.remaining() < 1) {
+                    throw new BufferUnderflowException();
+                }
                 buffer.get();
                 i++;
             }
@@ -556,16 +587,28 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public byte[] readByteArray(boolean exception) {
         try {
+            if (buffer.remaining() < 1) {
+                throw new BufferUnderflowException();
+            }
             int sl = 1;
             int l = getIntFromByte(buffer.get());
             if (l >= 254) {
+                if (buffer.remaining() < 3) {
+                    throw new BufferUnderflowException();
+                }
                 l = getIntFromByte(buffer.get()) | (getIntFromByte(buffer.get()) << 8) | (getIntFromByte(buffer.get()) << 16);
                 sl = 4;
+            }
+            if (buffer.remaining() < l) {
+                throw new BufferUnderflowException();
             }
             byte[] b = new byte[l];
             buffer.get(b);
             int i = sl;
             while ((l + i) % 4 != 0) {
+                if (buffer.remaining() < 1) {
+                    throw new BufferUnderflowException();
+                }
                 buffer.get();
                 i++;
             }
@@ -585,11 +628,20 @@ public class NativeByteBuffer extends AbstractSerializedData {
 
     public NativeByteBuffer readByteBuffer(boolean exception) {
         try {
+            if (buffer.remaining() < 1) {
+                throw new BufferUnderflowException();
+            }
             int sl = 1;
             int l = getIntFromByte(buffer.get());
             if (l >= 254) {
+                if (buffer.remaining() < 3) {
+                    throw new BufferUnderflowException();
+                }
                 l = getIntFromByte(buffer.get()) | (getIntFromByte(buffer.get()) << 8) | (getIntFromByte(buffer.get()) << 16);
                 sl = 4;
+            }
+            if (buffer.remaining() < l) {
+                throw new BufferUnderflowException();
             }
             NativeByteBuffer b = new NativeByteBuffer(l);
             int old = buffer.limit();
@@ -599,6 +651,9 @@ public class NativeByteBuffer extends AbstractSerializedData {
             b.buffer.position(0);
             int i = sl;
             while ((l + i) % 4 != 0) {
+                if (buffer.remaining() < 1) {
+                    throw new BufferUnderflowException();
+                }
                 buffer.get();
                 i++;
             }
