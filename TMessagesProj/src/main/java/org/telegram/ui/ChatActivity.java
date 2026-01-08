@@ -3100,19 +3100,8 @@ public class ChatActivity extends BaseFragment implements
         boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
         Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
         if (isEnabled && dialog_id != 0) {
-            Log.d("wd", "ChatActivity: 直接打开媒体对话，dialog_id=" + dialog_id);
-            //wd 直接在UI线程打开媒体页，避免依赖通知和异步加载
-            AndroidUtilities.runOnUIThread(() -> {
-                Bundle bundle = new Bundle();
-                bundle.putInt("type", MediaActivity.TYPE_MEDIA);
-                bundle.putLong("dialog_id", dialog_id);
-                bundle.putLong("topic_id", getTopicId());
-                MediaActivity mediaActivity = new MediaActivity(bundle, null);
-                if (chatInfo != null) {
-                    mediaActivity.setChatInfo(chatInfo);
-                }
-                presentFragment(mediaActivity);
-            });
+            Log.d("wd", "ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
+            needOpenMediaDirectly = true;
         }
 
         if (forceHistoryEmpty) {
@@ -26673,6 +26662,20 @@ public class ChatActivity extends BaseFragment implements
             if (!fragmentOpened) {
                 fragmentOpened = true;
                 updateMessagesVisiblePart(false);
+                //wd 检查是否需要直接打开媒体页
+                if (needOpenMediaDirectly && dialog_id != 0) {
+                    Log.d("wd", "ChatActivity: 在fragmentOpened后打开媒体页，dialog_id=" + dialog_id);
+                    needOpenMediaDirectly = false;
+                    Bundle bundle = new Bundle();
+                    bundle.putInt("type", MediaActivity.TYPE_MEDIA);
+                    bundle.putLong("dialog_id", dialog_id);
+                    bundle.putLong("topic_id", getTopicId());
+                    MediaActivity mediaActivity = new MediaActivity(bundle, null);
+                    if (chatInfo != null) {
+                        mediaActivity.setChatInfo(chatInfo);
+                    }
+                    presentFragment(mediaActivity);
+                }
             }
             if (transitionAnimationIndex == 0) {
                 alowedNotifications = new int[]{
@@ -33911,6 +33914,8 @@ public class ChatActivity extends BaseFragment implements
                 //wd 切换锁定状态
                 if (selectedObject != null) {
                     selectedObject.setLocked(!selectedObject.isLocked);
+                    //wd 保存锁定状态到数据库
+                    getMessagesStorage().updateMessageCustomParams(dialog_id, selectedObject.messageOwner);
                     // 更新UI显示
                     updateVisibleRows();
                 }

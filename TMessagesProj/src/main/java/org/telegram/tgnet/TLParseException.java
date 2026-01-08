@@ -11,6 +11,10 @@ public class TLParseException extends RuntimeException {
     }
 
     public static void doThrowOrLog(InputSerializedData stream, String tlTypeName, int constructorId, boolean throwEnabled) {
+        //wd 忽略magic 0的解析错误，避免弹窗干扰
+        if (constructorId == 0) {
+            return;
+        }
         final TLDataSourceType dataSourceType = stream != null ? stream.getDataSourceType() : null;
         final String message = String.format("can't parse magic %x in %s. Source: %s", constructorId, tlTypeName, dataSourceType);
         final TLParseException tlParseException = new TLParseException(message);

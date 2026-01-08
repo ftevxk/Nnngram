@@ -3884,9 +3884,14 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         loadFastScrollData(false);
         delegate.updateSelectedMediaTabText();
         boolean enc = DialogObject.isEncryptedDialog(dialog_id);
+        long minDuration = Config.getSearchVideoMinDuration();
         for (int i = 0; i < messages.size(); i++) {
             MessageObject messageObject = messages.get(i);
             if (sharedMediaData[0].filterType == FILTER_PHOTOS_AND_VIDEOS) {
+                //wd 检查视频最小时长
+                if (minDuration > 0 && messageObject.isVideo() && !messageObject.isLongVideo(false, minDuration)) {
+                    continue;
+                }
                 sharedMediaData[0].addMessage(messageObject, 0, false, enc);
             } else if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY) {
                 if (messageObject.isPhoto()) {
@@ -3894,6 +3899,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 }
             } else {
                 if (!messageObject.isPhoto()) {
+                    //wd 检查视频最小时长
+                    if (minDuration > 0 && messageObject.isVideo() && !messageObject.isLongVideo(false, minDuration)) {
+                        continue;
+                    }
                     sharedMediaData[0].addMessage(messageObject, 0, false, enc);
                 }
             }

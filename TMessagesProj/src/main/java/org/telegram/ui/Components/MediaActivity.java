@@ -444,8 +444,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         
         //wd 添加视频最小时长设置选项，在所有类型下都显示
         ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
-            93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), true);
-        videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
+            93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), false);
         videoMinDurationItem.setOnClickListener(e -> {
             //wd 弹出对话框设置视频最小时长
             final EditText editText = new EditTextBoldCursor(getContext());
