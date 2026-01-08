@@ -1842,8 +1842,8 @@ public class MessageObject {
         localEdit = edit;
         
         //wd 从params加载锁定状态
-        if (message.params != null) {
-            String lockParam = message.params.get("wd_lock");
+        if (messageOwner.params != null) {
+            String lockParam = messageOwner.params.get("wd_lock");
             this.isLocked = lockParam != null && lockParam.equals("1");
         }
     }

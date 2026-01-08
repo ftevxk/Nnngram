@@ -3100,10 +3100,19 @@ public class ChatActivity extends BaseFragment implements
         boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
         Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
         if (isEnabled && dialog_id != 0) {
-            Log.d("wd", "ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
-            needOpenMediaDirectly = true;
-            //wd 主动触发媒体数据加载，确保能收到mediaCountsDidLoad通知
-            getMediaDataController().getMediaCounts(dialog_id, getTopicId(), classGuid);
+            Log.d("wd", "ChatActivity: 直接打开媒体对话，dialog_id=" + dialog_id);
+            //wd 直接在UI线程打开媒体页，避免依赖通知和异步加载
+            AndroidUtilities.runOnUIThread(() -> {
+                Bundle bundle = new Bundle();
+                bundle.putInt("type", MediaActivity.TYPE_MEDIA);
+                bundle.putLong("dialog_id", dialog_id);
+                bundle.putLong("topic_id", getTopicId());
+                MediaActivity mediaActivity = new MediaActivity(bundle, null);
+                if (chatInfo != null) {
+                    mediaActivity.setChatInfo(chatInfo);
+                }
+                presentFragment(mediaActivity);
+            });
         }
 
         if (forceHistoryEmpty) {

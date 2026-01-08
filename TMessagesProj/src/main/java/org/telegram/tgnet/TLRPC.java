@@ -47618,6 +47618,9 @@ public class TLRPC {
                 case 0xa3d1cb80:
                     result = new TL_reactionCount();
                     break;
+                case 0:
+                    //wd 处理magic 0的情况，返回null而不是抛出异常
+                    return null;
             }
             return TLdeserialize(ReactionCount.class, result, stream, constructor, exception);
         }

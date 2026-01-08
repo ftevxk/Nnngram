@@ -61,6 +61,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.view.inputmethod.EditorInfo;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -2224,6 +2225,47 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     openMediaDirectlyItem.setChecked(!wasEnabled);
                 });
                 options.getLayout().addView(openMediaDirectlyItem);
+                
+                //wd 添加视频最小时长设置选项，在所有类型下都显示
+                ActionBarMenuSubItem videoMinDurationItem = new ActionBarMenuSubItem(context, true, false, true, resourcesProvider);
+                videoMinDurationItem.setTextAndIcon(getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration), 0);
+                videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
+                videoMinDurationItem.setOnClickListener(v -> {
+                    //wd 弹出对话框设置视频最小时长
+                    final EditText editText = new EditTextBoldCursor(context);
+                    editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
+                    editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+                    editText.setHint(getString("Second", R.string.Second));
+                    editText.setSingleLine(true);
+                    editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+                    editText.setPadding(dp(16), dp(8), dp(16), dp(8));
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
+                    builder.setTitle(getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration));
+                    builder.setView(editText);
+                    builder.setPositiveButton(getString("OK", R.string.OK), (dialog, which) -> {
+                        String text = editText.getText().toString();
+                        int duration;
+                        try {
+                            duration = Integer.parseInt(text);
+                        } catch (NumberFormatException ex) {
+                            duration = 0;
+                        }
+                        Config.setSearchVideoMinDuration(duration);
+                        videoMinDurationItem.setChecked(duration > 0);
+                        //wd 更新媒体过滤
+                        if (!isStories) {
+                            changeMediaFilterType();
+                        } else {
+                            StoriesAdapter adapter = storyAlbums_getStoriesAdapterByTabType(tab);
+                            if (adapter != null && adapter.storiesList != null) {
+                                adapter.storiesList.updateFilters(adapter.storiesList.showPhotos(), adapter.storiesList.showVideos());
+                            }
+                        }
+                    });
+                    builder.setNegativeButton(getString("Cancel", R.string.Cancel), null);
+                    builder.show();
+                });
+                options.getLayout().addView(videoMinDurationItem);
                 
                 options
                     .setDismissWithButtons(false)
