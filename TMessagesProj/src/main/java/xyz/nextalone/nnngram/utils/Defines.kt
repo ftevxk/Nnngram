@@ -87,7 +87,7 @@ object Defines {
     @IntConfig(512) const val modifyDownloadSpeed = "modifyDownloadSpeed"
     @BooleanConfig const val disablePreviewVideoSoundShortcut = "disablePreviewVideoSoundShortcut"
     @BooleanConfig const val quickToggleAnonymous = "quickToggleAnonymous"
-    @BooleanConfig const val hideProxySponsorChannel = "hideProxySponsorChannel"
+    @BooleanConfig(true) const val hideProxySponsorChannel = "hideProxySponsorChannel"
     @BooleanConfig const val hideAllTab = "hideAllTab"
     const val autoHideFolderPrefix = "autoHideFolder_"
     const val folderVisibilityPrefix = "folderVisible_"

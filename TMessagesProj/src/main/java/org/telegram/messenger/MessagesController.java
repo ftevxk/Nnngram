@@ -10273,6 +10273,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 return;
             }
             boolean noDialog = false;
+            
             if (Config.hideProxySponsorChannel) {
                 nextPromoInfoCheckTime = getConnectionsManager().getCurrentTime() + 60 * 60;
                 noDialog = true;
@@ -10312,7 +10313,10 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
                 promoDialogId = did;
-                if (res.proxy) {
+                
+                if (Config.hideProxySponsorChannel) {
+                    promoDialogType = PROMO_TYPE_PROXY;
+                } else if (res.proxy) {
                     promoDialogType = PROMO_TYPE_PROXY;
                 } else if (!TextUtils.isEmpty(res.psa_type)) {
                     promoDialogType = PROMO_TYPE_PSA;
