@@ -24447,33 +24447,8 @@ public class ChatActivity extends BaseFragment implements
         if (res == null || res.messages == null) {
             return;
         }
-        String filterText = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
-        Pattern filterPattern = null;
-        if (!filterText.isEmpty()) {
-            try {
-                filterPattern = Pattern.compile(filterText, Pattern.CASE_INSENSITIVE);
-            } catch (Exception e) {
-                android.util.Log.e("wd", "Invalid filter pattern: " + filterText);
-            }
-        }
         for (int i = res.messages.size() - 1; i >= 0; i--) {
             MessageObject messageObject = res.messages.get(i);
-            if (filterPattern != null) {
-                StringBuilder sb = new StringBuilder();
-                if (messageObject.sponsoredTitle != null) {
-                    sb.append(messageObject.sponsoredTitle).append(" ");
-                }
-                if (messageObject.sponsoredUrl != null) {
-                    sb.append(messageObject.sponsoredUrl).append(" ");
-                }
-                if (messageObject.messageText != null) {
-                    sb.append(messageObject.messageText);
-                }
-                if (sb.length() > 0 && filterPattern.matcher(sb.toString()).find()) {
-                    res.messages.remove(i);
-                    continue;
-                }
-            }
             messageObject.resetLayout();
             if (messageObject.sponsoredUrl != null) {
                 try {

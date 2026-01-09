@@ -130,6 +130,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import xyz.nextalone.gen.Config;
@@ -20258,8 +20259,45 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
 
                     int messageId = -10000000;
+                    
+                    String filterText = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
+                    Pattern filterPattern = null;
+                    
+                    if (!filterText.isEmpty()) {
+                        try {
+                            filterPattern = Pattern.compile(filterText, Pattern.CASE_INSENSITIVE);
+                        } catch (Exception e) {
+                            android.util.Log.e("wd", "无效的过滤正则表达式: " + filterText);
+                        }
+                    }
+                    
                     for (int a = 0, N = res.messages.size(); a < N; a++) {
                         TLRPC.TL_sponsoredMessage sponsoredMessage = res.messages.get(a);
+                        
+                        if (filterPattern != null) {
+                            StringBuilder sb = new StringBuilder();
+                            
+                            if (sponsoredMessage.title != null) {
+                                sb.append(sponsoredMessage.title).append(" ");
+                            }
+                            if (sponsoredMessage.url != null) {
+                                sb.append(sponsoredMessage.url).append(" ");
+                            }
+                            if (sponsoredMessage.message != null) {
+                                sb.append(sponsoredMessage.message);
+                            }
+                            if (sponsoredMessage.sponsor_info != null) {
+                                sb.append(" ").append(sponsoredMessage.sponsor_info);
+                            }
+                            if (sponsoredMessage.additional_info != null) {
+                                sb.append(" ").append(sponsoredMessage.additional_info);
+                            }
+                            
+                            if (sb.length() > 0 && filterPattern.matcher(sb.toString()).find()) {
+                                continue;
+                            }
+                        }
+                        
                         TLRPC.TL_message message = new TLRPC.TL_message();
                         if (!sponsoredMessage.entities.isEmpty()) {
                             message.entities = sponsoredMessage.entities;
