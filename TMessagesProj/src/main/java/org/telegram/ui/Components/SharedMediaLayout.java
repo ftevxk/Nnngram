@@ -1015,6 +1015,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     boolean enc = DialogObject.isEncryptedDialog(dialogId);
                     ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[1];
                     final int currentAccount = parentFragment != null ? parentFragment.getCurrentAccount() : -1;
+                    long minDuration = Config.getSearchVideoMinDuration();
                     for (int a = 0; a < arr.size(); a++) {
                         MessageObject obj = arr.get(a);
                         if (topicId != 0 && topicId != MessageObject.getTopicId(currentAccount, obj.messageOwner, true)) {
@@ -1031,14 +1032,17 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                             if (!obj.isVideo()) {
                                 continue;
                             }
-                            //wd 添加最小时长筛选
-                            long minDuration = Config.getSearchVideoMinDuration();
                             if (minDuration > 0 && !obj.isLongVideo(false, minDuration)) {
                                 continue;
                             }
                         }
                         if (type == 0 && sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY && obj.isVideo()) {
                             continue;
+                        }
+                        if (type == 0 && sharedMediaData[0].filterType == FILTER_PHOTOS_AND_VIDEOS) {
+                            if (minDuration > 0 && obj.isVideo() && !obj.isLongVideo(false, minDuration)) {
+                                continue;
+                            }
                         }
                         if (sharedMediaData[type].startReached) {
                             sharedMediaData[type].addMessage(obj, 0, true, enc);
@@ -6126,9 +6130,21 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
                 SparseBooleanArray addedMesages = new SparseBooleanArray();
 
+                long minDuration = Config.getSearchVideoMinDuration();
                 if (fromStart) {
                     for (int a = arr.size() - 1; a >= 0; a--) {
                         MessageObject message = arr.get(a);
+                        if (type == 0) {
+                            if (sharedMediaData[0].filterType == FILTER_PHOTOS_AND_VIDEOS) {
+                                if (minDuration > 0 && message.isVideo() && !message.isLongVideo(false, minDuration)) {
+                                    continue;
+                                }
+                            } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                                if (minDuration > 0 && !message.isLongVideo(false, minDuration)) {
+                                    continue;
+                                }
+                            }
+                        }
                         boolean added = sharedMediaData[type].addMessage(message, loadIndex, true, enc);
                         if (added) {
                             addedMesages.put(message.getId(), true);
@@ -6145,6 +6161,17 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 } else {
                     for (int a = 0; a < arr.size(); a++) {
                         MessageObject message = arr.get(a);
+                        if (type == 0) {
+                            if (sharedMediaData[0].filterType == FILTER_PHOTOS_AND_VIDEOS) {
+                                if (minDuration > 0 && message.isVideo() && !message.isLongVideo(false, minDuration)) {
+                                    continue;
+                                }
+                            } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                                if (minDuration > 0 && !message.isLongVideo(false, minDuration)) {
+                                    continue;
+                                }
+                            }
+                        }
                         if (sharedMediaData[type].addMessage(message, loadIndex, false, enc)) {
                             addedMesages.put(message.getId(), true);
                             sharedMediaData[type].endLoadingStubs--;
@@ -6313,6 +6340,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[1];
                 boolean enc = DialogObject.isEncryptedDialog(dialog_id);
                 boolean updated = false;
+                long minDuration = Config.getSearchVideoMinDuration();
                 for (int a = 0; a < arr.size(); a++) {
                     MessageObject obj = arr.get(a);
                     if (MessageObject.getMedia(obj.messageOwner) == null || obj.needDrawBluredPreview()) {
@@ -6321,6 +6349,19 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     int type = MediaDataController.getMediaType(obj.messageOwner);
                     if (type == -1) {
                         return;
+                    }
+                    if (type == 0) {
+                        if (sharedMediaData[0].filterType == FILTER_PHOTOS_AND_VIDEOS) {
+                            if (minDuration > 0 && obj.isVideo() && !obj.isLongVideo(false, minDuration)) {
+                                continue;
+                            }
+                        } else if (sharedMediaData[0].filterType == FILTER_VIDEOS_ONLY) {
+                            if (minDuration > 0 && !obj.isLongVideo(false, minDuration)) {
+                                continue;
+                            }
+                        } else if (sharedMediaData[0].filterType == FILTER_PHOTOS_ONLY && obj.isVideo()) {
+                            continue;
+                        }
                     }
                     if (sharedMediaData[type].startReached && sharedMediaData[type].addMessage(obj, obj.getDialogId() == dialog_id ? 0 : 1, true, enc)) {
                         updated = true;
