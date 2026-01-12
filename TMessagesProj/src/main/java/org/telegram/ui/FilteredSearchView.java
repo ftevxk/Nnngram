@@ -1099,9 +1099,18 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             if (holder.getItemViewType() == 0) {
                 ArrayList<MessageObject> messageObjects = messages;
                 SharedPhotoVideoCell cell = (SharedPhotoVideoCell) holder.itemView;
-                cell.setItemsCount(columnsCount);
+                int itemsCount = columnsCount;
+                int lastRowItems = messages.size() % columnsCount;
+                if (lastRowItems == 0) {
+                    lastRowItems = columnsCount;
+                }
+                int rowCount = (int) Math.ceil(messages.size() / (float) columnsCount);
+                if (position == rowCount - 1 && lastRowItems != columnsCount) {
+                    itemsCount = lastRowItems;
+                }
+                cell.setItemsCount(itemsCount, columnsCount);
                 cell.setIsFirst(position == 0);
-                for (int a = 0; a < columnsCount; a++) {
+                for (int a = 0; a < itemsCount; a++) {
                     int index = position * columnsCount + a;
                     if (index < messageObjects.size()) {
                         MessageObject messageObject = messageObjects.get(index);

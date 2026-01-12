@@ -285,6 +285,9 @@ public class SharedPhotoVideoCell extends FrameLayout {
         indeces = new int[6];
         for (int a = 0; a < 6; a++) {
             photoVideoViews[a] = new PhotoVideoView(context);
+            LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
+            layoutParams.gravity = Gravity.TOP | Gravity.LEFT;
+            photoVideoViews[a].setLayoutParams(layoutParams);
             addView(photoVideoViews[a]);
             photoVideoViews[a].setVisibility(INVISIBLE);
             photoVideoViews[a].setTag(a);
@@ -332,12 +335,19 @@ public class SharedPhotoVideoCell extends FrameLayout {
         this.delegate = delegate;
     }
 
+    private int currentColumnsCount = 3;
+
     public void setItemsCount(int count) {
         for (int a = 0; a < photoVideoViews.length; a++) {
             photoVideoViews[a].clearAnimation();
             photoVideoViews[a].setVisibility(a < count ? VISIBLE : INVISIBLE);
         }
         itemsCount = count;
+    }
+
+    public void setItemsCount(int count, int actualColumnsCount) {
+        setItemsCount(count);
+        currentColumnsCount = actualColumnsCount;
     }
 
     public BackupImageView getImageView(int a) {
@@ -402,8 +412,9 @@ public class SharedPhotoVideoCell extends FrameLayout {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int itemWidth;
         int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
+        int columnsForMeasure = (type == VIEW_TYPE_GLOBAL_SEARCH) ? currentColumnsCount : itemsCount;
         if (type == VIEW_TYPE_GLOBAL_SEARCH) {
-            itemWidth = (parentWidth - (itemsCount - 1) * AndroidUtilities.dp(2)) / itemsCount;
+            itemWidth = (parentWidth - (columnsForMeasure - 1) * AndroidUtilities.dp(2)) / columnsForMeasure;
         } else {
             itemWidth = getItemSize(itemsCount);
         }
@@ -415,8 +426,7 @@ public class SharedPhotoVideoCell extends FrameLayout {
             layoutParams.leftMargin = (itemWidth + AndroidUtilities.dp(2)) * a;
             if (a == itemsCount - 1) {
                 if (type == VIEW_TYPE_GLOBAL_SEARCH) {
-                    //wd 修复全局搜索时最后一个项目的宽度计算，使用实际测量宽度而不是屏幕宽度
-                    layoutParams.width = parentWidth - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
+                    layoutParams.width = parentWidth - (columnsForMeasure - 1) * (AndroidUtilities.dp(2) + itemWidth);
                 } else {
                     if (AndroidUtilities.isTablet()) {
                         layoutParams.width = AndroidUtilities.dp(490) - (itemsCount - 1) * (AndroidUtilities.dp(2) + itemWidth);
