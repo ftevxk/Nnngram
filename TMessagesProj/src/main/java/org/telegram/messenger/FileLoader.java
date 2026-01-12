@@ -963,6 +963,13 @@ public class FileLoader extends BaseController {
                             storeDir = newDir;
                             saveCustomPath = true;
                         }
+                    } else if (cacheType == 10) {
+                        //wd 预加载视频保存到 Cache 目录
+                        File newDir = getDirectory(MEDIA_DIR_CACHE);
+                        if (newDir != null) {
+                            storeDir = newDir;
+                            saveCustomPath = true;
+                        }
                     } else if ((type == MEDIA_DIR_IMAGE || type == MEDIA_DIR_VIDEO) && canSaveToPublicStorage(parentObject)) {
                         File newDir;
                         if (type == MEDIA_DIR_IMAGE) {

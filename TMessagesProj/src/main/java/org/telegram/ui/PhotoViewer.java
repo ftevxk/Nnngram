@@ -20180,6 +20180,38 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                     }
                 } else if (pageBlocksAdapter != null) {
                     if (!FileLoader.getInstance(currentAccount).isLoadingFile(currentFileNames[0])) {
+                        FileLoader.getInstance(currentAccount).loadFile((TLRPC.Document) pageBlocksAdapter.getMedia(currentIndex), pageBlocksAdapter.getParentObject(), FileLoader.PRIORITY_NORMAL, 0);
+                    } else {
+                        FileLoader.getInstance(currentAccount).cancelLoadFile((TLRPC.Document) pageBlocksAdapter.getMedia(currentIndex));
+                    }
+                }
+                Drawable drawable = centerImage.getStaticThumb();
+                if (drawable instanceof OtherDocumentPlaceholderDrawable) {
+                    ((OtherDocumentPlaceholderDrawable) drawable).checkFileExist();
+                }
+            } else {
+                if (currentMessageObject !=  null) {
+                    if (!FileLoader.getInstance(currentAccount).isLoadingFile(currentFileNames[0])) {
+                        FileLoader.getInstance(currentAccount).loadFile(currentMessageObject.getDocument(), currentMessageObject, FileLoader.PRIORITY_NORMAL, 1);
+                    } else {
+                        FileLoader.getInstance(currentAccount).cancelLoadFile(currentMessageObject.getDocument());
+                    }
+                } else if (currentBotInlineResult != null) {
+                    if (currentBotInlineResult.document != null) {
+                        if (!FileLoader.getInstance(currentAccount).isLoadingFile(currentFileNames[0])) {
+                            FileLoader.getInstance(currentAccount).loadFile(currentBotInlineResult.document, currentMessageObject, FileLoader.PRIORITY_NORMAL, 1);
+                        } else {
+                            FileLoader.getInstance(currentAccount).cancelLoadFile(currentBotInlineResult.document);
+                        }
+                    } else if (currentBotInlineResult.content instanceof TLRPC.TL_webDocument) {
+                        if (!ImageLoader.getInstance().isLoadingHttpFile(currentBotInlineResult.content.url)) {
+                            ImageLoader.getInstance().loadHttpFile(currentBotInlineResult.content.url, "mp4", currentAccount);
+                        } else {
+                            ImageLoader.getInstance().cancelLoadHttpFile(currentBotInlineResult.content.url);
+                        }
+                    }
+                } else if (pageBlocksAdapter != null) {
+                    if (!FileLoader.getInstance(currentAccount).isLoadingFile(currentFileNames[0])) {
                         FileLoader.getInstance(currentAccount).loadFile((TLRPC.Document) pageBlocksAdapter.getMedia(currentIndex), pageBlocksAdapter.getParentObject(), FileLoader.PRIORITY_NORMAL, 1);
                     } else {
                         FileLoader.getInstance(currentAccount).cancelLoadFile((TLRPC.Document) pageBlocksAdapter.getMedia(currentIndex));
