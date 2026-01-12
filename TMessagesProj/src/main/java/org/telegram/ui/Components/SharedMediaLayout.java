@@ -1080,7 +1080,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         boolean enc = DialogObject.isEncryptedDialog(did);
                         int loadIndex = isFolderMedia ? 0 : (did == dialogId ? 0 : 1);
                         if (type == 0 || type == 6 || type == 7) {
-                            if (type != sharedMediaData[0].filterType) {
+                            if (type == 0 && sharedMediaData[0].filterType != FILTER_PHOTOS_AND_VIDEOS) {
+                                return;
+                            }
+                            if (type == 6 && sharedMediaData[0].filterType != FILTER_PHOTOS_ONLY) {
+                                return;
+                            }
+                            if (type == 7 && sharedMediaData[0].filterType != FILTER_VIDEOS_ONLY) {
                                 return;
                             }
                             type = 0;
