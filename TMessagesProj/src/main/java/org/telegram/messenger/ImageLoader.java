@@ -2521,7 +2521,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File videoPath = new File(telegramPath, "Video");
+                        File videoPath = new File(telegramPath, "Videos");
                         videoPath.mkdir();
                         if (videoPath.isDirectory() && canMoveFiles(cachePath, videoPath, FileLoader.MEDIA_DIR_VIDEO)) {
                             //wd 添加屏蔽媒体文件
@@ -2536,7 +2536,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File audioPath = new File(telegramPath, "Audio");
+                        File audioPath = new File(telegramPath, "Audios");
                         audioPath.mkdir();
                         if (audioPath.isDirectory() && canMoveFiles(cachePath, audioPath, FileLoader.MEDIA_DIR_AUDIO)) {
                             AndroidUtilities.createEmptyFile(new File(audioPath, ".nomedia"));

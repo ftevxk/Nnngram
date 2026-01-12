@@ -210,9 +210,9 @@ public class AutoDeleteMediaTask {
                             skippedFiles++;
                             continue;
                         }
-                        //wd 保护Video文件夹不被自动删除
+                        //wd 保护Videos文件夹不被自动删除
                         File parentDir = allFiles.get(i).file.getParentFile();
-                        if (parentDir != null && parentDir.getName().equals("Video")) {
+                        if (parentDir != null && parentDir.getName().equals("Videos")) {
                             continue;
                         }
                         long size = allFiles.get(i).file.length();
