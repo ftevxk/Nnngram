@@ -144,6 +144,13 @@ public class AutoDeleteMediaTask {
                                 }
                             }
                             boolean needDelete = lastUsageTime > 316000000 && lastUsageTime < timeLocal && !usingFilePaths.contains(file.file.getPath()) && !isLocked;
+                            //wd 保护Video文件夹不被自动删除
+                            if (needDelete) {
+                                File parentDir = file.file.getParentFile();
+                                if (parentDir != null && parentDir.getName().equals("Video")) {
+                                    needDelete = false;
+                                }
+                            }
                             if (needDelete) {
                                 try {
                                     if (BuildVars.LOGS_ENABLED) {
@@ -201,6 +208,11 @@ public class AutoDeleteMediaTask {
                         }
                         if (allFiles.get(i).lastUsageDate <= 0) {
                             skippedFiles++;
+                            continue;
+                        }
+                        //wd 保护Video文件夹不被自动删除
+                        File parentDir = allFiles.get(i).file.getParentFile();
+                        if (parentDir != null && parentDir.getName().equals("Video")) {
                             continue;
                         }
                         long size = allFiles.get(i).file.length();

@@ -13,7 +13,7 @@
 ## 3. 编译运行
 - Gradle 编译，PowerShell 环境
 - 编译安装：./gradlew :TMessagesProj:installDebug; adb shell am start -n xyz.nextalone.nnngram/org.telegram.ui.LaunchActivity
-- 提交前确保本地编译通过
+- 任务完成后，编译并安装到设备，启动应用
 
 ## 4. 代码风格
 - 遵循 Android Studio 默认格式化规则
