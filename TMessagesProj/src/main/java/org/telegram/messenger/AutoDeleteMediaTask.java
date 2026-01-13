@@ -147,7 +147,7 @@ public class AutoDeleteMediaTask {
                             //wd 保护Video文件夹不被自动删除
                             if (needDelete) {
                                 File parentDir = file.file.getParentFile();
-                                if (parentDir != null && parentDir.getName().equals("Video")) {
+                                if (parentDir != null && parentDir.getName().equals("Videos")) {
                                     needDelete = false;
                                 }
                             }

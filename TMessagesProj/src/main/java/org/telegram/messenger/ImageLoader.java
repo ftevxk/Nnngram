@@ -2608,7 +2608,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File videoPath = new File(publicMediaDir, "Video");
+                        File videoPath = new File(publicMediaDir, "Videos");
                         videoPath.mkdir();
                         if (videoPath.isDirectory() && canMoveFiles(cachePath, videoPath, FileLoader.MEDIA_DIR_VIDEO)) {
                             //wd 添加屏蔽媒体文件

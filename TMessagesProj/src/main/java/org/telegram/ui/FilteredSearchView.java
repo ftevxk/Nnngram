@@ -843,11 +843,6 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         switch (currentSearchFilter.filterType) {
                             case FiltersView.FILTER_TYPE_MEDIA:
                                 //wd 使用图片墙形式显示全局搜索-媒体的搜索结果
-//                                if (TextUtils.isEmpty(currentDataQuery)) {
-//                                    adapter = sharedPhotoVideoAdapter;
-//                                } else {
-//                                    adapter = dialogsAdapter;
-//                                }
                                 adapter = sharedPhotoVideoAdapter;
                                 break;
                             case FiltersView.FILTER_TYPE_FILES:
@@ -866,9 +861,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     } else {
                         adapter = dialogsAdapter;
                     }
-                    if (recyclerListView.getAdapter() != adapter) {
-                        recyclerListView.setAdapter(adapter);
-                    }
+                    // 强制设置 adapter，确保正确显示
+                    recyclerListView.setAdapter(adapter);
 
                     if (!filterAndQueryIsSame) {
                         localTipChats.clear();
@@ -975,11 +969,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         if (currentSearchFilter == null) {
             loadingView.setViewType(FlickerLoadingView.DIALOG_TYPE);
         } else if (currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
-            if (!TextUtils.isEmpty(currentSearchString)) {
-                loadingView.setViewType(FlickerLoadingView.DIALOG_TYPE);
-            } else {
-                loadingView.setViewType(FlickerLoadingView.PHOTOS_TYPE);
-            }
+            //wd 媒体类型始终使用 PHOTOS_TYPE 加载动画
+            loadingView.setViewType(FlickerLoadingView.PHOTOS_TYPE);
         } else if (currentSearchFilter.filterType == FiltersView.FILTER_TYPE_FILES) {
             loadingView.setViewType(FlickerLoadingView.FILES_TYPE);
         } else if (currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MUSIC || currentSearchFilter.filterType == FiltersView.FILTER_TYPE_VOICE) {
