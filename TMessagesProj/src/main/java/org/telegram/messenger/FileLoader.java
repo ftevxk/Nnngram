@@ -913,6 +913,9 @@ public class FileLoader extends BaseController {
             if (MessageObject.isRoundVideoDocument(document)) {
                 documentId = 0;
                 dcId = 0;
+                if (!isUserDownloadRequest(parentObject)) {
+                    type = MEDIA_DIR_CACHE;
+                }
             }
         } else if (webDocument != null) {
             operation = new FileLoadOperation(currentAccount, webDocument);
@@ -926,6 +929,9 @@ public class FileLoader extends BaseController {
                 type = MEDIA_DIR_IMAGE;
             } else {
                 type = MEDIA_DIR_DOCUMENT;
+            }
+            if (!isUserDownloadRequest(parentObject)) {
+                type = MEDIA_DIR_CACHE;
             }
         }
 
@@ -970,18 +976,13 @@ public class FileLoader extends BaseController {
                             storeDir = newDir;
                             saveCustomPath = true;
                         }
-                    } else if ((type == MEDIA_DIR_IMAGE || type == MEDIA_DIR_VIDEO) && canSaveToPublicStorage(parentObject)) {
-                        File newDir;
-                        if (type == MEDIA_DIR_IMAGE) {
-                            newDir = getDirectory(MEDIA_DIR_IMAGE_PUBLIC);
-                        } else {
-                            newDir = getDirectory(MEDIA_DIR_VIDEO_PUBLIC);
-                        }
+                    } else if (!isUserDownloadRequest(parentObject)) {
+                        File newDir = getDirectory(MEDIA_DIR_CACHE);
                         if (newDir != null) {
                             storeDir = newDir;
                             saveCustomPath = true;
                         }
-                    } else if (!TextUtils.isEmpty(getDocumentFileName(document)) && canSaveAsFile(parentObject)) {
+                    } else if (isUserDownloadRequest(parentObject) && !TextUtils.isEmpty(getDocumentFileName(document)) && canSaveAsFile(parentObject)) {
                         storeFileName = getDocumentFileName(document);
                         File newDir = getDirectory(MEDIA_DIR_FILES);
                         if (newDir != null) {
@@ -995,7 +996,11 @@ public class FileLoader extends BaseController {
                     }
                 }
             } else {
-                storeDir = getDirectory(type);
+                if (type != MEDIA_DIR_CACHE && !isUserDownloadRequest(parentObject)) {
+                    storeDir = getDirectory(MEDIA_DIR_CACHE);
+                } else {
+                    storeDir = getDirectory(type);
+                }
             }
         } else if (cacheType == ImageLoader.CACHE_TYPE_ENCRYPTED) {
             operation.setEncryptFile(true);
@@ -1109,6 +1114,13 @@ public class FileLoader extends BaseController {
                 return false;
             }
             return true;
+        }
+        return false;
+    }
+
+    private static boolean isUserDownloadRequest(Object parentObject) {
+        if (parentObject instanceof MessageObject) {
+            return ((MessageObject) parentObject).putInDownloadsStore;
         }
         return false;
     }
