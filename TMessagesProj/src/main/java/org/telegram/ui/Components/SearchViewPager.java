@@ -60,6 +60,7 @@ import org.telegram.ui.Cells.SharedAudioCell;
 import org.telegram.ui.Cells.SharedDocumentCell;
 import org.telegram.ui.Cells.SharedLinkCell;
 import org.telegram.ui.Cells.SharedPhotoVideoCell;
+import org.telegram.ui.Cells.SharedPhotoVideoCell2;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.DialogsActivity;
@@ -1069,6 +1070,8 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             ((SharedDocumentCell) view).setChecked(selectedFiles.containsKey(hashId), true);
         } else if (view instanceof SharedPhotoVideoCell) {
             ((SharedPhotoVideoCell) view).setChecked(a, selectedFiles.containsKey(hashId), true);
+        } else if (view instanceof SharedPhotoVideoCell2) {
+            ((SharedPhotoVideoCell2) view).setChecked(selectedFiles.containsKey(hashId), true);
         } else if (view instanceof SharedLinkCell) {
             ((SharedLinkCell) view).setChecked(selectedFiles.containsKey(hashId), true);
         } else if (view instanceof SharedAudioCell) {
@@ -1565,6 +1568,9 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             if (items.get(position).type == POSTS_TYPE) {
                 return 6;
             }
+            if (items.get(position).type == FILTER_TYPE) {
+                return 100 + items.get(position).filterIndex;
+            }            
             return items.get(position).type + position;
         }
 

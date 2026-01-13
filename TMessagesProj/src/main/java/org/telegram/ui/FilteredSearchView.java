@@ -44,7 +44,7 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AccountInstance;
@@ -87,6 +87,7 @@ import org.telegram.ui.Cells.SharedDocumentCell;
 import org.telegram.ui.Cells.SharedLinkCell;
 import org.telegram.ui.Cells.SharedMediaSectionCell;
 import org.telegram.ui.Cells.SharedPhotoVideoCell;
+import org.telegram.ui.Cells.SharedPhotoVideoCell2;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BlurredRecyclerView;
@@ -210,6 +211,13 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             imageView.getLocationInWindow(coords);
                         }
                     }
+                } else if (view instanceof SharedPhotoVideoCell2) {
+                    SharedPhotoVideoCell2 cell = (SharedPhotoVideoCell2) view;
+                    MessageObject message = cell.getMessageObject();
+                    if (message != null && message.getId() == messageObject.getId()) {
+                        imageReceiver = cell.imageReceiver;
+                        cell.getLocationInWindow(coords);
+                    }
                 } else if (view instanceof SharedDocumentCell) {
                     SharedDocumentCell cell = (SharedDocumentCell) view;
                     MessageObject message = cell.getMessage();
@@ -281,7 +289,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 
     private Delegate delegate;
     private SearchViewPager.ChatPreviewDelegate chatPreviewDelegate;
-    public final LinearLayoutManager layoutManager;
+    public final GridLayoutManager layoutManager;
     private final FlickerLoadingView loadingView;
     private boolean firstLoading = true;
     private AnimationNotificationsLocker notificationsLocker = new AnimationNotificationsLocker();
@@ -335,6 +343,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 FilteredSearchView.this.onItemClick(position, view, ((SharedAudioCell) view).getMessage(), 0);
             } else if (view instanceof ContextLinkCell) {
                 FilteredSearchView.this.onItemClick(position, view, ((ContextLinkCell) view).getMessageObject(), 0);
+            } else if (view instanceof SharedPhotoVideoCell2) {
+                FilteredSearchView.this.onItemClick(position, view, ((SharedPhotoVideoCell2) view).getMessageObject(), 0);
             } else if (view instanceof DialogCell) {
                 FilteredSearchView.this.onItemClick(position, view, ((DialogCell) view).getMessage(), 0);
             }
@@ -350,6 +360,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     FilteredSearchView.this.onItemLongClick(((SharedAudioCell) view).getMessage(), view, 0);
                 } else if (view instanceof ContextLinkCell) {
                     FilteredSearchView.this.onItemLongClick(((ContextLinkCell) view).getMessageObject(), view, 0);
+                } else if (view instanceof SharedPhotoVideoCell2) {
+                    FilteredSearchView.this.onItemLongClick(((SharedPhotoVideoCell2) view).getMessageObject(), view, 0);
                 } else if (view instanceof DialogCell) {
                     if (!uiCallback.actionModeShowing()) {
                         if (((DialogCell) view).isPointInsideAvatar(x, y)) {
@@ -373,8 +385,18 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             }
         });
         recyclerListView.setPadding(0, 0, 0, AndroidUtilities.dp(3));
-
-        layoutManager = new LinearLayoutManager(context);
+        layoutManager = new GridLayoutManager(context, columnsCount);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                RecyclerView.Adapter a = recyclerListView.getAdapter();
+                if (a == sharedPhotoVideoAdapter) {
+                    int viewType = a.getItemViewType(position);
+                    return viewType == 0 ? 1 : columnsCount;
+                }
+                return columnsCount;
+            }
+        });
         recyclerListView.setLayoutManager(layoutManager);
         addView(loadingView = new FlickerLoadingView(context) {
             @Override
@@ -414,9 +436,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     }
                     RecyclerListView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(firstVisibleItem);
                     if (holder != null && holder.getItemViewType() == 0) {
-                        if (holder.itemView instanceof SharedPhotoVideoCell) {
-                            SharedPhotoVideoCell cell = (SharedPhotoVideoCell) holder.itemView;
-                            MessageObject messageObject = cell.getMessageObject(0);
+                        if (holder.itemView instanceof SharedPhotoVideoCell2) {
+                            MessageObject messageObject = ((SharedPhotoVideoCell2) holder.itemView).getMessageObject();
                             if (messageObject != null) {
                                 floatingDateView.setCustomDate(messageObject.messageOwner.date, false, true);
                             }
@@ -1023,6 +1044,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
     private class SharedPhotoVideoAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context mContext;
+        private SharedPhotoVideoCell2.SharedResources sharedResources;
 
         public SharedPhotoVideoAdapter(Context context) {
             mContext = context;
@@ -1033,7 +1055,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             if (messages.isEmpty()) {
                 return 0;
             }
-            return (int) Math.ceil(messages.size() / (float) columnsCount) +  (endReached ? 0 : 1);
+            return messages.size() + (endReached ? 0 : 1);
         }
 
         @Override
@@ -1046,23 +1068,10 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             View view;
             switch (viewType) {
                 case 0:
-                    view = new SharedPhotoVideoCell(mContext, SharedPhotoVideoCell.VIEW_TYPE_GLOBAL_SEARCH);
-                    SharedPhotoVideoCell cell = (SharedPhotoVideoCell) view;
-                    cell.setDelegate(new SharedPhotoVideoCell.SharedPhotoVideoCellDelegate() {
-                        @Override
-                        public void didClickItem(SharedPhotoVideoCell cell, int index, MessageObject messageObject, int a) {
-                            onItemClick(index, cell, messageObject, a);
-                        }
-
-                        @Override
-                        public boolean didLongClickItem(SharedPhotoVideoCell cell, int index, MessageObject messageObject, int a) {
-                            if (uiCallback.actionModeShowing()) {
-                                didClickItem(cell, index, messageObject, a);
-                                return true;
-                            }
-                            return onItemLongClick(messageObject, cell, a);
-                        }
-                    });
+                    if (sharedResources == null) {
+                        sharedResources = new SharedPhotoVideoCell2.SharedResources(parent.getContext(), null);
+                    }
+                    view = new SharedPhotoVideoCell2(mContext, sharedResources, UserConfig.selectedAccount);
                     break;
                 case 2:
                     view = new GraySectionCell(mContext);
@@ -1088,46 +1097,31 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (holder.getItemViewType() == 0) {
-                ArrayList<MessageObject> messageObjects = messages;
-                SharedPhotoVideoCell cell = (SharedPhotoVideoCell) holder.itemView;
-                int itemsCount = columnsCount;
-                int lastRowItems = messages.size() % columnsCount;
-                if (lastRowItems == 0) {
-                    lastRowItems = columnsCount;
-                }
-                int rowCount = (int) Math.ceil(messages.size() / (float) columnsCount);
-                if (position == rowCount - 1 && lastRowItems != columnsCount) {
-                    itemsCount = lastRowItems;
-                }
-                cell.setItemsCount(itemsCount, columnsCount);
-                cell.setIsFirst(position == 0);
-                for (int a = 0; a < itemsCount; a++) {
-                    int index = position * columnsCount + a;
-                    if (index < messageObjects.size()) {
-                        MessageObject messageObject = messageObjects.get(index);
-                        cell.setItem(a, messages.indexOf(messageObject), messageObject);
-                        if (uiCallback.actionModeShowing()) {
-                            messageHashIdTmp.set(messageObject.getId(), messageObject.getDialogId());
-                            cell.setChecked(a, uiCallback.isSelected(messageHashIdTmp), true);
-                        } else {
-                            cell.setChecked(a, false, true);
-                        }
+                SharedPhotoVideoCell2 cell = (SharedPhotoVideoCell2) holder.itemView;
+                int oldMessageId = cell.getMessageId();
+                if (position >= 0 && position < messages.size()) {
+                    MessageObject messageObject = messages.get(position);
+                    boolean animated = messageObject.getId() == oldMessageId;
+                    if (uiCallback.actionModeShowing()) {
+                        messageHashIdTmp.set(messageObject.getId(), messageObject.getDialogId());
+                        cell.setChecked(uiCallback.isSelected(messageHashIdTmp), animated);
                     } else {
-                        cell.setItem(a, index, null);
+                        cell.setChecked(false, animated);
                     }
+                    cell.setMessageObject(messageObject, columnsCount);
+                } else {
+                    cell.setMessageObject(null, columnsCount);
+                    cell.setChecked(false, false);
                 }
-                cell.requestLayout();
             } else if (holder.getItemViewType() == 1) {
                 FlickerLoadingView flickerLoadingView = (FlickerLoadingView) holder.itemView;
-                int count = (int) Math.ceil(messages.size() / (float) columnsCount);
-                flickerLoadingView.skipDrawItemsCount(columnsCount - (columnsCount * count - messages.size()));
+                flickerLoadingView.skipDrawItemsCount(0);
             }
         }
 
         @Override
         public int getItemViewType(int position) {
-            int count = (int) Math.ceil(messages.size() / (float) columnsCount);
-            if (position < count) {
+            if (position < messages.size()) {
                 return 0;
             }
             return 1;
@@ -1763,6 +1757,9 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             } else {
                 columnsCount = 3;
             }
+        }
+        if (oldColumnsCount != columnsCount) {
+            layoutManager.setSpanCount(columnsCount);
         }
         if (oldColumnsCount != columnsCount && adapter == sharedPhotoVideoAdapter) {
             ignoreRequestLayout = true;
