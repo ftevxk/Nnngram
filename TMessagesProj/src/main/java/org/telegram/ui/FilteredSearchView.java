@@ -35,6 +35,7 @@ import android.os.Build;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.View;
@@ -116,6 +117,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
     Runnable searchRunnable;
 
     public ArrayList<MessageObject> messages = new ArrayList<>();
+    public ArrayList<MessageObject> searchResultMessages = new ArrayList<>();
+    public ArrayList<MessageObject> searchLocalResultMessages = new ArrayList<>();
     public SparseArray<MessageObject> messagesById = new SparseArray<>();
     public ArrayList<String> sections = new ArrayList<>();
     public HashMap<String, ArrayList<MessageObject>> sectionArrays = new HashMap<>();
@@ -164,6 +167,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         public void run() {
             if (isLoading) {
                 messages.clear();
+                searchResultMessages.clear();
+                searchLocalResultMessages.clear();
                 sections.clear();
                 sectionArrays.clear();
                 if (adapter != null) {
@@ -593,6 +598,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         }
         if (forceClear || currentSearchFilter == null && dialogId == 0 && minDate == 0 && maxDate == 0) {
             messages.clear();
+            searchResultMessages.clear();
+            searchLocalResultMessages.clear();
             sections.clear();
             sectionArrays.clear();
             isLoading = true;
@@ -689,6 +696,18 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 req.flags |= 1;
                 req.folder_id = includeFolder ? 1 : 0;
                 request = req;
+
+                searchLocalResultMessages.clear();
+                if (resultArray != null) {
+                    for (int i = 0; i < resultArray.size(); i++) {
+                        Object obj = resultArray.get(i);
+                        if (obj instanceof TLRPC.Message message) {
+                            MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
+                            messageObject.setQuery(finalQuery);
+                            searchLocalResultMessages.add(messageObject);
+                        }
+                    }
+                }
             }
 
             //wd 一次请求获取更多条数据
@@ -719,13 +738,38 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                 //wd 过滤搜索返回结果中的重复视频
                 ArrayList<MessageObject> messageObjects = new ArrayList<>();
                 ArrayList<TLRPC.Message> newMessages = new ArrayList<>();
+                int N = 0;
                 if (error == null) {
                     TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
-                    int n = res.messages.size();
-                    for (int i = 0; i < n; i++) {
+                    N = res.messages.size();
+                    for (int i = 0; i < N; i++) {
                         TLRPC.Message message = res.messages.get(i);
                         MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
-                        if (!messages.contains(messageObject) && !messageObjects.contains(messageObject)) {
+                        boolean isDuplicate = false;
+                        for (MessageObject m : messages) {
+                            if (m.getId() == messageObject.getId()) {
+                                isDuplicate = true;
+                                break;
+                            }
+                        }
+                        if (!isDuplicate) {
+                            for (MessageObject m : searchLocalResultMessages) {
+                                if (m.getId() == messageObject.getId()) {
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!isDuplicate) {
+                            for (MessageObject m : messageObjects) {
+                                if (m.getId() == messageObject.getId()) {
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!isDuplicate) {
                             newMessages.add(message);
                             messageObject.setQuery(finalQuery);
                             messageObjects.add(messageObject);
@@ -737,6 +781,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     res.messages.addAll(newMessages);
                 }
 
+                final int finalN = N;
                 AndroidUtilities.runOnUIThread(() -> {
                     if (requestId != requestIndex) {
                         return;
@@ -747,6 +792,14 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         emptyView.subtitle.setVisibility(View.VISIBLE);
                         emptyView.subtitle.setText(LocaleController.getString(R.string.SearchEmptyViewFilteredSubtitle2));
                         emptyView.showProgress(false, true);
+                        if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
+                            Log.d("wd", "========== 加载更多完成汇总 ==========");
+                            Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
+                            Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
+                            Log.d("wd", "网络请求匹配数量: " + finalN);
+                            Log.d("wd", "最终显示数量: " + searchResultMessages.size());
+                            Log.d("wd", "=====================================");
+                        }
                         return;
                     }
 
@@ -763,6 +816,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         sections.clear();
                         sectionArrays.clear();
                     }
+                    searchResultMessages.clear();
                     //wd 过滤后需要移除的数量
                     int removeCount = 0;
                     totalCount = res.count;
@@ -797,6 +851,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                                     }
                                     messageObjectsByDate.add(messageObject);
                                     messages.add(messageObject);
+                                    searchResultMessages.add(messageObject);
                                     messagesById.put(messageObject.getId(), messageObject);
 
                                     if (PhotoViewer.getInstance().isVisible()) {
@@ -818,6 +873,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             }
                             messageObjectsByDate.add(messageObject);
                             messages.add(messageObject);
+                            searchResultMessages.add(messageObject);
                             messagesById.put(messageObject.getId(), messageObject);
 
                             if (PhotoViewer.getInstance().isVisible()) {
@@ -830,6 +886,16 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         totalCount = messages.size();
                     }
                     endReached = messages.size() >= totalCount;
+
+                    if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
+                        //wd 打印完整的搜索汇总（包括本地和网络结果）
+                        Log.d("wd", "========== 加载更多完成汇总 ==========");
+                        Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
+                        Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size()); // User's requested format
+                        Log.d("wd", "网络请求匹配数量: " + finalN);
+                        Log.d("wd", "最终显示数量: " + searchResultMessages.size());
+                        Log.d("wd", "=====================================");
+                    }
 
                     if (messages.isEmpty()) {
                         if (currentSearchFilter != null) {
@@ -882,8 +948,10 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     } else {
                         adapter = dialogsAdapter;
                     }
-                    // 强制设置 adapter，确保正确显示
-                    recyclerListView.setAdapter(adapter);
+                    //wd 仅在 adapter 发生变化时设置，避免加载更多时回滚到顶部
+                    if (recyclerListView.getAdapter() != adapter) {
+                        recyclerListView.setAdapter(adapter);
+                    }
 
                     if (!filterAndQueryIsSame) {
                         localTipChats.clear();
