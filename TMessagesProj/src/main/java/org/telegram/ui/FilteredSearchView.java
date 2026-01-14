@@ -41,7 +41,10 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.inputmethod.EditorInfo;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -71,6 +74,7 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
@@ -94,9 +98,11 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BlurredRecyclerView;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EmbedBottomSheet;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.Forum.ForumUtilities;
+import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SearchViewPager;
@@ -106,6 +112,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.widget.EditText;
 
 public class FilteredSearchView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
@@ -580,7 +590,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
     public void search(long dialogId, long minDate, long maxDate, FiltersView.MediaFilterData currentSearchFilter, boolean includeFolder, String query, boolean clearOldResults) {
         if (query == null) query = "";
         final String finalQuery = query;
-        String currentSearchFilterQueryString = String.format(Locale.ENGLISH, "%d%d%d%d%s%s", dialogId, minDate, maxDate, currentSearchFilter == null ? -1 : currentSearchFilter.filterType, query, includeFolder);
+        String currentSearchFilterQueryString = String.format(Locale.ENGLISH, "%d%d%d%d%d%s%s", dialogId, minDate, maxDate, currentSearchFilter == null ? -1 : currentSearchFilter.filterType, Config.getSearchVideoMinDuration(), query, includeFolder);
         boolean filterAndQueryIsSame = lastSearchFilterQueryString != null && lastSearchFilterQueryString.equals(currentSearchFilterQueryString);
         boolean forceClear = !filterAndQueryIsSame && clearOldResults;
         this.currentSearchFilter = currentSearchFilter;
@@ -589,6 +599,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         this.currentSearchMaxDate = maxDate;
         this.currentSearchString = query;
         this.currentIncludeFolder = includeFolder;
+
         if (searchRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(searchRunnable);
         }
@@ -815,34 +826,56 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         messagesById.clear();
                         sections.clear();
                         sectionArrays.clear();
+                        //wd 将本地搜索结果加入处理列表，仅在第一页搜索时加入
+                        messageObjects.addAll(0, searchLocalResultMessages);
                     }
                     searchResultMessages.clear();
                     //wd 过滤后需要移除的数量
                     int removeCount = 0;
                     totalCount = res.count;
+                    if (!filterAndQueryIsSame) {
+                        totalCount += searchLocalResultMessages.size();
+                    }
                     currentDataQuery = finalQuery;
                     int n = messageObjects.size();
+                    long minDuration = Config.getSearchVideoMinDuration();
+                    Log.d("wd", "========== 开始处理搜索结果 ==========");
+                    Log.d("wd", "搜索字符串: " + (finalQuery.isEmpty() ? "(空)" : finalQuery));
+                    Log.d("wd", "消息总数: " + n);
+                    String filterTypeName = "null";
+                    if (currentSearchFilter != null) {
+                        switch (currentSearchFilter.filterType) {
+                            case FiltersView.FILTER_TYPE_MEDIA:
+                                filterTypeName = "媒体(视频)";
+                                break;
+                            case FiltersView.FILTER_TYPE_FILES:
+                                filterTypeName = "文件";
+                                break;
+                            case FiltersView.FILTER_TYPE_LINKS:
+                                filterTypeName = "链接";
+                                break;
+                            case FiltersView.FILTER_TYPE_MUSIC:
+                                filterTypeName = "音乐";
+                                break;
+                            case FiltersView.FILTER_TYPE_VOICE:
+                                filterTypeName = "语音";
+                                break;
+                            default:
+                                filterTypeName = "其他";
+                                break;
+                        }
+                    }
+                    Log.d("wd", "过滤器类型: " + filterTypeName);
+                    Log.d("wd", "最小时长设置: " + minDuration + " 秒");
+                    int videoCount = 0;
+                    int shortVideoCount = 0;
+                    int nonVideoCount = 0;
                     for (int i = 0; i < n; i++) {
                         MessageObject messageObject = messageObjects.get(i);
-//                        ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
-//                        if (messageObjectsByDate == null) {
-//                            messageObjectsByDate = new ArrayList<>();
-//                            sectionArrays.put(messageObject.monthKey, messageObjectsByDate);
-//                            sections.add(messageObject.monthKey);
-//                        }
-//                        messageObjectsByDate.add(messageObject);
-//                        messages.add(messageObject);
-//                        messagesById.put(messageObject.getId(), messageObject);
-//
-//                        if (PhotoViewer.getInstance().isVisible()) {
-//                            PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
-//                        }
-                        //wd 全局搜索-媒体只显示视频，尊重最小时长设置
                         if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
                             if (messageObject.isVideo()) {
-                                //wd 应用最小时长筛选
-                                long minDuration = Config.getSearchVideoMinDuration();
-                                if (minDuration == 0 || messageObject.isLongVideo(false, minDuration)) {
+                                boolean isLongEnough = minDuration == 0 || messageObject.isLongVideo(false, minDuration);
+                                if (isLongEnough) {
                                     ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
                                     if (messageObjectsByDate == null) {
                                         messageObjectsByDate = new ArrayList<>();
@@ -853,18 +886,19 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                                     messages.add(messageObject);
                                     searchResultMessages.add(messageObject);
                                     messagesById.put(messageObject.getId(), messageObject);
-
                                     if (PhotoViewer.getInstance().isVisible()) {
                                         PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
                                     }
+                                    videoCount++;
                                 } else {
                                     removeCount++;
+                                    shortVideoCount++;
                                 }
                             } else {
                                 removeCount++;
+                                nonVideoCount++;
                             }
                         } else {
-                            //wd 非媒体类型搜索，保持原有逻辑
                             ArrayList<MessageObject> messageObjectsByDate = sectionArrays.get(messageObject.monthKey);
                             if (messageObjectsByDate == null) {
                                 messageObjectsByDate = new ArrayList<>();
@@ -875,17 +909,25 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             messages.add(messageObject);
                             searchResultMessages.add(messageObject);
                             messagesById.put(messageObject.getId(), messageObject);
-
                             if (PhotoViewer.getInstance().isVisible()) {
                                 PhotoViewer.getInstance().addPhoto(messageObject, photoViewerClassGuid);
                             }
                         }
                     }
+                    Log.d("wd", "========== 过滤结果汇总 ==========");
+                    Log.d("wd", "总消息数: " + n);
+                    Log.d("wd", "保留视频数: " + videoCount);
+                    Log.d("wd", "过滤短视频数: " + shortVideoCount);
+                    Log.d("wd", "过滤非视频数: " + nonVideoCount);
+                    Log.d("wd", "移除总数: " + removeCount);
+                    Log.d("wd", "最终消息数: " + messages.size());
+                    Log.d("wd", "===================================");
                     totalCount -= removeCount;
                     if (messages.size() > totalCount) {
                         totalCount = messages.size();
                     }
-                    endReached = messages.size() >= totalCount;
+                    //wd 当服务器没有更多数据或过滤后消息数量已达到预期总数时，设置结束标志
+                    endReached = messages.size() >= totalCount || nextSearchRate == 0;
 
                     if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
                         //wd 打印完整的搜索汇总（包括本地和网络结果）
