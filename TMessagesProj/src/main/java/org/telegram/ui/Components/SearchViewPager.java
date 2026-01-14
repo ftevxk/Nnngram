@@ -1433,6 +1433,19 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         return -1;
     }
 
+    public boolean isMediaFilterTabSelected() {
+        int position = getCurrentPosition();
+        return isMediaFilterTab(position);
+    }
+
+    public boolean isMediaFilterTab(int position) {
+        if (position < 0 || position >= viewPagerAdapter.items.size()) {
+            return false;
+        }
+        ViewPagerAdapter.Item item = viewPagerAdapter.items.get(position);
+        return item.type == ViewPagerAdapter.FILTER_TYPE && item.filterIndex == FiltersView.FILTER_INDEX_MEDIA;
+    }
+
     private class ViewPagerAdapter extends ViewPagerFixed.Adapter {
 
         ArrayList<Item> items = new ArrayList<>();

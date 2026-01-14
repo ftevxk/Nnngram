@@ -3242,17 +3242,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     FrameLayout searchContainer = (FrameLayout) searchItem.getSearchClearButton().getParent();
                     qrItem = new ActionBarMenuItem(context, menu, Theme.getColor(Theme.key_actionBarDefaultSelector), Theme.getColor(Theme.key_actionBarDefaultIcon));
                     qrItem.setTranslationX(dp(32));
-                    if (initialSearchType == 0) {
-                        //wd 媒体页使用最小时长设置
-                        qrItem.setIcon(R.drawable.ic_filter_list);
-                        qrItem.setOnClickListener(v -> showDurationSelectionDialog());
-                        qrItem.setContentDescription(LocaleController.getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration));
-                    } else {
-                        //wd 非媒体页使用二维码扫描
-                        qrItem.setIcon(R.drawable.ic_line_scan);
-                        qrItem.setOnClickListener(v -> QrHelper.openCameraScanActivity(DialogsActivity.this));
-                        qrItem.setContentDescription(LocaleController.getString("AuthAnotherClientScan", R.string.AuthAnotherClientScan));
-                    }
+                    updateQrItemForSearchTab();
                     qrItem.setFixBackground(true);
                     FrameLayout.LayoutParams speedParams = new FrameLayout.LayoutParams(dp(42), ViewGroup.LayoutParams.MATCH_PARENT);
                     speedParams.leftMargin = speedParams.rightMargin = dp(14 + 24);
@@ -6597,6 +6587,35 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         builder.show();
     }
 
+    private void updateQrItemForSearchTab() {
+        updateQrItemForSearchTab(-1);
+    }
+
+    private void updateQrItemForSearchTab(int position) {
+        if (qrItem == null) {
+            return;
+        }
+        if (isMediaSearchTabSelected(position)) {
+            qrItem.setIcon(R.drawable.ic_filter_list);
+            qrItem.setOnClickListener(v -> showDurationSelectionDialog());
+            qrItem.setContentDescription(LocaleController.getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration));
+        } else {
+            qrItem.setIcon(R.drawable.ic_line_scan);
+            qrItem.setOnClickListener(v -> QrHelper.openCameraScanActivity(DialogsActivity.this));
+            qrItem.setContentDescription(LocaleController.getString("AuthAnotherClientScan", R.string.AuthAnotherClientScan));
+        }
+    }
+
+    private boolean isMediaSearchTabSelected(int position) {
+        if (searchViewPager == null) {
+            return false;
+        }
+        if (position >= 0) {
+            return searchViewPager.isMediaFilterTab(position);
+        }
+        return searchViewPager.isMediaFilterTabSelected();
+    }
+
     private void refreshSearchResults() {
         if (searchViewPager != null) {
             try {
@@ -8087,6 +8106,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         if (show && startFromDownloads && searchViewPager != null) {
             searchViewPager.showDownloads();
+        }
+        if (show) {
+            updateQrItemForSearchTab();
         }
     }
 
@@ -13396,6 +13418,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             @Override
             protected void onTabPageSelected(int position) {
                 // updateSpeedItem(position == 2);
+                updateQrItemForSearchTab(position);
             }
 
             @Override
