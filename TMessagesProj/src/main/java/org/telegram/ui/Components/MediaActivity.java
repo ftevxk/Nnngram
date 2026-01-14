@@ -311,7 +311,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         this.fragmentView = fragmentView;
 
         ActionBarMenu menu2 = actionBar.createMenu();
-        if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES || type == TYPE_MEDIA) {
+        if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
             FrameLayout menu = new FrameLayout(context);
             actionBar.addView(menu, LayoutHelper.createFrame(56, 56, Gravity.RIGHT | Gravity.BOTTOM));
 
@@ -444,43 +444,46 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             }
         }
 
+        if (optionsItem != null) {
             //wd 添加视频最小时长设置选项，在所有类型下都显示
             ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
-                93, 0, LocaleController.getString(R.string.SearchVideoMinDuration), true);
+                93, R.drawable.ic_filter_list, LocaleController.getString(R.string.SearchVideoMinDuration), true);
             videoMinDurationItem.setOnClickListener(e -> {
-            //wd 弹出对话框设置视频最小时长
-            final EditText editText = new EditTextBoldCursor(getContext());
-            editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
-            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
-            editText.setHint(LocaleController.getString(R.string.Second));
-            editText.setSingleLine(true);
-            editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-            editText.setPadding(dp(16), dp(8), dp(16), dp(8));
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
-            builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
-            builder.setView(editText);
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
-                String text = editText.getText().toString();
-                int duration;
-                try {
-                    duration = Integer.parseInt(text);
-                } catch (NumberFormatException ex) {
-                    duration = 0;
-                }
-                Config.setSearchVideoMinDuration(duration);
-                videoMinDurationItem.setChecked(duration > 0);
-                //wd 最小时长改变时重新加载数据
-                if (sharedMediaLayout != null) {
-                    // 清除现有数据并重新加载以应用最小时长过滤
-                    sharedMediaLayout.clearMediaData();
-                    sharedMediaLayout.changeMediaFilterType();
-                }
+                optionsItem.closeSubMenu();
+                //wd 弹出对话框设置视频最小时长
+                final EditText editText = new EditTextBoldCursor(getContext());
+                editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
+                editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+                editText.setHint(LocaleController.getString(R.string.Second));
+                editText.setSingleLine(true);
+                editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+                editText.setPadding(dp(16), dp(8), dp(16), dp(8));
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
+                builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
+                builder.setView(editText);
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                    String text = editText.getText().toString();
+                    int duration;
+                    try {
+                        duration = Integer.parseInt(text);
+                    } catch (NumberFormatException ex) {
+                        duration = 0;
+                    }
+                    Config.setSearchVideoMinDuration(duration);
+                    videoMinDurationItem.setChecked(duration > 0);
+                    //wd 最小时长改变时重新加载数据
+                    if (sharedMediaLayout != null) {
+                        // 清除现有数据并重新加载以应用最小时长过滤
+                        sharedMediaLayout.clearMediaData();
+                        sharedMediaLayout.changeMediaFilterType();
+                    }
+                });
+                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                builder.show();
             });
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-            builder.show();
-        });
-        
-        optionsItem.addColoredGap();
+
+            optionsItem.addColoredGap();
+        }
 
         boolean hasAvatar = type == TYPE_MEDIA;
 

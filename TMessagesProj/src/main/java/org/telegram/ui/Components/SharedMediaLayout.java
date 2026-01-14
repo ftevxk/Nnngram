@@ -2250,9 +2250,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 
                 //wd 添加视频最小时长设置选项，在所有类型下都显示（不需要勾选图标）
                 ActionBarMenuSubItem videoMinDurationItem = new ActionBarMenuSubItem(context, false, false, true, resourcesProvider);
-                videoMinDurationItem.setTextAndIcon(getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration), 0);
+                videoMinDurationItem.setTextAndIcon(getString("SearchVideoMinDuration", R.string.SearchVideoMinDuration), R.drawable.ic_filter_list);
                 videoMinDurationItem.setChecked(Config.getSearchVideoMinDuration() > 0);
                 videoMinDurationItem.setOnClickListener(v -> {
+                    options.dismiss();
                     //wd 弹出对话框设置视频最小时长
                     final EditText editText = new EditTextBoldCursor(context);
                     editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
