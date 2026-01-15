@@ -996,7 +996,17 @@ public class FileLoader extends BaseController {
                             saveCustomPath = true;
                         }
                     } else if (isUserDownloadRequest(parentObject) && type == MEDIA_DIR_VIDEO) {
-                        //wd 用户手动下载视频，保存到 Videos 目录
+                        File videoDir = getDirectory(MEDIA_DIR_VIDEO);
+                        if (videoDir != null) {
+                            File parent = videoDir.getParentFile();
+                            if (parent != null) {
+                                File videosDir = new File(parent, "Videos");
+                                if (!videosDir.equals(videoDir) && (videosDir.isDirectory() || videosDir.mkdirs())) {
+                                    storeDir = videosDir;
+                                    saveCustomPath = true;
+                                }
+                            }
+                        }
                     } else if (isUserDownloadRequest(parentObject) && !TextUtils.isEmpty(getDocumentFileName(document)) && canSaveAsFile(parentObject)) {
                         storeFileName = getDocumentFileName(document);
                         File newDir = getDirectory(MEDIA_DIR_FILES);
@@ -1026,6 +1036,8 @@ public class FileLoader extends BaseController {
         }
 
         final int finalType = type;
+        final long finalDocumentId = documentId;
+        final int finalDcId = dcId;
 
         FileLoadOperation.FileLoadOperationDelegate fileLoadOperationDelegate = new FileLoadOperation.FileLoadOperationDelegate() {
 
@@ -1044,9 +1056,56 @@ public class FileLoader extends BaseController {
                     checkDownloadQueue(operation, operation.getQueue(), 0);
                     return;
                 }
+                File resultFile = finalFile;
+                if (parentObject instanceof MessageObject && finalType != MEDIA_DIR_CACHE) {
+                    MessageObject messageObject = (MessageObject) parentObject;
+                    if (messageObject.putInDownloadsStore) {
+                        File cacheDir = getDirectory(MEDIA_DIR_CACHE);
+                        File targetDir = getDirectory(finalType);
+                        if (finalType == MEDIA_DIR_VIDEO && targetDir != null) {
+                            File parent = targetDir.getParentFile();
+                            if (parent != null) {
+                                File videosDir = new File(parent, "Videos");
+                                if (!videosDir.equals(targetDir) && (videosDir.isDirectory() || videosDir.mkdirs())) {
+                                    targetDir = videosDir;
+                                }
+                            }
+                        }
+                        if (cacheDir != null && targetDir != null && resultFile != null) {
+                            String cachePrefix = cacheDir.getAbsolutePath() + File.separator;
+                            String filePath = resultFile.getAbsolutePath();
+                            if (filePath.startsWith(cachePrefix) && !targetDir.equals(cacheDir)) {
+                                File destFile = new File(targetDir, resultFile.getName());
+                                if (destFile.exists()) {
+                                    if (destFile.length() == resultFile.length()) {
+                                        resultFile.delete();
+                                        resultFile = destFile;
+                                    } else {
+                                        destFile.delete();
+                                    }
+                                }
+                                if (!destFile.exists()) {
+                                    boolean moved = resultFile.renameTo(destFile);
+                                    if (!moved) {
+                                        moved = AndroidUtilities.copyFileSafe(resultFile, destFile);
+                                        if (moved) {
+                                            resultFile.delete();
+                                        }
+                                    }
+                                    if (moved) {
+                                        resultFile = destFile;
+                                    }
+                                }
+                                if (finalDocumentId != 0 && resultFile != null && resultFile.exists()) {
+                                    getFileDatabase().putPath(finalDocumentId, finalDcId, finalType, 0, resultFile.getAbsolutePath());
+                                }
+                            }
+                        }
+                    }
+                }
                 FilePathDatabase.FileMeta fileMeta = getFileMetadataFromParent(currentAccount, parentObject);
                 if (fileMeta != null) {
-                    getFileLoader().getFileDatabase().saveFileDialogId(finalFile, fileMeta);
+                    getFileLoader().getFileDatabase().saveFileDialogId(resultFile, fileMeta);
                 }
                 if (parentObject instanceof MessageObject) {
                     MessageObject messageObject = (MessageObject) parentObject;
@@ -1058,7 +1117,7 @@ public class FileLoader extends BaseController {
                 if (!operation.isPreloadVideoOperation()) {
                     loadOperationPathsUI.remove(fileName);
                     if (delegate != null) {
-                        delegate.fileDidLoaded(fileName, finalFile, parentObject, finalType);
+                        delegate.fileDidLoaded(fileName, resultFile, parentObject, finalType);
                     }
                 }
 
@@ -1470,7 +1529,10 @@ public class FileLoader extends BaseController {
         if (documentId != 0) {
             String path = getInstance(UserConfig.selectedAccount).getFileDatabase().getPath(documentId, dcId, type, useFileDatabaseQueue);
             if (path != null) {
-                return new File(path);
+                File file = new File(path);
+                if (file.exists()) {
+                    return file;
+                }
             }
         }
         //wd 文件对应目录获取不到尝试从缓存目录获取
@@ -1487,9 +1549,23 @@ public class FileLoader extends BaseController {
                     if (!videosDir.equals(videoDir)) {
                         File videoFile = new File(videosDir, getAttachFileName(attach, ext));
                         if (videoFile.exists()) {
+                            if (documentId != 0) {
+                                getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
+                            }
                             return videoFile;
                         }
                     }
+                }
+            }
+
+            File videoPublicDir = getDirectory(MEDIA_DIR_VIDEO_PUBLIC);
+            if (videoPublicDir != null) {
+                File videoFile = new File(videoPublicDir, getAttachFileName(attach, ext));
+                if (videoFile.exists()) {
+                    if (documentId != 0) {
+                        getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
+                    }
+                    return videoFile;
                 }
             }
         }
@@ -1500,6 +1576,9 @@ public class FileLoader extends BaseController {
             if (videoDir != null) {
                 File videoFile = new File(videoDir, getAttachFileName(attach, ext));
                 if (videoFile.exists()) {
+                    if (documentId != 0) {
+                        getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
+                    }
                     return videoFile;
                 }
                 //wd 同时检查 Videos 目录
@@ -1509,9 +1588,23 @@ public class FileLoader extends BaseController {
                     if (!videosDir.equals(videoDir)) {
                         videoFile = new File(videosDir, getAttachFileName(attach, ext));
                         if (videoFile.exists()) {
+                            if (documentId != 0) {
+                                getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
+                            }
                             return videoFile;
                         }
                     }
+                }
+            }
+
+            File videoPublicDir = getDirectory(MEDIA_DIR_VIDEO_PUBLIC);
+            if (videoPublicDir != null) {
+                File videoFile = new File(videoPublicDir, getAttachFileName(attach, ext));
+                if (videoFile.exists()) {
+                    if (documentId != 0) {
+                        getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
+                    }
+                    return videoFile;
                 }
             }
         }

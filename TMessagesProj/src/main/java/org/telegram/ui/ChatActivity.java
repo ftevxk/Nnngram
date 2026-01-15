@@ -40477,9 +40477,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 return;
             } else if (message.isVideo()) {
-                if (DownloadController.getInstance(currentAccount).canDownloadMedia(message.messageOwner) == 1) {
-                    message.putInDownloadsStore = true;
-                }
+                message.putInDownloadsStore = false;
             } else {
                 message.putInDownloadsStore = true;
             }
