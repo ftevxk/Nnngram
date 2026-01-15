@@ -792,6 +792,19 @@ public class FileLoader extends BaseController {
         f = new File(getDirectory(MEDIA_DIR_VIDEO), fileName);
         if (f.exists()) return f;
 
+        //wd 检查 Videos 目录 (如果 MEDIA_DIR_VIDEO 默认不是 Videos)
+        File videoDir = getDirectory(MEDIA_DIR_VIDEO);
+        if (videoDir != null) {
+            File parent = videoDir.getParentFile();
+            if (parent != null) {
+                File videosDir = new File(parent, "Videos");
+                if (!videosDir.equals(videoDir)) {
+                    f = new File(videosDir, fileName);
+                    if (f.exists()) return f;
+                }
+            }
+        }
+
         f = new File(getDirectory(MEDIA_DIR_FILES), fileName);
         if (f.exists()) return f;
 
@@ -982,6 +995,8 @@ public class FileLoader extends BaseController {
                             storeDir = newDir;
                             saveCustomPath = true;
                         }
+                    } else if (isUserDownloadRequest(parentObject) && type == MEDIA_DIR_VIDEO) {
+                        //wd 用户手动下载视频，保存到 Videos 目录
                     } else if (isUserDownloadRequest(parentObject) && !TextUtils.isEmpty(getDocumentFileName(document)) && canSaveAsFile(parentObject)) {
                         storeFileName = getDocumentFileName(document);
                         File newDir = getDirectory(MEDIA_DIR_FILES);
@@ -1460,6 +1475,47 @@ public class FileLoader extends BaseController {
         }
         //wd 文件对应目录获取不到尝试从缓存目录获取
         File attachFile = new File(dir, getAttachFileName(attach, ext));
+
+        //wd 如果在标准目录找不到，且 dir 是 Video 目录，尝试在 Videos 目录查找
+        if (!attachFile.exists() && type == MEDIA_DIR_VIDEO) {
+            File videoDir = getDirectory(MEDIA_DIR_VIDEO);
+            if (videoDir != null) {
+                File parent = videoDir.getParentFile();
+                if (parent != null) {
+                    File videosDir = new File(parent, "Videos");
+                    // 如果当前 dir 不是 Videos (例如是 Video)，则检查 Videos
+                    if (!videosDir.equals(videoDir)) {
+                        File videoFile = new File(videosDir, getAttachFileName(attach, ext));
+                        if (videoFile.exists()) {
+                            return videoFile;
+                        }
+                    }
+                }
+            }
+        }
+
+        //wd 如果在标准目录找不到，尝试在 Videos 目录查找（应对从 Cache 移动到 Videos 的情况）
+        if (!attachFile.exists() && type == MEDIA_DIR_CACHE) {
+            File videoDir = getDirectory(MEDIA_DIR_VIDEO);
+            if (videoDir != null) {
+                File videoFile = new File(videoDir, getAttachFileName(attach, ext));
+                if (videoFile.exists()) {
+                    return videoFile;
+                }
+                //wd 同时检查 Videos 目录
+                File parent = videoDir.getParentFile();
+                if (parent != null) {
+                    File videosDir = new File(parent, "Videos");
+                    if (!videosDir.equals(videoDir)) {
+                        videoFile = new File(videosDir, getAttachFileName(attach, ext));
+                        if (videoFile.exists()) {
+                            return videoFile;
+                        }
+                    }
+                }
+            }
+        }
+
         if (!attachFile.exists() && !dir.equals(getDirectory(MEDIA_DIR_CACHE))) {
             attachFile = new File(getDirectory(MEDIA_DIR_CACHE), getAttachFileName(attach, ext));
         }
