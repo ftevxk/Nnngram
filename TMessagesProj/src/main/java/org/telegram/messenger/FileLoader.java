@@ -1450,8 +1450,13 @@ public class FileLoader extends BaseController {
         } else {
             if (attach instanceof TLRPC.Document) {
                 TLRPC.Document document = (TLRPC.Document) attach;
+                //wd 优先验证数据库中记录的本地路径是否有效，防止文件被移动后 localPath 仍指向旧路径导致“假下载”状态
                 if (!TextUtils.isEmpty(document.localPath)) {
-                    return new File(document.localPath);
+                    File localFile = new File(document.localPath);
+                    if (localFile.exists()) {
+                        return localFile;
+                    }
+                    document.localPath = null;
                 }
                 if (document.key != null) {
                     type = MEDIA_DIR_CACHE;
@@ -1538,7 +1543,7 @@ public class FileLoader extends BaseController {
         //wd 文件对应目录获取不到尝试从缓存目录获取
         File attachFile = new File(dir, getAttachFileName(attach, ext));
 
-        //wd 如果在标准目录找不到，且 dir 是 Video 目录，尝试在 Videos 目录查找
+        //wd 当标准存储目录找不到文件时，通过检查同级 Videos 目录实现 Video -> Videos 迁移的向前兼容
         if (!attachFile.exists() && type == MEDIA_DIR_VIDEO) {
             File videoDir = getDirectory(MEDIA_DIR_VIDEO);
             if (videoDir != null) {
@@ -1570,7 +1575,7 @@ public class FileLoader extends BaseController {
             }
         }
 
-        //wd 如果在标准目录找不到，尝试在 Videos 目录查找（应对从 Cache 移动到 Videos 的情况）
+        //wd 应对用户手动将 Cache 目录文件迁移到 Videos 目录的情况，确保文件在物理位置变更后依然可读
         if (!attachFile.exists() && type == MEDIA_DIR_CACHE) {
             File videoDir = getDirectory(MEDIA_DIR_VIDEO);
             if (videoDir != null) {

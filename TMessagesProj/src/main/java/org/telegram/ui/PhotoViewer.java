@@ -25,6 +25,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.ClipData;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,6 +33,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -64,6 +66,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -83,6 +86,7 @@ import android.transition.TransitionManager;
 import android.transition.TransitionSet;
 import android.transition.TransitionValues;
 import android.util.FloatProperty;
+import android.util.Log;
 import android.util.Pair;
 import android.util.Property;
 import android.util.Range;
@@ -312,9 +316,11 @@ import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -10232,11 +10238,514 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         }
     }
 
+    //wd 当视频文件在原始路径（如Cache目录）不存在时，尝试在其他媒体目录（如Videos）中查找，解决由于目录迁移导致的播放失败问题
+    private Uri resolveLocalVideoUri(Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        if (BuildVars.LOGS_ENABLED) {
+            Log.d("wd", "视频URI修正-开始 " + getSafeUriInfo(uri));
+        }
+
+        if ("content".equals(uri.getScheme())) {
+            if (canReadUri(uri)) {
+                if (BuildVars.LOGS_ENABLED) {
+                    Log.d("wd", "视频URI修正-content可读 直接使用 " + getSafeUriInfo(uri));
+                }
+                return uri;
+            }
+            Uri fallbackUri = resolveLocalVideoUriFromMessage(uri);
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-content不可读 回退=" + (fallbackUri != null) + " 原=" + getSafeUriInfo(uri));
+            }
+            return fallbackUri != null ? fallbackUri : uri;
+        }
+
+        if (!"file".equals(uri.getScheme())) {
+            return uri;
+        }
+        String path = uri.getPath();
+        if (TextUtils.isEmpty(path)) {
+            return uri;
+        }
+        File sourceFile = new File(path);
+        if (sourceFile.exists()) {
+            Uri resolved = getAccessibleUri(sourceFile);
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-file存在 name=" + sourceFile.getName() + " size=" + sourceFile.length()
+                                + " -> " + getSafeUriInfo(resolved));
+            }
+            return resolved;
+        }
+
+        Uri fallbackUri = resolveLocalVideoUriFromMessage(uri);
+        if (fallbackUri != null) {
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-file不存在 FileLoader回退成功 原=" + getSafeUriInfo(uri)
+                                + " -> " + getSafeUriInfo(fallbackUri));
+            }
+            return fallbackUri;
+        }
+
+        ArrayList<String> candidates = collectVideoCandidateNames(sourceFile);
+        long expectedSize = 0;
+        if (currentMessageObject != null) {
+            TLRPC.Document document = currentMessageObject.getDocument();
+            if (document != null) {
+                expectedSize = document.size;
+            }
+        }
+
+        File resolvedFile = findLocalVideoFileByCandidates(sourceFile, candidates, expectedSize);
+        if (resolvedFile == null) {
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-回退失败 name=" + sourceFile.getName() + " pathHash="
+                                + Integer.toHexString(path.hashCode()));
+            }
+            return uri;
+        }
+        updateCurrentVideoDataSource(resolvedFile);
+        Uri resolved = getAccessibleUri(resolvedFile);
+        if (BuildVars.LOGS_ENABLED) {
+            Log.d("wd", "视频URI修正-回退成功 name=" + resolvedFile.getName() + " size=" + resolvedFile.length()
+                            + " -> " + getSafeUriInfo(resolved));
+        }
+        return resolved;
+    }
+
+    //wd 针对消息视频优先走 FileLoader 路径解析，避免仅按文件名回退导致找不到
+    private Uri resolveLocalVideoUriFromMessage(Uri uri) {
+        if (currentMessageObject == null) {
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-消息回退失败 currentMessageObject为空");
+            }
+            return null;
+        }
+        TLRPC.Document document = currentMessageObject.getDocument();
+        if (document == null) {
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-消息回退失败 document为空");
+            }
+            return null;
+        }
+        File file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, null, false, true);
+        if (file == null || !file.exists()) {
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI修正-消息回退未命中 name=" + FileLoader.getAttachFileName(document));
+            }
+            return null;
+        }
+        updateCurrentVideoDataSource(file);
+        if (BuildVars.LOGS_ENABLED) {
+            Log.d("wd", "视频URI修正-消息回退命中 name=" + file.getName() + " size=" + file.length());
+        }
+        return getAccessibleUri(file);
+    }
+
+    //wd 将可能的文件名来源统一收集，兼容用户手动重命名或应用保存不同命名策略导致的找回失败
+    private ArrayList<String> collectVideoCandidateNames(File sourceFile) {
+        ArrayList<String> result = new ArrayList<>(4);
+        if (sourceFile != null) {
+            String name = sourceFile.getName();
+            if (!TextUtils.isEmpty(name)) {
+                result.add(name);
+            }
+        }
+
+        if (currentMessageObject != null) {
+            TLRPC.Document document = currentMessageObject.getDocument();
+            if (document != null) {
+                String attachName = FileLoader.getAttachFileName(document);
+                if (!TextUtils.isEmpty(attachName) && !result.contains(attachName)) {
+                    result.add(attachName);
+                }
+                String documentName = FileLoader.getDocumentFileName(document);
+                if (!TextUtils.isEmpty(documentName) && !result.contains(documentName)) {
+                    result.add(documentName);
+                }
+            }
+        }
+        return result;
+    }
+
+    private Uri getAccessibleUri(File file) {
+        if (file == null) {
+            return null;
+        }
+        //wd 优先尝试 FileProvider 获取 Uri，解决 Android 7.0+ 严格模式及 Android 10+ 作用域存储导致的权限问题
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                    ApplicationLoader.applicationContext,
+                    ApplicationLoader.getApplicationId() + ".provider",
+                    file);
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI可访问-FileProvider成功 name=" + file.getName() + " -> " + getSafeUriInfo(uri));
+            }
+            return uri;
+        } catch (Exception e) {
+            //wd FileProvider 失败不阻断播放链路，继续降级尝试其他可访问的 Uri
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI可访问-FileProvider失败 name=" + file.getName() + " err="
+                                + e.getClass().getSimpleName());
+            }
+        }
+
+        //wd 如果 FileProvider 失败（如路径未配置），且文件位于公共目录，尝试通过 MediaStore 获取 Content Uri
+        Uri mediaUri = getContentUriFromFile(file);
+        if (mediaUri != null) {
+            if (BuildVars.LOGS_ENABLED) {
+                Log.d("wd", "视频URI可访问-MediaStore成功 name=" + file.getName() + " -> " + getSafeUriInfo(mediaUri));
+            }
+            return mediaUri;
+        }
+
+        //wd 降级回退到 file:// 协议
+        Uri uri = Uri.fromFile(file);
+        if (BuildVars.LOGS_ENABLED) {
+            Log.d("wd", "视频URI可访问-回退file协议 name=" + file.getName() + " -> " + getSafeUriInfo(uri));
+        }
+        return uri;
+    }
+
+    private static String getSafeUriInfo(Uri uri) {
+        if (uri == null) {
+            return "uri=null";
+        }
+        String scheme = uri.getScheme();
+        String authority = uri.getAuthority();
+        String last = uri.getLastPathSegment();
+        StringBuilder sb = new StringBuilder(64);
+        sb.append("scheme=").append(scheme);
+        if (!TextUtils.isEmpty(authority)) {
+            sb.append(" authority=").append(authority);
+        }
+        if (!TextUtils.isEmpty(last)) {
+            sb.append(" last=").append(last);
+        }
+        return sb.toString();
+    }
+
+    private boolean canReadUri(Uri uri) {
+        if (uri == null) {
+            return false;
+        }
+        try {
+            return ApplicationLoader.applicationContext.getContentResolver().openAssetFileDescriptor(uri, "r") != null;
+        } catch (Exception ignore) {
+            return false;
+        }
+    }
+
+    private Uri getContentUriFromFile(File file) {
+        try {
+            String filePath = file.getAbsolutePath();
+            Cursor cursor = ApplicationLoader.applicationContext.getContentResolver().query(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    new String[] { MediaStore.Video.Media._ID },
+                    MediaStore.Video.Media.DATA + "=? ",
+                    new String[] { filePath },
+                    null);
+            if (cursor != null) {
+                try {
+                    if (cursor.moveToFirst()) {
+                        int id = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID));
+                        return ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+                    }
+                } finally {
+                    cursor.close();
+                }
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return null;
+    }
+
+    //wd 按照优先级遍历各个可能的存储目录，根据文件名或文件大小找回迁移后的文件
+    private File findLocalVideoFileByCandidates(File sourceFile, ArrayList<String> candidates, long expectedSize) {
+        if (candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+
+        if (BuildVars.LOGS_ENABLED) {
+            String name = sourceFile != null ? sourceFile.getName() : "null";
+            Log.d("wd", "视频文件查找-开始 name=" + name + " 候选名数=" + candidates.size() + " 期望size=" + expectedSize);
+        }
+
+        ArrayList<File> dirs = new ArrayList<>(10);
+        if (sourceFile != null) {
+            File parent = sourceFile.getParentFile();
+            if (parent != null) {
+                dirs.add(parent);
+                File root = parent.getParentFile();
+                if (root != null) {
+                    File siblingVideo = new File(root, "Video");
+                    if (!dirs.contains(siblingVideo)) {
+                        dirs.add(siblingVideo);
+                    }
+                    File siblingVideos = new File(root, "Videos");
+                    if (!dirs.contains(siblingVideos)) {
+                        dirs.add(siblingVideos);
+                    }
+                }
+            }
+        }
+
+        File videoDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_VIDEO);
+        if (videoDir != null) {
+            if (!dirs.contains(videoDir)) {
+                dirs.add(videoDir);
+            }
+            File parent = videoDir.getParentFile();
+            if (parent != null) {
+                File videosDir = new File(parent, "Videos");
+                if (!videosDir.equals(videoDir)) {
+                    if (!dirs.contains(videosDir)) {
+                        dirs.add(videosDir);
+                    }
+                }
+            }
+        }
+
+        File videoPublicDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC);
+        if (videoPublicDir != null) {
+            if (!dirs.contains(videoPublicDir)) {
+                dirs.add(videoPublicDir);
+            }
+        }
+
+        File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
+        if (cacheDir != null) {
+            if (!dirs.contains(cacheDir)) {
+                dirs.add(cacheDir);
+            }
+        }
+
+        File filesDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_FILES);
+        if (filesDir != null) {
+            if (!dirs.contains(filesDir)) {
+                dirs.add(filesDir);
+            }
+        }
+
+        File documentDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_DOCUMENT);
+        if (documentDir != null) {
+            if (!dirs.contains(documentDir)) {
+                dirs.add(documentDir);
+            }
+        }
+
+        for (int i = 0; i < candidates.size(); i++) {
+            String fileName = candidates.get(i);
+            if (TextUtils.isEmpty(fileName)) {
+                continue;
+            }
+            for (int d = 0; d < dirs.size(); d++) {
+                File dir = dirs.get(d);
+                if (dir == null) {
+                    continue;
+                }
+                File f = new File(dir, fileName);
+                if (f.exists()) {
+                    if (BuildVars.LOGS_ENABLED) {
+                        Log.d("wd", "视频文件查找-按名直查命中 root=" + dir.getName() + " name=" + f.getName());
+                    }
+                    return f;
+                }
+            }
+        }
+
+        HashSet<String> nameSet = new HashSet<>();
+        for (int i = 0; i < candidates.size(); i++) {
+            String name = candidates.get(i);
+            if (!TextUtils.isEmpty(name)) {
+                nameSet.add(name);
+            }
+        }
+
+        int maxCheckedNames = 12000;
+        for (int d = 0; d < dirs.size(); d++) {
+            File dir = dirs.get(d);
+            if (dir == null || !dir.isDirectory()) {
+                continue;
+            }
+            boolean isImportantDir = dir.equals(videoDir) || dir.equals(videoPublicDir);
+            File f = findFileByNameRecursive(dir, nameSet, isImportantDir ? 25000 : maxCheckedNames);
+            if (f != null) {
+                if (BuildVars.LOGS_ENABLED) {
+                    Log.d("wd", "视频文件查找-按名递归命中 root=" + dir.getName() + " name=" + f.getName());
+                }
+                return f;
+            }
+        }
+
+        if (expectedSize <= 0) {
+            return null;
+        }
+
+        HashSet<String> exts = new HashSet<>();
+        for (int i = 0; i < candidates.size(); i++) {
+            String name = candidates.get(i);
+            if (TextUtils.isEmpty(name)) {
+                continue;
+            }
+            int dot = name.lastIndexOf('.');
+            if (dot > 0 && dot < name.length() - 1) {
+                String ext = name.substring(dot).toLowerCase();
+                if (ext.length() <= 8) {
+                    exts.add(ext);
+                }
+            }
+        }
+
+        int maxChecked = 500;
+        for (int d = 0; d < dirs.size(); d++) {
+            File dir = dirs.get(d);
+            if (dir == null || !dir.isDirectory()) {
+                continue;
+            }
+            boolean isImportantDir = dir.equals(videoDir) || dir.equals(videoPublicDir);
+            File f = findFileBySizeRecursive(
+                    dir,
+                    expectedSize,
+                    exts,
+                    isImportantDir ? 10000 : maxChecked);
+            if (f != null) {
+                if (BuildVars.LOGS_ENABLED) {
+                    Log.d("wd", "视频文件查找-按size递归命中 root=" + dir.getName() + " name=" + f.getName());
+                }
+                return f;
+            }
+        }
+
+        if (BuildVars.LOGS_ENABLED) {
+            String name = sourceFile != null ? sourceFile.getName() : "null";
+            Log.d("wd", "视频文件查找-结束未命中 name=" + name);
+        }
+        return null;
+    }
+
+    private File findFileByNameRecursive(File root, HashSet<String> names, int maxChecked) {
+        if (root == null
+                || !root.isDirectory()
+                || names == null
+                || names.isEmpty()
+                || maxChecked <= 0) {
+            return null;
+        }
+        ArrayDeque<File> queue = new ArrayDeque<>();
+        queue.add(root);
+        int checked = 0;
+        while (!queue.isEmpty() && checked < maxChecked) {
+            File dir = queue.poll();
+            File[] list = dir != null ? dir.listFiles() : null;
+            if (list == null || list.length == 0) {
+                continue;
+            }
+            for (int i = 0; i < list.length && checked < maxChecked; i++) {
+                File f = list[i];
+                if (f == null) {
+                    continue;
+                }
+                if (f.isDirectory()) {
+                    queue.add(f);
+                    continue;
+                }
+                checked++;
+                if (names.contains(f.getName())) {
+                    return f;
+                }
+            }
+        }
+        return null;
+    }
+
+    private File findFileBySizeRecursive(File root, long expectedSize, HashSet<String> exts, int maxChecked) {
+        if (root == null || !root.isDirectory() || expectedSize <= 0 || maxChecked <= 0) {
+            return null;
+        }
+        ArrayDeque<File> queue = new ArrayDeque<>();
+        queue.add(root);
+        int checked = 0;
+        while (!queue.isEmpty() && checked < maxChecked) {
+            File dir = queue.poll();
+            File[] list = dir != null ? dir.listFiles() : null;
+            if (list == null || list.length == 0) {
+                continue;
+            }
+            for (int i = 0; i < list.length && checked < maxChecked; i++) {
+                File f = list[i];
+                if (f == null) {
+                    continue;
+                }
+                if (f.isDirectory()) {
+                    queue.add(f);
+                    continue;
+                }
+                checked++;
+                if (f.length() != expectedSize) {
+                    continue;
+                }
+                if (!exts.isEmpty()) {
+                    String name = f.getName();
+                    int dot = name.lastIndexOf('.');
+                    if (dot <= 0 || dot >= name.length() - 1) {
+                        continue;
+                    }
+                    String ext = name.substring(dot).toLowerCase();
+                    if (!exts.contains(ext)) {
+                        continue;
+                    }
+                }
+                return f;
+            }
+        }
+        return null;
+    }
+
+    //wd 将找回的正确路径回写到内存对象和数据库中，防止下次播放再次触发查找逻辑
+    private void updateCurrentVideoDataSource(File file) {
+        if (file == null || !file.exists()) {
+            return;
+        }
+        String path = file.getAbsolutePath();
+        if (currentPathObject instanceof String) {
+            //wd 同步修正当前展示对象的路径，避免同一页面内再次播放仍复用旧路径
+            currentPathObject = path;
+        }
+        if (currentMessageObject != null) {
+            if (currentMessageObject.messageOwner != null) {
+                currentMessageObject.messageOwner.attachPath = path;
+            }
+            TLRPC.Document document = currentMessageObject.getDocument();
+            if (document != null) {
+                document.localPath = path;
+                int type;
+                if (document.key != null) {
+                    type = FileLoader.MEDIA_DIR_CACHE;
+                } else if (MessageObject.isVoiceDocument(document)) {
+                    type = FileLoader.MEDIA_DIR_AUDIO;
+                } else if (MessageObject.isVideoDocument(document)) {
+                    type = FileLoader.MEDIA_DIR_VIDEO;
+                } else {
+                    type = FileLoader.MEDIA_DIR_DOCUMENT;
+                }
+                FileLoader.getInstance(currentAccount).getFileDatabase().putPath(document.id, document.dc_id, type, 0, path);
+                if (document.key == null && MessageObject.isVideoDocument(document)) {
+                    FileLoader.getInstance(currentAccount).getFileDatabase().putPath(document.id, document.dc_id, FileLoader.MEDIA_DIR_VIDEO, 0, path);
+                }
+            }
+        }
+    }
+
     private void preparePlayer(ArrayList<VideoPlayer.Quality> videoUrises, Uri uri, boolean playWhenReady, boolean preview) {
         preparePlayer(videoUrises, uri, playWhenReady, preview, null);
     }
 
     private void preparePlayer(ArrayList<VideoPlayer.Quality> videoUrises, Uri uri, boolean playWhenReady, boolean preview, MediaController.SavedFilterState savedFilterState) {
+        //wd 在准备播放器前尝试修正本地路径，确保被迁移（如Cache -> Videos）的文件仍能正常播放
+        uri = resolveLocalVideoUri(uri);
         if (!preview) {
             currentPlayingVideoFile = uri;
             currentPlayingVideoQualityFiles = videoUrises;

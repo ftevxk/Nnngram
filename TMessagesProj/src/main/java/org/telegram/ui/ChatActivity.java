@@ -40477,6 +40477,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 return;
             } else if (message.isVideo()) {
+                //wd 视频默认不存入 DownloadsStore，确保自动播放的视频仅暂存在 Cache 目录，只有手动下载才迁移到媒体目录
                 message.putInDownloadsStore = false;
             } else {
                 message.putInDownloadsStore = true;

@@ -116,6 +116,7 @@ import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
 
 import java.io.File;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -321,6 +322,10 @@ public class MessagesController extends BaseController implements NotificationCe
     private LongSparseArray<SponsoredMessagesInfo> sponsoredMessages = new LongSparseArray<>();
     private LongSparseArray<SendAsPeersInfo> sendAsPeers = new LongSparseArray<>();
     private LongSparseArray<SendAsPeersInfo> sendAsPeersLiveStories = new LongSparseArray<>();
+
+    private volatile String messageFilterTextCached;
+    private volatile Pattern messageFilterPatternCached;
+    private volatile ArrayList<String> messageFilterKeywordsCached;
 
     private HashMap<String, ArrayList<MessageObject>> reloadingWebpages = new HashMap<>();
     private LongSparseArray<ArrayList<MessageObject>> reloadingWebpagesPending = new LongSparseArray<>();
@@ -11409,9 +11414,27 @@ public class MessagesController extends BaseController implements NotificationCe
         ArrayList<MessageObject> objects = new ArrayList<>();
         ArrayList<Integer> messagesToReload = new ArrayList<>();
         HashMap<String, ArrayList<MessageObject>> webpagesToReload = new HashMap<>();
+
+        LongSparseArray<Boolean> blockedGroupedIds = null;
+        for (int a = 0; a < size; a++) {
+            TLRPC.Message message = messagesRes.messages.get(a);
+            if (message != null && message.grouped_id != 0 && isMessageBlockedByFilter(message)) {
+                if (blockedGroupedIds == null) {
+                    blockedGroupedIds = new LongSparseArray<>();
+                }
+                blockedGroupedIds.put(message.grouped_id, true);
+            }
+        }
+
         for (int a = 0; a < size; a++) {
             TLRPC.Message message = messagesRes.messages.get(a);
             message.dialog_id = dialogId;
+            if (blockedGroupedIds != null && message.grouped_id != 0 && blockedGroupedIds.get(message.grouped_id) != null) {
+                continue;
+            }
+            if (isMessageBlockedByFilter(message)) {
+                continue;
+            }
             long checkFileTime = SystemClock.elapsedRealtime();
             MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, true, false, mode == ChatActivity.MODE_SAVED);
             messageObject.scheduled = mode == 1;
@@ -20217,6 +20240,276 @@ public class MessagesController extends BaseController implements NotificationCe
         NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_REACTIONS_READ);
     }
 
+    private void updateMessageFilterCache() {
+        String filterText = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
+        if (TextUtils.equals(filterText, messageFilterTextCached)) {
+            return;
+        }
+
+        Pattern pattern = null;
+        ArrayList<String> literalKeywords = null;
+
+        if (!TextUtils.isEmpty(filterText)) {
+            try {
+                pattern = Pattern.compile(filterText, Pattern.CASE_INSENSITIVE);
+            } catch (Exception e) {
+                Log.e("wd", "无效的消息过滤正则表达式: " + filterText, e);
+            }
+
+            String[] filterTokens = filterText.split("\\|");
+            for (int i = 0; i < filterTokens.length; i++) {
+                String token = filterTokens[i];
+                if (token == null) {
+                    continue;
+                }
+                token = token.trim();
+                if (token.isEmpty()) {
+                    continue;
+                }
+
+                boolean hasRegexMeta = false;
+                for (int c = 0; c < token.length(); c++) {
+                    char ch = token.charAt(c);
+                    if (ch == '\\' || ch == '.' || ch == '*' || ch == '+' || ch == '?' || ch == '^' || ch == '$' || ch == '[' || ch == ']' || ch == '(' || ch == ')' || ch == '{' || ch == '}') {
+                        hasRegexMeta = true;
+                        break;
+                    }
+                }
+                if (hasRegexMeta) {
+                    continue;
+                }
+
+                String normalizedToken = Normalizer.normalize(token, Normalizer.Form.NFKC);
+                String cleanToken = normalizedToken.replaceAll("[\\p{P}\\p{S}\\p{Z}\\s\\p{Cf}]+", "");
+                if (cleanToken.isEmpty()) {
+                    continue;
+                }
+                if (literalKeywords == null) {
+                    literalKeywords = new ArrayList<>();
+                }
+                literalKeywords.add(cleanToken);
+            }
+        }
+
+        messageFilterTextCached = filterText;
+        messageFilterPatternCached = pattern;
+        messageFilterKeywordsCached = literalKeywords;
+    }
+
+    private static boolean isTextBlockedByFilter(String text, Pattern pattern, ArrayList<String> keywords) {
+        if (TextUtils.isEmpty(text)) {
+            return false;
+        }
+        if (pattern == null && (keywords == null || keywords.isEmpty())) {
+            return false;
+        }
+
+        String normalizedText = Normalizer.normalize(text, Normalizer.Form.NFKC);
+        if (pattern != null && pattern.matcher(normalizedText).find()) {
+            return true;
+        }
+
+        String cleanText = normalizedText.replaceAll("[\\p{P}\\p{S}\\p{Z}\\s\\p{Cf}]+", "");
+        if (pattern != null && pattern.matcher(cleanText).find()) {
+            return true;
+        }
+
+        if (keywords != null) {
+            for (int i = 0; i < keywords.size(); i++) {
+                String keyword = keywords.get(i);
+                if (!TextUtils.isEmpty(keyword) && cleanText.contains(keyword)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isMessageBlockedByFilter(TLRPC.Message message) {
+        if (message == null) {
+            return false;
+        }
+
+        updateMessageFilterCache();
+        Pattern pattern = messageFilterPatternCached;
+        ArrayList<String> keywords = messageFilterKeywordsCached;
+        if (pattern == null && (keywords == null || keywords.isEmpty())) {
+            return false;
+        }
+
+        return isTextBlockedByFilter(buildFilterText(message), pattern, keywords);
+    }
+
+    private static String buildFilterText(TLRPC.Message message) {
+        StringBuilder sb = new StringBuilder();
+        if (!TextUtils.isEmpty(message.message)) {
+            sb.append(message.message);
+        }
+
+        if (!TextUtils.isEmpty(message.via_bot_name)) {
+            sb.append(' ').append(message.via_bot_name);
+        }
+        if (!TextUtils.isEmpty(message.post_author)) {
+            sb.append(' ').append(message.post_author);
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaWebPage && message.media.webpage != null) {
+            TLRPC.WebPage webpage = message.media.webpage;
+            if (!TextUtils.isEmpty(webpage.url)) {
+                sb.append(' ').append(webpage.url);
+            }
+            if (!TextUtils.isEmpty(webpage.display_url)) {
+                sb.append(' ').append(webpage.display_url);
+            }
+            if (!TextUtils.isEmpty(webpage.site_name)) {
+                sb.append(' ').append(webpage.site_name);
+            }
+            if (!TextUtils.isEmpty(webpage.title)) {
+                sb.append(' ').append(webpage.title);
+            }
+            if (!TextUtils.isEmpty(webpage.description)) {
+                sb.append(' ').append(webpage.description);
+            }
+            if (!TextUtils.isEmpty(webpage.author)) {
+                sb.append(' ').append(webpage.author);
+            }
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaGame && ((TLRPC.TL_messageMediaGame) message.media).game != null) {
+            TLRPC.TL_game game = ((TLRPC.TL_messageMediaGame) message.media).game;
+            if (!TextUtils.isEmpty(game.title)) {
+                sb.append(' ').append(game.title);
+            }
+            if (!TextUtils.isEmpty(game.description)) {
+                sb.append(' ').append(game.description);
+            }
+            if (!TextUtils.isEmpty(game.short_name)) {
+                sb.append(' ').append(game.short_name);
+            }
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaInvoice) {
+            TLRPC.TL_messageMediaInvoice invoice = (TLRPC.TL_messageMediaInvoice) message.media;
+            if (!TextUtils.isEmpty(invoice.title)) {
+                sb.append(' ').append(invoice.title);
+            }
+            if (!TextUtils.isEmpty(invoice.description)) {
+                sb.append(' ').append(invoice.description);
+            }
+            if (!TextUtils.isEmpty(invoice.currency)) {
+                sb.append(' ').append(invoice.currency);
+            }
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaVenue) {
+            TLRPC.TL_messageMediaVenue venue = (TLRPC.TL_messageMediaVenue) message.media;
+            if (!TextUtils.isEmpty(venue.title)) {
+                sb.append(' ').append(venue.title);
+            }
+            if (!TextUtils.isEmpty(venue.address)) {
+                sb.append(' ').append(venue.address);
+            }
+            if (!TextUtils.isEmpty(venue.provider)) {
+                sb.append(' ').append(venue.provider);
+            }
+            if (!TextUtils.isEmpty(venue.venue_id)) {
+                sb.append(' ').append(venue.venue_id);
+            }
+            if (!TextUtils.isEmpty(venue.venue_type)) {
+                sb.append(' ').append(venue.venue_type);
+            }
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaContact) {
+            TLRPC.TL_messageMediaContact contact = (TLRPC.TL_messageMediaContact) message.media;
+            if (!TextUtils.isEmpty(contact.first_name)) {
+                sb.append(' ').append(contact.first_name);
+            }
+            if (!TextUtils.isEmpty(contact.last_name)) {
+                sb.append(' ').append(contact.last_name);
+            }
+            if (!TextUtils.isEmpty(contact.phone_number)) {
+                sb.append(' ').append(contact.phone_number);
+            }
+            if (!TextUtils.isEmpty(contact.vcard)) {
+                sb.append(' ').append(contact.vcard);
+            }
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaDocument && message.media.document != null) {
+            TLRPC.Document document = message.media.document;
+            if (!TextUtils.isEmpty(document.mime_type)) {
+                sb.append(' ').append(document.mime_type);
+            }
+            if (document.attributes != null) {
+                for (int i = 0; i < document.attributes.size(); i++) {
+                    TLRPC.DocumentAttribute attribute = document.attributes.get(i);
+                    if (attribute instanceof TLRPC.TL_documentAttributeFilename) {
+                        String fileName = ((TLRPC.TL_documentAttributeFilename) attribute).file_name;
+                        if (!TextUtils.isEmpty(fileName)) {
+                            sb.append(' ').append(fileName);
+                        }
+                    } else if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                        TLRPC.TL_documentAttributeAudio audio = (TLRPC.TL_documentAttributeAudio) attribute;
+                        if (!TextUtils.isEmpty(audio.title)) {
+                            sb.append(' ').append(audio.title);
+                        }
+                        if (!TextUtils.isEmpty(audio.performer)) {
+                            sb.append(' ').append(audio.performer);
+                        }
+                    } else if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+                        String alt = ((TLRPC.TL_documentAttributeSticker) attribute).alt;
+                        if (!TextUtils.isEmpty(alt)) {
+                            sb.append(' ').append(alt);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (message.reply_markup != null && message.reply_markup.rows != null && !message.reply_markup.rows.isEmpty()) {
+            for (int r = 0; r < message.reply_markup.rows.size(); r++) {
+                TLRPC.TL_keyboardButtonRow row = message.reply_markup.rows.get(r);
+                if (row == null || row.buttons == null) {
+                    continue;
+                }
+                for (int b = 0; b < row.buttons.size(); b++) {
+                    TLRPC.KeyboardButton button = row.buttons.get(b);
+                    if (button == null) {
+                        continue;
+                    }
+                    if (!TextUtils.isEmpty(button.text)) {
+                        sb.append(' ').append(button.text);
+                    }
+                    if (button instanceof TLRPC.TL_keyboardButtonUrl) {
+                        String url = ((TLRPC.TL_keyboardButtonUrl) button).url;
+                        if (!TextUtils.isEmpty(url)) {
+                            sb.append(' ').append(url);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (message.media instanceof TLRPC.TL_messageMediaPoll && ((TLRPC.TL_messageMediaPoll) message.media).poll != null) {
+            TLRPC.Poll poll = ((TLRPC.TL_messageMediaPoll) message.media).poll;
+            if (poll.question != null && !TextUtils.isEmpty(poll.question.text)) {
+                sb.append(' ').append(poll.question.text);
+            }
+            if (poll.answers != null) {
+                for (int i = 0; i < poll.answers.size(); i++) {
+                    TLRPC.PollAnswer answer = poll.answers.get(i);
+                    if (answer != null && answer.text != null && !TextUtils.isEmpty(answer.text.text)) {
+                        sb.append(' ').append(answer.text.text);
+                    }
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+
     public SponsoredMessagesInfo getSponsoredMessages(long dialogId) {
         SponsoredMessagesInfo info = sponsoredMessages.get(dialogId);
         if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= 5 * 60 * 1000)) {
@@ -20263,41 +20556,36 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
 
                     int messageId = -10000000;
-                    
-                    String filterText = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
-                    Pattern filterPattern = null;
-                    
-                    if (!filterText.isEmpty()) {
-                        try {
-                            filterPattern = Pattern.compile(filterText, Pattern.CASE_INSENSITIVE);
-                        } catch (Exception e) {
-                            android.util.Log.e("wd", "无效的过滤正则表达式: " + filterText);
-                        }
-                    }
+
+                    updateMessageFilterCache();
+                    Pattern filterPattern = messageFilterPatternCached;
+                    ArrayList<String> literalKeywords = messageFilterKeywordsCached;
+                    boolean needFilter = filterPattern != null || (literalKeywords != null && !literalKeywords.isEmpty());
                     
                     for (int a = 0, N = res.messages.size(); a < N; a++) {
                         TLRPC.TL_sponsoredMessage sponsoredMessage = res.messages.get(a);
-                        
-                        if (filterPattern != null) {
+
+                        if (needFilter) {
                             StringBuilder sb = new StringBuilder();
-                            
-                            if (sponsoredMessage.title != null) {
-                                sb.append(sponsoredMessage.title).append(" ");
+                            if (!TextUtils.isEmpty(sponsoredMessage.title)) {
+                                sb.append(sponsoredMessage.title).append(' ');
                             }
-                            if (sponsoredMessage.url != null) {
-                                sb.append(sponsoredMessage.url).append(" ");
+                            if (!TextUtils.isEmpty(sponsoredMessage.url)) {
+                                sb.append(sponsoredMessage.url).append(' ');
                             }
-                            if (sponsoredMessage.message != null) {
+                            if (!TextUtils.isEmpty(sponsoredMessage.message)) {
                                 sb.append(sponsoredMessage.message);
                             }
-                            if (sponsoredMessage.sponsor_info != null) {
-                                sb.append(" ").append(sponsoredMessage.sponsor_info);
+                            if (!TextUtils.isEmpty(sponsoredMessage.sponsor_info)) {
+                                sb.append(' ').append(sponsoredMessage.sponsor_info);
                             }
-                            if (sponsoredMessage.additional_info != null) {
-                                sb.append(" ").append(sponsoredMessage.additional_info);
+                            if (!TextUtils.isEmpty(sponsoredMessage.additional_info)) {
+                                sb.append(' ').append(sponsoredMessage.additional_info);
                             }
-                            
-                            if (sb.length() > 0 && filterPattern.matcher(sb.toString()).find()) {
+                            if (!TextUtils.isEmpty(sponsoredMessage.button_text)) {
+                                sb.append(' ').append(sponsoredMessage.button_text);
+                            }
+                            if (isTextBlockedByFilter(sb.toString(), filterPattern, literalKeywords)) {
                                 continue;
                             }
                         }
@@ -20515,6 +20803,31 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public boolean updateInterfaceWithMessages(long dialogId, ArrayList<MessageObject> messages, int mode) {
         if (messages == null || messages.isEmpty()) {
+            return false;
+        }
+
+        LongSparseArray<Boolean> blockedGroupedIds = null;
+        for (int i = 0, N = messages.size(); i < N; i++) {
+            MessageObject message = messages.get(i);
+            if (message != null && message.messageOwner != null && message.messageOwner.grouped_id != 0 && isMessageBlockedByFilter(message.messageOwner)) {
+                if (blockedGroupedIds == null) {
+                    blockedGroupedIds = new LongSparseArray<>();
+                }
+                blockedGroupedIds.put(message.messageOwner.grouped_id, true);
+            }
+        }
+
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            MessageObject message = messages.get(i);
+            if (message != null && message.messageOwner != null && blockedGroupedIds != null && message.messageOwner.grouped_id != 0 && blockedGroupedIds.get(message.messageOwner.grouped_id) != null) {
+                messages.remove(i);
+                continue;
+            }
+            if (message != null && isMessageBlockedByFilter(message.messageOwner)) {
+                messages.remove(i);
+            }
+        }
+        if (messages.isEmpty()) {
             return false;
         }
         final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
