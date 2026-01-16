@@ -332,7 +332,6 @@ import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.helpers.QrHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
 import xyz.nextalone.nnngram.utils.Defines;
-import xyz.nextalone.nnngram.utils.Log;
 import xyz.nextalone.nnngram.utils.MessageUtils;
 
 @SuppressLint("WrongConstant")
@@ -14899,7 +14898,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                                     if (!TranslateHelper.isLanguageRestricted(lang)) {
                                         menuItem.showSubItem(gallery_menu_translate);
                                     }
-                                }, e -> Log.e("mlkit: failed to detect language")
+                                }, e -> Log.e("PhotoViewer", "mlkit: failed to detect language")
                             );
                         } else {
                             menuItem.showSubItem(gallery_menu_translate);
