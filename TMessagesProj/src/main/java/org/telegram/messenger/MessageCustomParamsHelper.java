@@ -34,6 +34,10 @@ public class MessageCustomParamsHelper {
             message.voiceTranscription == null &&
             message.translatedVoiceTranscription == null &&
             !message.voiceTranscriptionOpen &&
+            !message.summarizedOpen &&
+            message.summaryText == null &&
+            message.translatedSummaryLanguage == null &&
+            message.translatedSummaryText == null &&
             !message.voiceTranscriptionFinal &&
             !message.voiceTranscriptionRated &&
             !message.voiceTranscriptionForce &&
@@ -64,6 +68,10 @@ public class MessageCustomParamsHelper {
         toMessage.errorAllowedPriceStars = fromMessage.errorAllowedPriceStars;
         toMessage.errorNewPriceStars = fromMessage.errorNewPriceStars;
         toMessage.translatedVoiceTranscription = fromMessage.translatedVoiceTranscription;
+        toMessage.summarizedOpen = fromMessage.summarizedOpen;
+        toMessage.summaryText = fromMessage.summaryText;
+        toMessage.translatedSummaryText = fromMessage.translatedSummaryText;
+        toMessage.translatedSummaryLanguage = fromMessage.translatedSummaryLanguage;
         //wd 复制params以支持锁定状态等自定义参数
         if (fromMessage.params != null) {
             toMessage.params = new HashMap<>(fromMessage.params);
@@ -125,6 +133,10 @@ public class MessageCustomParamsHelper {
             flags |= message.errorNewPriceStars != 0 ? 128 : 0;
 
             flags |= message.translatedVoiceTranscription != null ? 256 : 0;
+
+            flags = setFlag(flags, FLAG_10, message.summaryText != null);
+            flags = setFlag(flags, FLAG_11, message.translatedSummaryText != null);
+            flags = setFlag(flags, FLAG_12, message.translatedSummaryLanguage != null);
             flags |= message.params != null ? 512 : 0;
         }
 
@@ -132,6 +144,7 @@ public class MessageCustomParamsHelper {
         public void serializeToStream(OutputSerializedData stream) {
             stream.writeInt32(VERSION);
             flags = message.voiceTranscriptionForce ? (flags | 2) : (flags &~ 2);
+            flags = message.summarizedOpen ? (flags | 512) : (flags &~ 512);
             flags = message.params != null ? (flags | 512) : (flags &~ 512);
             stream.writeInt32(flags);
             if ((flags & 1) != 0) {
@@ -166,6 +179,15 @@ public class MessageCustomParamsHelper {
             if ((flags & 256) != 0) {
                 message.translatedVoiceTranscription.serializeToStream(stream);
             }
+            if (hasFlag(flags, FLAG_10)) {
+                message.summaryText.serializeToStream(stream);
+            }
+            if (hasFlag(flags, FLAG_11)) {
+                message.translatedSummaryText.serializeToStream(stream);
+            }
+            if (hasFlag(flags, FLAG_12)) {
+                stream.writeString(message.translatedSummaryLanguage);
+            }
             if ((flags & 512) != 0) {
                 if (message.params != null) {
                     stream.writeInt32(message.params.size());
@@ -186,6 +208,7 @@ public class MessageCustomParamsHelper {
                 message.voiceTranscription = stream.readString(exception);
             }
             message.voiceTranscriptionForce = (flags & 2) != 0;
+            message.summarizedOpen = (flags & 512) != 0;
             message.voiceTranscriptionOpen = stream.readBool(exception);
             message.voiceTranscriptionFinal = stream.readBool(exception);
             message.voiceTranscriptionRated = stream.readBool(exception);
@@ -213,6 +236,15 @@ public class MessageCustomParamsHelper {
             }
             if ((flags & 256) != 0) {
                 message.translatedVoiceTranscription = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (hasFlag(flags, FLAG_10)) {
+                message.summaryText = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (hasFlag(flags, FLAG_11)) {
+                message.translatedSummaryText = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (hasFlag(flags, FLAG_12)) {
+                message.translatedSummaryLanguage = stream.readString(exception);
             }
             if ((flags & 512) != 0) {
                 int size = stream.readInt32(exception);

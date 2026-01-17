@@ -106,7 +106,6 @@ dependencies {
     implementation(libs.mediarouter)
     implementation(libs.recaptcha)
     implementation(libs.multidex)
-    implementation(libs.cbor)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
 
@@ -233,6 +232,10 @@ android {
     kotlinOptions {
         // 使用编译器选项DSL
         freeCompilerArgs += listOf("-Xparallel-compile")
+    }
+
+    tasks.withType<JavaCompile> {
+        options.forkOptions.jvmArgs = listOf("-Xmx4g")
     }
 
     splits {

@@ -615,6 +615,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private ArrayList<Long> selectedDialogs = new ArrayList<>();
     public boolean notify = true;
     public int scheduleDate;
+    public int scheduleRepeatPeriod;
 
     private int canReadCount;
     private int canPinCount;
@@ -2802,7 +2803,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     public interface DialogsActivityDelegate {
-        boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, TopicsFragment topicsFragment);
+        boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment);
 
         default boolean canSelectStories() {
             return false;
@@ -4376,7 +4377,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             if (closeFragment) {
                                 removeSelfFromStack();
                             }
-                            dialogsActivityDelegate.didSelectDialogs(DialogsActivity.this, arrayList, null, true, notify, scheduleDate, null);
+                            dialogsActivityDelegate.didSelectDialogs(DialogsActivity.this, arrayList, null, true, notify, scheduleDate, scheduleRepeatPeriod, null);
                         }
 
                         @Override
@@ -4753,6 +4754,24 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             MediaActivity mediaActivity = new MediaActivity(args, null);
             presentFragment(mediaActivity);
             return;
+//            if (initialDialogsType == DIALOGS_TYPE_WIDGET) {
+//                if (delegate == null || selectedDialogs.isEmpty()) {
+//                    return;
+//                }
+//                ArrayList<MessagesStorage.TopicKey> topicKeys = new ArrayList<>();
+//                for (int i = 0; i < selectedDialogs.size(); i++) {
+//                    topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
+//                }
+//                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, null, false, notify, scheduleDate, scheduleRepeatPeriod, null);
+//            } else {
+//                if (floatingButton.getVisibility() != View.VISIBLE) {
+//                    return;
+//                }
+//
+//                if (MessagesController.getInstance(currentAccount).isFrozen()) {
+//                    AccountFrozenAlert.show(currentAccount);
+//                    return;
+//                }
 
 //            if (parentLayout != null && parentLayout.isInPreviewMode()) {
 //                finishPreviewFragment();
@@ -4985,7 +5004,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     for (int i = 0; i < selectedDialogs.size(); i++) {
                         topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                     }
-                    delegate.didSelectDialogs(DialogsActivity.this, topicKeys, message, false, notify, scheduleDate, null);
+                    delegate.didSelectDialogs(DialogsActivity.this, topicKeys, message, false, notify, scheduleDate, scheduleRepeatPeriod, null);
                 }
 
                 @Override
@@ -5160,7 +5179,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 for (int i = 0; i < selectedDialogs.size(); i++) {
                     topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                 }
-                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, null);
+                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, scheduleRepeatPeriod, null);
             });
             writeButton.setOnLongClickListener(v -> {
                 if (isNextButton) {
@@ -6642,113 +6661,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             ChannelCreateActivity fragment = new ChannelCreateActivity(args);
             fragment.setOnFinishListener((fragment2, chatId) -> {
                 Utilities.doCallbacks(
-                    next -> {
-                        TLRPC.Chat chat = getMessagesController().getChat(chatId);
-                        showSendToBotAlert(chat, next, () -> {
-                            DialogsActivity.this.removeSelfFromStack();
-                            fragment.removeSelfFromStack();
-                            fragment2.finishFragment();
-                        });
-                    },
-                    next -> {
-                        progress.showDelayed(150);
-                        if (requestPeerType.bot_participant != null && requestPeerType.bot_participant) {
-                            TLRPC.User bot = getMessagesController().getUser(requestPeerBotId);
-                            getMessagesController().addUserToChat(chatId, bot, 0, null, DialogsActivity.this, false, next, err -> {
-                                next.run();
-                                return true;
-                            });
-                        } else {
-                            next.run();
-                        }
-                    },
-                    next -> {
-                        if (requestPeerType.bot_admin_rights != null) {
-                            TLRPC.User bot = getMessagesController().getUser(requestPeerBotId);
-                            getMessagesController().setUserAdminRole(chatId, bot, requestPeerType.bot_admin_rights, null, false, DialogsActivity.this, !(requestPeerType.bot_participant != null && requestPeerType.bot_participant), true, null, next, err -> {
-                                next.run();
-                                return true;
-                            });
-                        } else {
-                            next.run();
-                        }
-                    },
-                    next -> {
-                        if (requestPeerType.user_admin_rights != null) {
-                            TLRPC.Chat chat = getMessagesController().getChat(chatId);
-                            getMessagesController().setUserAdminRole(chatId, getAccountInstance().getUserConfig().getCurrentUser(), ChatRightsEditActivity.rightsOR(chat.admin_rights, requestPeerType.user_admin_rights), null, true, DialogsActivity.this, false, true, null, next, err -> {
-                                next.run();
-                                return true;
-                            });
-                        } else {
-                            next.run();
-                        }
-                    },
-                    next -> {
-                        progress.dismiss();
-                        getMessagesController().loadChannelParticipants(chatId);
-                        DialogsActivityDelegate delegate = DialogsActivity.this.delegate;
-                        DialogsActivity.this.removeSelfFromStack();
-                        fragment.removeSelfFromStack();
-                        fragment2.finishFragment();
-                        if (delegate != null) {
-                            ArrayList<MessagesStorage.TopicKey> keys = new ArrayList<>();
-                            keys.add(MessagesStorage.TopicKey.of(-chatId, 0));
-                            delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, null);
-                        }
-                    }
-                );
-            });
-            presentFragment(fragment);
-        } else if (requestPeerType instanceof TLRPC.TL_requestPeerTypeChat) {
-            Bundle args = new Bundle();
-            long[] array;
-            if (requestPeerType.bot_participant != null && requestPeerType.bot_participant) {
-                array = new long[]{getUserConfig().getClientUserId(), requestPeerBotId};
-            } else {
-                array = new long[]{getUserConfig().getClientUserId()};
-            }
-            args.putLongArray("result", array);
-            args.putInt("chatType", requestPeerType.forum != null && requestPeerType.forum ? ChatObject.CHAT_TYPE_FORUM : ChatObject.CHAT_TYPE_MEGAGROUP);
-            args.putBoolean("canToggleTopics", false);
-            GroupCreateFinalActivity activity = new GroupCreateFinalActivity(args);
-            activity.setDelegate(new GroupCreateFinalActivity.GroupCreateFinalActivityDelegate() {
-                @Override
-                public void didStartChatCreation() {
-                }
-
-                @Override
-                public void didFailChatCreation() {
-                }
-
-                @Override
-                public void didFinishChatCreation(GroupCreateFinalActivity fragment, long chatId) {
-                    BaseFragment[] lastFragments = new BaseFragment[]{fragment, null};
-                    Utilities.doCallbacks(
-                        next -> {
-                            if (requestPeerType.has_username != null && requestPeerType.has_username) {
-                                Bundle args = new Bundle();
-                                args.putInt("step", 1);
-                                args.putLong("chat_id", chatId);
-                                args.putBoolean("forcePublic", requestPeerType.has_username);
-                                ChannelCreateActivity fragment2 = new ChannelCreateActivity(args);
-                                fragment2.setOnFinishListener((_fragment, _chatId) -> next.run());
-                                presentFragment(fragment2);
-                                lastFragments[1] = fragment2;
-                            } else {
-                                next.run();
-                            }
-                        },
                         next -> {
                             TLRPC.Chat chat = getMessagesController().getChat(chatId);
                             showSendToBotAlert(chat, next, () -> {
                                 DialogsActivity.this.removeSelfFromStack();
-                                if (lastFragments[1] != null) {
-                                    lastFragments[0].removeSelfFromStack();
-                                    lastFragments[1].finishFragment();
-                                } else {
-                                    lastFragments[0].finishFragment();
-                                }
+                                fragment.removeSelfFromStack();
+                                fragment2.finishFragment();
                             });
                         },
                         next -> {
@@ -6777,7 +6695,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         next -> {
                             if (requestPeerType.user_admin_rights != null) {
                                 TLRPC.Chat chat = getMessagesController().getChat(chatId);
-                                getMessagesController().setUserAdminRole(chatId, getAccountInstance().getUserConfig().getCurrentUser(), ChatRightsEditActivity.rightsOR(chat.admin_rights, requestPeerType.user_admin_rights), null, false, DialogsActivity.this, false, true, null, next, err -> {
+                                getMessagesController().setUserAdminRole(chatId, getAccountInstance().getUserConfig().getCurrentUser(), ChatRightsEditActivity.rightsOR(chat.admin_rights, requestPeerType.user_admin_rights), null, true, DialogsActivity.this, false, true, null, next, err -> {
                                     next.run();
                                     return true;
                                 });
@@ -6790,18 +6708,119 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             getMessagesController().loadChannelParticipants(chatId);
                             DialogsActivityDelegate delegate = DialogsActivity.this.delegate;
                             DialogsActivity.this.removeSelfFromStack();
-                            if (lastFragments[1] != null) {
-                                lastFragments[0].removeSelfFromStack();
-                                lastFragments[1].finishFragment();
-                            } else {
-                                lastFragments[0].finishFragment();
-                            }
+                            fragment.removeSelfFromStack();
+                            fragment2.finishFragment();
                             if (delegate != null) {
                                 ArrayList<MessagesStorage.TopicKey> keys = new ArrayList<>();
                                 keys.add(MessagesStorage.TopicKey.of(-chatId, 0));
-                                delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, null);
+                                delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, scheduleRepeatPeriod, null);
                             }
                         }
+                );
+            });
+            presentFragment(fragment);
+        } else if (requestPeerType instanceof TLRPC.TL_requestPeerTypeChat) {
+            Bundle args = new Bundle();
+            long[] array;
+            if (requestPeerType.bot_participant != null && requestPeerType.bot_participant) {
+                array = new long[]{getUserConfig().getClientUserId(), requestPeerBotId};
+            } else {
+                array = new long[]{getUserConfig().getClientUserId()};
+            }
+            args.putLongArray("result", array);
+            args.putInt("chatType", requestPeerType.forum != null && requestPeerType.forum ? ChatObject.CHAT_TYPE_FORUM : ChatObject.CHAT_TYPE_MEGAGROUP);
+            args.putBoolean("canToggleTopics", false);
+            GroupCreateFinalActivity activity = new GroupCreateFinalActivity(args);
+            activity.setDelegate(new GroupCreateFinalActivity.GroupCreateFinalActivityDelegate() {
+                @Override
+                public void didStartChatCreation() {
+                }
+
+                @Override
+                public void didFailChatCreation() {
+                }
+
+                @Override
+                public void didFinishChatCreation(GroupCreateFinalActivity fragment, long chatId) {
+                    BaseFragment[] lastFragments = new BaseFragment[]{fragment, null};
+                    Utilities.doCallbacks(
+                            next -> {
+                                if (requestPeerType.has_username != null && requestPeerType.has_username) {
+                                    Bundle args = new Bundle();
+                                    args.putInt("step", 1);
+                                    args.putLong("chat_id", chatId);
+                                    args.putBoolean("forcePublic", requestPeerType.has_username);
+                                    ChannelCreateActivity fragment2 = new ChannelCreateActivity(args);
+                                    fragment2.setOnFinishListener((_fragment, _chatId) -> next.run());
+                                    presentFragment(fragment2);
+                                    lastFragments[1] = fragment2;
+                                } else {
+                                    next.run();
+                                }
+                            },
+                            next -> {
+                                TLRPC.Chat chat = getMessagesController().getChat(chatId);
+                                showSendToBotAlert(chat, next, () -> {
+                                    DialogsActivity.this.removeSelfFromStack();
+                                    if (lastFragments[1] != null) {
+                                        lastFragments[0].removeSelfFromStack();
+                                        lastFragments[1].finishFragment();
+                                    } else {
+                                        lastFragments[0].finishFragment();
+                                    }
+                                });
+                            },
+                            next -> {
+                                progress.showDelayed(150);
+                                if (requestPeerType.bot_participant != null && requestPeerType.bot_participant) {
+                                    TLRPC.User bot = getMessagesController().getUser(requestPeerBotId);
+                                    getMessagesController().addUserToChat(chatId, bot, 0, null, DialogsActivity.this, false, next, err -> {
+                                        next.run();
+                                        return true;
+                                    });
+                                } else {
+                                    next.run();
+                                }
+                            },
+                            next -> {
+                                if (requestPeerType.bot_admin_rights != null) {
+                                    TLRPC.User bot = getMessagesController().getUser(requestPeerBotId);
+                                    getMessagesController().setUserAdminRole(chatId, bot, requestPeerType.bot_admin_rights, null, false, DialogsActivity.this, !(requestPeerType.bot_participant != null && requestPeerType.bot_participant), true, null, next, err -> {
+                                        next.run();
+                                        return true;
+                                    });
+                                } else {
+                                    next.run();
+                                }
+                            },
+                            next -> {
+                                if (requestPeerType.user_admin_rights != null) {
+                                    TLRPC.Chat chat = getMessagesController().getChat(chatId);
+                                    getMessagesController().setUserAdminRole(chatId, getAccountInstance().getUserConfig().getCurrentUser(), ChatRightsEditActivity.rightsOR(chat.admin_rights, requestPeerType.user_admin_rights), null, false, DialogsActivity.this, false, true, null, next, err -> {
+                                        next.run();
+                                        return true;
+                                    });
+                                } else {
+                                    next.run();
+                                }
+                            },
+                            next -> {
+                                progress.dismiss();
+                                getMessagesController().loadChannelParticipants(chatId);
+                                DialogsActivityDelegate delegate = DialogsActivity.this.delegate;
+                                DialogsActivity.this.removeSelfFromStack();
+                                if (lastFragments[1] != null) {
+                                    lastFragments[0].removeSelfFromStack();
+                                    lastFragments[1].finishFragment();
+                                } else {
+                                    lastFragments[0].finishFragment();
+                                }
+                                if (delegate != null) {
+                                    ArrayList<MessagesStorage.TopicKey> keys = new ArrayList<>();
+                                    keys.add(MessagesStorage.TopicKey.of(-chatId, 0));
+                                    delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, scheduleRepeatPeriod, null);
+                                }
+                            }
                     );
                 }
             });
@@ -7558,11 +7577,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     @Override
-    public boolean onBackPressed() {
-        if (closeSheet()) {
+    public boolean onBackPressed(boolean invoked) {
+        if (hasShownSheet()) {
+            if (invoked) closeSheet();
             return false;
-        } else if (rightSlidingDialogContainer.hasFragment()) {
-            if (rightSlidingDialogContainer.getFragment().onBackPressed()) {
+        } else if (rightSlidingDialogContainer.hasFragment() && rightSlidingDialogContainer.getFragment().onBackPressed(invoked)) {
+            if (invoked) {
                 rightSlidingDialogContainer.finishPreview();
                 if (searchViewPager != null) {
                     searchViewPager.updateTabs();
@@ -7570,31 +7590,35 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             return false;
         } else if (filterOptions != null) {
-            filterOptions.dismiss();
-            filterOptions = null;
+            if (invoked) {
+                filterOptions.dismiss();
+                filterOptions = null;
+            }
             return false;
         } else if (filterTabsView != null && filterTabsView.isEditing()) {
-            filterTabsView.setIsEditing(false);
-            showDoneItem(false);
+            if (invoked) {
+                filterTabsView.setIsEditing(false);
+                showDoneItem(false);
+            }
             return false;
         } else if (actionBar != null && actionBar.isActionModeShowed()) {
-            if (searchViewPager != null && searchViewPager.getVisibility() == View.VISIBLE) {
-                searchViewPager.hideActionMode();
-                hideActionMode(true);
-            } else {
+            if (invoked) {
+                if (searchViewPager != null && searchViewPager.getVisibility() == View.VISIBLE) {
+                    searchViewPager.hideActionMode();
+                }
                 hideActionMode(true);
             }
             return false;
         } else if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && !tabsAnimationInProgress && !filterTabsView.isAnimatingIndicator() && filterTabsView.getCurrentTabId() != filterTabsView.getFirstTabId() && !startedTracking && !filterTabsView.isFirstTabSelected()) {
-            filterTabsView.selectFirstTab();
+            if (invoked) filterTabsView.selectFirstTab();
             return false;
         } else if (commentView != null && commentView.isPopupShowing()) {
-            commentView.hidePopup(true);
+            if (invoked) commentView.hidePopup(true);
             return false;
         } else if (dialogStoriesCell.isFullExpanded() && dialogStoriesCell.scrollToFirst()) {
             return false;
         }
-        return super.onBackPressed();
+        return super.onBackPressed(invoked);
     }
 
     @Override
@@ -12113,7 +12137,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         setDialogsListFrozen(true);
                         ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
                         dids.add(MessagesStorage.TopicKey.of(dialogId, 0));
-                        delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, null);
+                        delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, scheduleRepeatPeriod, null);
                     });
                 } else {
                     AlertsCreator.processError(currentAccount, error, this, req);
@@ -12192,7 +12216,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (delegate != null) {
                     ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
                     dids.add(MessagesStorage.TopicKey.of(dialogId, topicId));
-                    delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, topicsFragment);
+                    delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment);
                     if (resetDelegate) {
                         delegate = null;
                     }
@@ -12220,7 +12244,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (delegate != null) {
                 ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
                 dids.add(MessagesStorage.TopicKey.of(dialogId, topicId));
-                boolean res = delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, topicsFragment);
+                boolean res = delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment);
                 if (res && resetDelegate) {
                     delegate = null;
                 }
@@ -12335,7 +12359,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             for (int i = 0; i < selectedDialogs.size(); i++) {
                 topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
             }
-            delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, null);
+            delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, scheduleRepeatPeriod, null);
         });
 
         boolean onlyMyself = false;
@@ -12366,6 +12390,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     @Override
                     public void didSelectDate(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
                         DialogsActivity.this.scheduleDate = scheduleDate;
+                        DialogsActivity.this.scheduleRepeatPeriod = scheduleRepeatPeriod;
                         if (delegate == null || selectedDialogs.isEmpty()) {
                             return;
                         }
@@ -12373,7 +12398,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         for (int i = 0; i < selectedDialogs.size(); i++) {
                             topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                         }
-                        delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, null);
+                        delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, scheduleRepeatPeriod, null);
                     }
                 }, resourcesProvider);
             });
@@ -12976,7 +13001,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     float slideFragmentProgress = 1f;
-    final int slideAmplitudeDp = 120;
+    final int slideAmplitudeDp = 240;
     boolean slideFragmentLite;
     boolean isSlideBackTransition;
     boolean isDrawerTransition;
