@@ -1445,88 +1445,89 @@ public class FileLoader extends BaseController {
         long documentId = 0;
         int dcId = 0;
         int type = 0;
+        if (attach instanceof TLRPC.Document) {
+            TLRPC.Document document = (TLRPC.Document) attach;
+            //wd 优先验证数据库中记录的本地路径是否有效，防止文件被移动后 localPath 仍指向旧路径导致“假下载”状态
+            if (!TextUtils.isEmpty(document.localPath)) {
+                File localFile = new File(document.localPath);
+                if (localFile.exists()) {
+                    return localFile;
+                }
+                document.localPath = null;
+            }
+            if (document.key != null) {
+                type = MEDIA_DIR_CACHE;
+            } else {
+                if (MessageObject.isVoiceDocument(document)) {
+                    type = MEDIA_DIR_AUDIO;
+                } else if (MessageObject.isVideoDocument(document)) {
+                    type = MEDIA_DIR_VIDEO;
+                } else {
+                    type = MEDIA_DIR_DOCUMENT;
+                }
+            }
+            documentId = document.id;
+            dcId = document.dc_id;
+            dir = getDirectory(type);
+        } else if (attach instanceof TLRPC.Photo) {
+            TLRPC.PhotoSize photoSize = getClosestPhotoSizeWithSize(((TLRPC.Photo) attach).sizes, AndroidUtilities.getPhotoSize(true));
+            return getPathToAttach(photoSize, ext, forceCache, useFileDatabaseQueue);
+        } else if (attach instanceof TLRPC.PhotoSize) {
+            TLRPC.PhotoSize photoSize = (TLRPC.PhotoSize) attach;
+            if (photoSize instanceof TLRPC.TL_photoStrippedSize || photoSize instanceof TLRPC.TL_photoPathSize) {
+                dir = null;
+            } else if (photoSize.location == null || photoSize.location.key != null || photoSize.location.volume_id == Integer.MIN_VALUE && photoSize.location.local_id < 0 || photoSize.size < 0) {
+                dir = getDirectory(type = MEDIA_DIR_CACHE);
+            } else {
+                dir = getDirectory(type = MEDIA_DIR_IMAGE);
+            }
+            documentId = photoSize.location.volume_id;
+            dcId = photoSize.location.dc_id + (photoSize.location.local_id << 16);
+        } else if (attach instanceof TLRPC.TL_videoSize) {
+            TLRPC.TL_videoSize videoSize = (TLRPC.TL_videoSize) attach;
+            if (videoSize.location == null || videoSize.location.key != null || videoSize.location.volume_id == Integer.MIN_VALUE && videoSize.location.local_id < 0 || videoSize.size < 0) {
+                dir = getDirectory(type = MEDIA_DIR_CACHE);
+            } else {
+                dir = getDirectory(type = MEDIA_DIR_IMAGE);
+            }
+            documentId = videoSize.location.volume_id;
+            dcId = videoSize.location.dc_id + (videoSize.location.local_id << 16);
+        } else if (attach instanceof TLRPC.FileLocation) {
+            TLRPC.FileLocation fileLocation = (TLRPC.FileLocation) attach;
+            if (fileLocation.key != null || fileLocation.volume_id == Integer.MIN_VALUE && fileLocation.local_id < 0) {
+                dir = getDirectory(MEDIA_DIR_CACHE);
+            } else {
+                documentId = fileLocation.volume_id;
+                dcId = fileLocation.dc_id + (fileLocation.local_id << 16);
+                dir = getDirectory(type = MEDIA_DIR_IMAGE);
+            }
+        } else if (attach instanceof TLRPC.UserProfilePhoto || attach instanceof TLRPC.ChatPhoto) {
+            if (size == null) {
+                size = "s";
+            }
+            if ("s".equals(size)) {
+                dir = getDirectory(MEDIA_DIR_CACHE);
+            } else {
+                dir = getDirectory(MEDIA_DIR_IMAGE);
+            }
+        } else if (attach instanceof WebFile) {
+            WebFile document = (WebFile) attach;
+            if (document.mime_type.startsWith("image/")) {
+                dir = getDirectory(MEDIA_DIR_IMAGE);
+            } else if (document.mime_type.startsWith("audio/")) {
+                dir = getDirectory(MEDIA_DIR_AUDIO);
+            } else if (document.mime_type.startsWith("video/")) {
+                dir = getDirectory(MEDIA_DIR_VIDEO);
+            } else {
+                dir = getDirectory(MEDIA_DIR_DOCUMENT);
+            }
+        } else if (attach instanceof TLRPC.TL_secureFile || attach instanceof SecureDocument) {
+            dir = getDirectory(MEDIA_DIR_CACHE);
+        }
+
         if (forceCache) {
             dir = getDirectory(MEDIA_DIR_CACHE);
-        } else {
-            if (attach instanceof TLRPC.Document) {
-                TLRPC.Document document = (TLRPC.Document) attach;
-                //wd 优先验证数据库中记录的本地路径是否有效，防止文件被移动后 localPath 仍指向旧路径导致“假下载”状态
-                if (!TextUtils.isEmpty(document.localPath)) {
-                    File localFile = new File(document.localPath);
-                    if (localFile.exists()) {
-                        return localFile;
-                    }
-                    document.localPath = null;
-                }
-                if (document.key != null) {
-                    type = MEDIA_DIR_CACHE;
-                } else {
-                    if (MessageObject.isVoiceDocument(document)) {
-                        type = MEDIA_DIR_AUDIO;
-                    } else if (MessageObject.isVideoDocument(document)) {
-                        type = MEDIA_DIR_VIDEO;
-                    } else {
-                        type = MEDIA_DIR_DOCUMENT;
-                    }
-                }
-                documentId = document.id;
-                dcId = document.dc_id;
-                dir = getDirectory(type);
-            } else if (attach instanceof TLRPC.Photo) {
-                TLRPC.PhotoSize photoSize = getClosestPhotoSizeWithSize(((TLRPC.Photo) attach).sizes, AndroidUtilities.getPhotoSize(true));
-                return getPathToAttach(photoSize, ext, false, useFileDatabaseQueue);
-            } else if (attach instanceof TLRPC.PhotoSize) {
-                TLRPC.PhotoSize photoSize = (TLRPC.PhotoSize) attach;
-                if (photoSize instanceof TLRPC.TL_photoStrippedSize || photoSize instanceof TLRPC.TL_photoPathSize) {
-                    dir = null;
-                } else if (photoSize.location == null || photoSize.location.key != null || photoSize.location.volume_id == Integer.MIN_VALUE && photoSize.location.local_id < 0 || photoSize.size < 0) {
-                    dir = getDirectory(type = MEDIA_DIR_CACHE);
-                } else {
-                    dir = getDirectory(type = MEDIA_DIR_IMAGE);
-                }
-                documentId = photoSize.location.volume_id;
-                dcId = photoSize.location.dc_id + (photoSize.location.local_id << 16);
-            } else if (attach instanceof TLRPC.TL_videoSize) {
-                TLRPC.TL_videoSize videoSize = (TLRPC.TL_videoSize) attach;
-                if (videoSize.location == null || videoSize.location.key != null || videoSize.location.volume_id == Integer.MIN_VALUE && videoSize.location.local_id < 0 || videoSize.size < 0) {
-                    dir = getDirectory(type = MEDIA_DIR_CACHE);
-                } else {
-                    dir = getDirectory(type = MEDIA_DIR_IMAGE);
-                }
-                documentId = videoSize.location.volume_id;
-                dcId = videoSize.location.dc_id + (videoSize.location.local_id << 16);
-            } else if (attach instanceof TLRPC.FileLocation) {
-                TLRPC.FileLocation fileLocation = (TLRPC.FileLocation) attach;
-                if (fileLocation.key != null || fileLocation.volume_id == Integer.MIN_VALUE && fileLocation.local_id < 0) {
-                    dir = getDirectory(MEDIA_DIR_CACHE);
-                } else {
-                    documentId = fileLocation.volume_id;
-                    dcId = fileLocation.dc_id + (fileLocation.local_id << 16);
-                    dir = getDirectory(type = MEDIA_DIR_IMAGE);
-                }
-            } else if (attach instanceof TLRPC.UserProfilePhoto || attach instanceof TLRPC.ChatPhoto) {
-                if (size == null) {
-                    size = "s";
-                }
-                if ("s".equals(size)) {
-                    dir = getDirectory(MEDIA_DIR_CACHE);
-                } else {
-                    dir = getDirectory(MEDIA_DIR_IMAGE);
-                }
-            } else if (attach instanceof WebFile) {
-                WebFile document = (WebFile) attach;
-                if (document.mime_type.startsWith("image/")) {
-                    dir = getDirectory(MEDIA_DIR_IMAGE);
-                } else if (document.mime_type.startsWith("audio/")) {
-                    dir = getDirectory(MEDIA_DIR_AUDIO);
-                } else if (document.mime_type.startsWith("video/")) {
-                    dir = getDirectory(MEDIA_DIR_VIDEO);
-                } else {
-                    dir = getDirectory(MEDIA_DIR_DOCUMENT);
-                }
-            } else if (attach instanceof TLRPC.TL_secureFile || attach instanceof SecureDocument) {
-                dir = getDirectory(MEDIA_DIR_CACHE);
-            }
+            type = MEDIA_DIR_CACHE;
         }
         if (dir == null) {
             return new File("");
