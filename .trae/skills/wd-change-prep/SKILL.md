@@ -24,7 +24,7 @@ description: 固化代码改动前的需求澄清、影响评估、方案设计�
 - wd 规范要点：
   - 注释：中文且 `//wd` 前缀
   - 字符串：用户可见字符串禁止硬编码，写入 `strings_nullgram.xml`（中英文）
-  - 日志：TAG `"wd"`，中文文案，`Log.e` 带异常堆栈，禁止敏感信息
+  - 日志：使用 `import android.util.Log;`，禁止使用 `FileLog`；TAG `"wd"`，中文文案，`Log.e` 带异常堆栈，禁止敏感信息
 
 ## 输出产物（必须产出）
 
@@ -116,12 +116,14 @@ description: 固化代码改动前的需求澄清、影响评估、方案设计�
 
 - `.\gradlew clean`
 - `.\gradlew :TMessagesProj:assembleDebug`
+- `.\gradlew :TMessagesProj:installDebug`
 - `.\gradlew test`（如项目适用）
 - `.\gradlew lint`（建议）
 
 ### 5.2 手工验证路径（最少 3 条）
 
 **检查点**
+- 真机安装运行：安装 Debug 包后在真机打开 App，走到本次改动相关路径并观察行为与日志；建议使用 `adb shell am start -n xyz.nextalone.nnngram/org.telegram.ui.LaunchActivity` 启动
 - 正常路径：用户常用主路径
 - 边界路径：空值/无网络/权限拒绝/重复触发
 - 回归路径：与改动相邻或共享组件依赖的路径
