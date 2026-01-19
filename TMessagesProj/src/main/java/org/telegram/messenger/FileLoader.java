@@ -996,7 +996,7 @@ public class FileLoader extends BaseController {
                             saveCustomPath = true;
                         }
                     } else if (isUserDownloadRequest(parentObject) && type == MEDIA_DIR_VIDEO) {
-                        File videoDir = getDirectory(MEDIA_DIR_VIDEO);
+                        File videoDir = checkDirectory(MEDIA_DIR_VIDEO);
                         if (videoDir != null) {
                             File parent = videoDir.getParentFile();
                             if (parent != null) {
@@ -1060,8 +1060,8 @@ public class FileLoader extends BaseController {
                 if (parentObject instanceof MessageObject && finalType != MEDIA_DIR_CACHE) {
                     MessageObject messageObject = (MessageObject) parentObject;
                     if (messageObject.putInDownloadsStore) {
-                        File cacheDir = getDirectory(MEDIA_DIR_CACHE);
-                        File targetDir = getDirectory(finalType);
+                        File cacheDir = checkDirectory(MEDIA_DIR_CACHE);
+                        File targetDir = checkDirectory(finalType);
                         if (finalType == MEDIA_DIR_VIDEO && targetDir != null) {
                             File parent = targetDir.getParentFile();
                             if (parent != null) {
@@ -1076,16 +1076,16 @@ public class FileLoader extends BaseController {
                             String filePath = resultFile.getAbsolutePath();
                             if (filePath.startsWith(cachePrefix) && !targetDir.equals(cacheDir)) {
                                 File destFile = new File(targetDir, resultFile.getName());
-                                if (destFile.exists()) {
-                                    if (destFile.length() == resultFile.length()) {
-                                        resultFile.delete();
-                                        resultFile = destFile;
-                                    } else {
+                                boolean moved = false;
+                                if (destFile.exists() && destFile.length() == resultFile.length()) {
+                                    resultFile.delete();
+                                    resultFile = destFile;
+                                    moved = true;
+                                } else {
+                                    if (destFile.exists() && destFile.length() != resultFile.length()) {
                                         destFile.delete();
                                     }
-                                }
-                                if (!destFile.exists()) {
-                                    boolean moved = resultFile.renameTo(destFile);
+                                    moved = resultFile.renameTo(destFile);
                                     if (!moved) {
                                         moved = AndroidUtilities.copyFileSafe(resultFile, destFile);
                                         if (moved) {
@@ -1095,6 +1095,9 @@ public class FileLoader extends BaseController {
                                     if (moved) {
                                         resultFile = destFile;
                                     }
+                                }
+                                if (!moved && BuildVars.LOGS_ENABLED) {
+                                    Log.d("wd", "文件搬运失败 name=" + resultFile.getName() + " targetDir=" + targetDir.getName());
                                 }
                                 if (finalDocumentId != 0 && resultFile != null && resultFile.exists()) {
                                     getFileDatabase().putPath(finalDocumentId, finalDcId, finalType, 0, resultFile.getAbsolutePath());

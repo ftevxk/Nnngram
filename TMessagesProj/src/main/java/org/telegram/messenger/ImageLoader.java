@@ -2673,12 +2673,13 @@ public class ImageLoader {
             file.write(buffer);
             file.close();
             file = null;
-            boolean canRename = srcFile.renameTo(dstFile);
+            boolean canMove = srcFile.renameTo(dstFile);
+            if (!canMove) {
+                canMove = AndroidUtilities.copyFileSafe(srcFile, dstFile);
+            }
             srcFile.delete();
             dstFile.delete();
-            if (canRename) {
-                return true;
-            }
+            return canMove;
         } catch (Exception e) {
             FileLog.e(e);
         } finally {
@@ -3198,6 +3199,12 @@ public class ImageLoader {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), url);
                             } else if (MessageObject.isVideoDocument(document)) {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_VIDEO), url);
+                                if (!cacheFile.exists()) {
+                                    File realFile = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, true);
+                                    if (realFile != null && realFile.exists()) {
+                                        cacheFile = realFile;
+                                    }
+                                }
                             } else {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_DOCUMENT), url);
                             }
