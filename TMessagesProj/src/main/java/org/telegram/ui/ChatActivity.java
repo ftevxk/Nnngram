@@ -108,6 +108,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Space;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -241,6 +242,7 @@ import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Cells.MentionCell;
 import org.telegram.ui.Cells.ProfileChannelCell;
 import org.telegram.ui.Cells.ShareDialogCell;
+import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.Cells.UserInfoCell;
@@ -1655,8 +1657,9 @@ public class ChatActivity extends BaseFragment implements
 
     private final static int id_chat_compose_panel = 1000;
 
-    //wd 更多菜单增加代理设置页面跳转
+    //wd 更多菜单增加代理设置与消息过滤器入口
     private final static int proxy = UUID.randomUUID().hashCode();
+    private final static int message_filter = UUID.randomUUID().hashCode();
 
     RecyclerListView.OnItemLongClickListenerExtended onItemLongClickListener = new RecyclerListView.OnItemLongClickListenerExtended() {
         @Override
@@ -1692,6 +1695,91 @@ public class ChatActivity extends BaseFragment implements
 
     public RecyclerListView getChatListView() {
         return chatListView;
+    }
+
+    private void openMessageFilterDialog() {
+        Context context = getContext();
+        if (context == null) {
+            return;
+        }
+
+        Theme.ResourcesProvider resourcesProvider = getResourceProvider();
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
+        builder.setTitle(LocaleController.getString("MessageFilter", R.string.MessageFilter));
+        builder.setCancelable(true);
+
+        EditTextBoldCursor editText = new EditTextBoldCursor(context);
+        LinearLayout.LayoutParams editTextParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
+        editTextParams.rightMargin = AndroidUtilities.dp(24f);
+        editTextParams.leftMargin = AndroidUtilities.dp(24f);
+        editTextParams.height = AndroidUtilities.dp(48f);
+        editText.setLayoutParams(editTextParams);
+        editText.setBackground(null);
+
+        editText.setHintText(LocaleController.getString("Pattern", R.string.Pattern), true);
+        editText.setHintColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider));
+        editText.setHeaderHintColor(Theme.getColor(Theme.key_dialogTextBlue));
+        editText.setTransformHintToHeader(true);
+
+        editText.setText(ConfigManager.getStringOrDefault(Defines.messageFilter, ""));
+        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16f);
+        editText.setTextColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider));
+
+        editText.setCursorColor(Theme.getColor(Theme.key_dialogTextGray));
+        editText.setCursorSize(AndroidUtilities.dp(20f));
+        editText.setCursorWidth(1.5f);
+
+        editText.setLineColors(
+                Theme.getColor(Theme.key_windowBackgroundWhiteInputField),
+                Theme.getColor(Theme.key_windowBackgroundWhiteInputFieldActivated),
+                Theme.getColor(Theme.key_text_RedRegular)
+        );
+
+        TextView descView = new TextView(context);
+        LinearLayout.LayoutParams descParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
+        descParams.rightMargin = AndroidUtilities.dp(24f);
+        descParams.leftMargin = AndroidUtilities.dp(24f);
+        descParams.topMargin = AndroidUtilities.dp(8f);
+        descView.setLayoutParams(descParams);
+        descView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10f);
+        descView.setTextColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider));
+        descView.setText(LocaleController.getString("MessageFilterDesc", R.string.MessageFilterDesc));
+
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.addView(descView);
+        layout.addView(new ShadowSectionCell(context));
+        layout.addView(editText);
+        builder.setView(layout);
+
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setPositiveButton(LocaleController.getString("Save", R.string.Save), (di, w) -> {
+            String value = editText.getText() != null ? editText.getText().toString() : "";
+            value = trimPipes(value);
+            try {
+                if (!TextUtils.isEmpty(value)) {
+                    Pattern.compile(value);
+                }
+                ConfigManager.putString(Defines.messageFilter, value);
+            } catch (Exception e) {
+                Toast.makeText(context, LocaleController.getString("InvalidPattern", R.string.InvalidPattern), Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.show();
+    }
+
+    private static String trimPipes(String value) {
+        if (value == null) {
+            return "";
+        }
+        String result = value;
+        while (result.startsWith("|")) {
+            result = result.substring(1);
+        }
+        while (result.endsWith("|")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     private void startMultiselect(int position) {
@@ -4256,7 +4344,10 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                 }
-                //wd 更多菜单增加代理设置页面跳转
+                //wd 更多菜单增加消息过滤器入口
+                else if (id == message_filter) {
+                    openMessageFilterDialog();
+                }
                 else if (id == proxy) {
                     presentFragment(new ProxyListActivity());
                 }
@@ -4544,8 +4635,9 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
 
-            //wd 更多菜单增加代理设置页面跳转
+            //wd 更多菜单增加代理设置页面跳转与消息过滤
             headerItem.lazilyAddSubItem(proxy, R.drawable.msg2_proxy_off, LocaleController.getString(R.string.ProxySettings));
+            headerItem.lazilyAddSubItem(message_filter, R.drawable.msg2_block2, LocaleController.getString(R.string.MessageFilter));
 
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
