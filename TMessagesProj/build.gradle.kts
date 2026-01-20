@@ -129,9 +129,6 @@ dependencies {
     implementation(project(":libs:tcp2ws"))
     implementation(project(":libs:pangu"))
     ksp(project(":libs:ksp"))
-
-    // 通知栏日志调试框架：https://github.com/getActivity/Logcat
-    debugImplementation(libs.logcat)
 }
 
 android {

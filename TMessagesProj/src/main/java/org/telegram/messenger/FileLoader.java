@@ -793,19 +793,6 @@ public class FileLoader extends BaseController {
         f = new File(getDirectory(MEDIA_DIR_VIDEO), fileName);
         if (f.exists()) return f;
 
-        //wd 检查 Videos 目录 (如果 MEDIA_DIR_VIDEO 默认不是 Videos)
-        File videoDir = getDirectory(MEDIA_DIR_VIDEO);
-        if (videoDir != null) {
-            File parent = videoDir.getParentFile();
-            if (parent != null) {
-                File videosDir = new File(parent, "Videos");
-                if (!videosDir.equals(videoDir)) {
-                    f = new File(videosDir, fileName);
-                    if (f.exists()) return f;
-                }
-            }
-        }
-
         f = new File(getDirectory(MEDIA_DIR_FILES), fileName);
         if (f.exists()) return f;
 
@@ -999,14 +986,8 @@ public class FileLoader extends BaseController {
                     } else if (isUserDownloadRequest(parentObject) && type == MEDIA_DIR_VIDEO) {
                         File videoDir = checkDirectory(MEDIA_DIR_VIDEO);
                         if (videoDir != null) {
-                            File parent = videoDir.getParentFile();
-                            if (parent != null) {
-                                File videosDir = new File(parent, "Videos");
-                                if (!videosDir.equals(videoDir) && (videosDir.isDirectory() || videosDir.mkdirs())) {
-                                    storeDir = videosDir;
-                                    saveCustomPath = true;
-                                }
-                            }
+                            storeDir = videoDir;
+                            saveCustomPath = true;
                         }
                     } else if (isUserDownloadRequest(parentObject) && !TextUtils.isEmpty(getDocumentFileName(document)) && canSaveAsFile(parentObject)) {
                         storeFileName = getDocumentFileName(document);
@@ -1063,15 +1044,6 @@ public class FileLoader extends BaseController {
                     if (messageObject.putInDownloadsStore) {
                         File cacheDir = checkDirectory(MEDIA_DIR_CACHE);
                         File targetDir = checkDirectory(finalType);
-                        if (finalType == MEDIA_DIR_VIDEO && targetDir != null) {
-                            File parent = targetDir.getParentFile();
-                            if (parent != null) {
-                                File videosDir = new File(parent, "Videos");
-                                if (!videosDir.equals(targetDir) && (videosDir.isDirectory() || videosDir.mkdirs())) {
-                                    targetDir = videosDir;
-                                }
-                            }
-                        }
                         if (cacheDir != null && targetDir != null && resultFile != null) {
                             String cachePrefix = cacheDir.getAbsolutePath() + File.separator;
                             String filePath = resultFile.getAbsolutePath();
@@ -1547,77 +1519,6 @@ public class FileLoader extends BaseController {
         }
         //wd 文件对应目录获取不到尝试从缓存目录获取
         File attachFile = new File(dir, getAttachFileName(attach, ext));
-
-        //wd 当标准存储目录找不到文件时，通过检查同级 Videos 目录实现 Video -> Videos 迁移的向前兼容
-        if (!attachFile.exists() && type == MEDIA_DIR_VIDEO) {
-            File videoDir = getDirectory(MEDIA_DIR_VIDEO);
-            if (videoDir != null) {
-                File parent = videoDir.getParentFile();
-                if (parent != null) {
-                    File videosDir = new File(parent, "Videos");
-                    // 如果当前 dir 不是 Videos (例如是 Video)，则检查 Videos
-                    if (!videosDir.equals(videoDir)) {
-                        File videoFile = new File(videosDir, getAttachFileName(attach, ext));
-                        if (videoFile.exists()) {
-                            if (documentId != 0) {
-                                getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
-                            }
-                            return videoFile;
-                        }
-                    }
-                }
-            }
-
-            File videoPublicDir = getDirectory(MEDIA_DIR_VIDEO_PUBLIC);
-            if (videoPublicDir != null) {
-                File videoFile = new File(videoPublicDir, getAttachFileName(attach, ext));
-                if (videoFile.exists()) {
-                    if (documentId != 0) {
-                        getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
-                    }
-                    return videoFile;
-                }
-            }
-        }
-
-        //wd 应对用户手动将 Cache 目录文件迁移到 Videos 目录的情况，确保文件在物理位置变更后依然可读
-        if (!attachFile.exists() && type == MEDIA_DIR_CACHE) {
-            File videoDir = getDirectory(MEDIA_DIR_VIDEO);
-            if (videoDir != null) {
-                File videoFile = new File(videoDir, getAttachFileName(attach, ext));
-                if (videoFile.exists()) {
-                    if (documentId != 0) {
-                        getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
-                    }
-                    return videoFile;
-                }
-                //wd 同时检查 Videos 目录
-                File parent = videoDir.getParentFile();
-                if (parent != null) {
-                    File videosDir = new File(parent, "Videos");
-                    if (!videosDir.equals(videoDir)) {
-                        videoFile = new File(videosDir, getAttachFileName(attach, ext));
-                        if (videoFile.exists()) {
-                            if (documentId != 0) {
-                                getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
-                            }
-                            return videoFile;
-                        }
-                    }
-                }
-            }
-
-            File videoPublicDir = getDirectory(MEDIA_DIR_VIDEO_PUBLIC);
-            if (videoPublicDir != null) {
-                File videoFile = new File(videoPublicDir, getAttachFileName(attach, ext));
-                if (videoFile.exists()) {
-                    if (documentId != 0) {
-                        getFileDatabase().putPath(documentId, dcId, type, 0, videoFile.getAbsolutePath());
-                    }
-                    return videoFile;
-                }
-            }
-        }
 
         if (!attachFile.exists() && !dir.equals(getDirectory(MEDIA_DIR_CACHE))) {
             attachFile = new File(getDirectory(MEDIA_DIR_CACHE), getAttachFileName(attach, ext));

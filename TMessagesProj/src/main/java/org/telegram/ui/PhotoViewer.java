@@ -10483,13 +10483,9 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                 dirs.add(parent);
                 File root = parent.getParentFile();
                 if (root != null) {
-                    File siblingVideo = new File(root, "Video");
+                    File siblingVideo = new File(root, "Nnngram Video");
                     if (!dirs.contains(siblingVideo)) {
                         dirs.add(siblingVideo);
-                    }
-                    File siblingVideos = new File(root, "Videos");
-                    if (!dirs.contains(siblingVideos)) {
-                        dirs.add(siblingVideos);
                     }
                 }
             }
@@ -10499,15 +10495,6 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         if (videoDir != null) {
             if (!dirs.contains(videoDir)) {
                 dirs.add(videoDir);
-            }
-            File parent = videoDir.getParentFile();
-            if (parent != null) {
-                File videosDir = new File(parent, "Videos");
-                if (!videosDir.equals(videoDir)) {
-                    if (!dirs.contains(videosDir)) {
-                        dirs.add(videosDir);
-                    }
-                }
             }
         }
 

@@ -98,8 +98,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
-import xyz.nextalone.nnngram.utils.FileUtils;
-
 /**
  * image filter types
  * suffixes:
@@ -2462,12 +2460,8 @@ public class ImageLoader {
                 FileLog.d("external storage = " + path);
 
                 File publicMediaDir = null;
-                //wd 自用修改到下载目录下
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    File newPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                    telegramPath = new File(newPath, FileUtils.getRootPath());
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    File newPath;
+                //wd 媒体根目录统一使用应用外部目录（Android/data/<包名>/files/）
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     try {
                         if (ApplicationLoader.applicationContext.getExternalMediaDirs().length > 0) {
                             publicMediaDir = getPublicStorageDir();
@@ -2477,18 +2471,12 @@ public class ImageLoader {
                     } catch (Exception e) {
                         FileLog.e(e);
                     }
-                    newPath = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                    telegramPath = new File(newPath, "Nnngram");
-                } else {
-                    boolean isSdCard = !TextUtils.isEmpty(SharedConfig.storageCacheDir) && path.getAbsolutePath().startsWith(SharedConfig.storageCacheDir);
-                    if (!isSdCard) {
-                        if (!(path.exists() ? path.isDirectory() : path.mkdirs()) || !path.canWrite()) {
-                            FileLog.d("can't write to this directory = " + path + " use files dir");
-                            path = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                        }
-                    }
-                    telegramPath = new File(path, "Nnngram");
                 }
+                File newPath = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+                if (newPath == null) {
+                    newPath = ApplicationLoader.applicationContext.getFilesDir();
+                }
+                telegramPath = new File(newPath, "Nnngram");
                 telegramPath.mkdirs();
 
                 if (Build.VERSION.SDK_INT >= 19 && !telegramPath.isDirectory()) {
@@ -2506,7 +2494,7 @@ public class ImageLoader {
 
                 if (telegramPath.isDirectory()) {
                     try {
-                        File imagePath = new File(telegramPath, "Images");
+                        File imagePath = new File(telegramPath, "Nnngram Images");
                         imagePath.mkdir();
                         if (imagePath.isDirectory() && canMoveFiles(cachePath, imagePath, FileLoader.MEDIA_DIR_IMAGE)) {
                             //wd 添加屏蔽媒体文件
@@ -2521,7 +2509,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File videoPath = new File(telegramPath, "Videos");
+                        File videoPath = new File(telegramPath, "Nnngram Video");
                         videoPath.mkdir();
                         if (videoPath.isDirectory() && canMoveFiles(cachePath, videoPath, FileLoader.MEDIA_DIR_VIDEO)) {
                             //wd 添加屏蔽媒体文件
@@ -2536,7 +2524,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File audioPath = new File(telegramPath, "Audios");
+                        File audioPath = new File(telegramPath, "Nnngram Audio");
                         audioPath.mkdir();
                         if (audioPath.isDirectory() && canMoveFiles(cachePath, audioPath, FileLoader.MEDIA_DIR_AUDIO)) {
                             AndroidUtilities.createEmptyFile(new File(audioPath, ".nomedia"));
@@ -2550,7 +2538,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File documentPath = new File(telegramPath, "Documents");
+                        File documentPath = new File(telegramPath, "Nnngram Documents");
                         documentPath.mkdir();
                         if (documentPath.isDirectory() && canMoveFiles(cachePath, documentPath, FileLoader.MEDIA_DIR_DOCUMENT)) {
                             AndroidUtilities.createEmptyFile(new File(documentPath, ".nomedia"));
@@ -2564,7 +2552,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File normalNamesPath = new File(telegramPath, "Files");
+                        File normalNamesPath = new File(telegramPath, "Nnngram Files");
                         normalNamesPath.mkdir();
                         if (normalNamesPath.isDirectory() && canMoveFiles(cachePath, normalNamesPath, FileLoader.MEDIA_DIR_FILES)) {
                             AndroidUtilities.createEmptyFile(new File(normalNamesPath, ".nomedia"));
@@ -2578,7 +2566,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File normalNamesPath = new File(telegramPath, "Stories");
+                        File normalNamesPath = new File(telegramPath, "Nnngram Stories");
                         normalNamesPath.mkdir();
                         if (normalNamesPath.isDirectory() && canMoveFiles(cachePath, normalNamesPath, FileLoader.MEDIA_DIR_STORIES)) {
                             AndroidUtilities.createEmptyFile(new File(normalNamesPath, ".nomedia"));
@@ -2593,7 +2581,7 @@ public class ImageLoader {
                 }
                 if (publicMediaDir != null && publicMediaDir.isDirectory()) {
                     try {
-                        File imagePath = new File(publicMediaDir, "Images");
+                        File imagePath = new File(publicMediaDir, "Nnngram Images");
                         imagePath.mkdir();
                         if (imagePath.isDirectory() && canMoveFiles(cachePath, imagePath, FileLoader.MEDIA_DIR_IMAGE)) {
                             //wd 添加屏蔽媒体文件
@@ -2608,7 +2596,7 @@ public class ImageLoader {
                     }
 
                     try {
-                        File videoPath = new File(publicMediaDir, "Videos");
+                        File videoPath = new File(publicMediaDir, "Nnngram Video");
                         videoPath.mkdir();
                         if (videoPath.isDirectory() && canMoveFiles(cachePath, videoPath, FileLoader.MEDIA_DIR_VIDEO)) {
                             //wd 添加屏蔽媒体文件

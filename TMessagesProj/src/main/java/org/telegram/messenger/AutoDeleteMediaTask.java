@@ -212,7 +212,7 @@ public class AutoDeleteMediaTask {
                         }
                         //wd 保护Videos文件夹不被自动删除
                         File parentDir = allFiles.get(i).file.getParentFile();
-                        if (parentDir != null && (parentDir.getName().equals("Videos") || parentDir.getName().equals("Video"))) {
+                        if (parentDir != null && parentDir.getName().equals("Nnngram Video")) {
                             continue;
                         }
                         long size = allFiles.get(i).file.length();
