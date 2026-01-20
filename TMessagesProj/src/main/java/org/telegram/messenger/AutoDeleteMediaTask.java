@@ -144,12 +144,8 @@ public class AutoDeleteMediaTask {
                                 }
                             }
                             boolean needDelete = lastUsageTime > 316000000 && lastUsageTime < timeLocal && !usingFilePaths.contains(file.file.getPath()) && !isLocked;
-                            //wd 保护Video文件夹不被自动删除
-                            if (needDelete) {
-                                File parentDir = file.file.getParentFile();
-                                if (parentDir != null && parentDir.getName().equals("Videos")) {
-                                    needDelete = false;
-                                }
+                            if (needDelete && isInNnngramDirectory(file.file)) {
+                                needDelete = false;
                             }
                             if (needDelete) {
                                 try {
@@ -210,9 +206,7 @@ public class AutoDeleteMediaTask {
                             skippedFiles++;
                             continue;
                         }
-                        //wd 保护Videos文件夹不被自动删除
-                        File parentDir = allFiles.get(i).file.getParentFile();
-                        if (parentDir != null && parentDir.getName().equals("Nnngram Video")) {
+                        if (isInNnngramDirectory(allFiles.get(i).file)) {
                             continue;
                         }
                         long size = allFiles.get(i).file.length();
@@ -273,6 +267,18 @@ public class AutoDeleteMediaTask {
                 fileInfoList.add(new FileInfoInternal(fileEntry));
             }
         }
+    }
+
+    private static boolean isInNnngramDirectory(File file) {
+        File current = file;
+        while (current != null) {
+            String name = current.getName();
+            if ("Nnngram".equals(name) || name.startsWith("Nnngram ")) {
+                return true;
+            }
+            current = current.getParentFile();
+        }
+        return false;
     }
 
     private static class FileInfoInternal extends CacheByChatsController.KeepMediaFile {
