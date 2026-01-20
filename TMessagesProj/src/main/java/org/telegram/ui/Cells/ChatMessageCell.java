@@ -10123,7 +10123,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         photoImage.startAnimation();
                         TLRPC.Document document = messageObject.getDocument();
                         if (messageObject.hasVideoQualities() && messageObject.thumbQuality != null) {
-                            document = messageObject.thumbQuality.document;
+                            if (!currentMessageObject.mediaExists && !currentMessageObject.attachPathExists) {
+                                document = messageObject.thumbQuality.document;
+                            }
                         }
 
                         if (currentMessageObject.videoEditedInfo != null && currentMessageObject.videoEditedInfo.canAutoPlaySourceVideo() && document != null) {

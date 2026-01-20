@@ -231,8 +231,6 @@ import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.AnalyticsUtils;
 import xyz.nextalone.nnngram.utils.TypefaceUtils;
-import xyz.nextalone.nnngram.utils.FileUtils;
-
 public class AndroidUtilities {
     public final static int LIGHT_STATUS_BAR_OVERLAY = 0x0f000000, DARK_STATUS_BAR_OVERLAY = 0x33000000;
 
@@ -2560,14 +2558,6 @@ public class AndroidUtilities {
     }
 
     public static File getCacheDir() {
-        //wd 自用修改到下载目录下
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File cachePath = new File(path, FileUtils.getRootPath() + "/Cache");
-            cachePath.mkdirs();
-            AndroidUtilities.createEmptyFile(new File(cachePath, ".nomedia"));
-            return cachePath;
-        }
         String state = null;
         try {
             state = Environment.getExternalStorageState();
