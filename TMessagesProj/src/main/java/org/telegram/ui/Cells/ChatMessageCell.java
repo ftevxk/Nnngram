@@ -10087,8 +10087,16 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         currentPhotoObjectThumb.size = -1;
                     }
 
+                    boolean localVideoExists = false;
+                    if (messageObject.type == MessageObject.TYPE_VIDEO) {
+                        TLRPC.Document videoDocument = messageObject.getDocument();
+                        if (videoDocument != null) {
+                            File localFile = FileLoader.getInstance(currentAccount).getPathToAttach(videoDocument, null, false, true);
+                            localVideoExists = localFile != null && localFile.exists();
+                        }
+                    }
                     if (!currentMessageObject.isHiddenSensitive() && SharedConfig.isAutoplayVideo() && !currentMessageObject.hasVideoCover() && !currentMessageObject.isRepostPreview && (!currentMessageObject.hasMediaSpoilers() || currentMessageObject.isMediaSpoilersRevealed || currentMessageObject.revealingMediaSpoilers) && (messageObject.type == MessageObject.TYPE_VIDEO /*|| messageObject.type == MessageObject.TYPE_STORY && messageObject.getDocument() != null*/) && !messageObject.needDrawBluredPreview() &&
-                            ((currentMessageObject.mediaExists || currentMessageObject.attachPathExists) || messageObject.canStreamVideo() && DownloadController.getInstance(currentAccount).canDownloadMedia(currentMessageObject))
+                            ((currentMessageObject.mediaExists || currentMessageObject.attachPathExists || localVideoExists) || messageObject.canStreamVideo() && DownloadController.getInstance(currentAccount).canDownloadMedia(currentMessageObject))
                     ) {
                         if (currentPosition != null) {
                             autoPlayingMedia = (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_RIGHT) != 0;
@@ -10122,10 +10130,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         photoImage.setAllowStartAnimation(true);
                         photoImage.startAnimation();
                         TLRPC.Document document = messageObject.getDocument();
-                        if (messageObject.hasVideoQualities() && messageObject.thumbQuality != null) {
-                            if (!currentMessageObject.mediaExists && !currentMessageObject.attachPathExists) {
-                                document = messageObject.thumbQuality.document;
-                            }
+                        boolean originalDocumentExists = false;
+                        if (document != null) {
+                            File file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, true);
+                            originalDocumentExists = file != null && file.exists();
+                        }
+                        if (!originalDocumentExists && messageObject.hasVideoQualities() && messageObject.thumbQuality != null) {
+                            document = messageObject.thumbQuality.document;
                         }
 
                         if (currentMessageObject.videoEditedInfo != null && currentMessageObject.videoEditedInfo.canAutoPlaySourceVideo() && document != null) {

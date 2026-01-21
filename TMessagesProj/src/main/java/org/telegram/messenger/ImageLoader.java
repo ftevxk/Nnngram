@@ -2160,17 +2160,8 @@ public class ImageLoader {
             }
         };
 
-        SparseArray<File> mediaDirs = new SparseArray<>();
-        File cachePath = AndroidUtilities.getCacheDir();
-        if (!cachePath.isDirectory()) {
-            try {
-                cachePath.mkdirs();
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        }
-        AndroidUtilities.createEmptyFile(new File(cachePath, ".nomedia"));
-        mediaDirs.put(FileLoader.MEDIA_DIR_CACHE, cachePath);
+        SparseArray<File> mediaDirs = createMediaPaths();
+        File cachePath = mediaDirs.get(FileLoader.MEDIA_DIR_CACHE);
 
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             final int currentAccount = a;
