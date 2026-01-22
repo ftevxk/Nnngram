@@ -41,6 +41,7 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
@@ -3178,9 +3179,29 @@ public class ImageLoader {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), url);
                             } else if (MessageObject.isVideoDocument(document)) {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_VIDEO), url);
-                                if (!cacheFile.exists()) {
-                                    File realFile = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, true);
-                                    if (realFile != null && realFile.exists()) {
+                                File realFile = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, true);
+                                if (BuildVars.LOGS_ENABLED) {
+                                    File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
+                                    boolean videoExists = cacheFile != null && cacheFile.exists();
+                                    boolean realExists = realFile != null && realFile.exists();
+                                    boolean realInCache = false;
+                                    if (cacheDir != null && realFile != null) {
+                                        String cachePath = cacheDir.getAbsolutePath();
+                                        String realPath = realFile.getAbsolutePath();
+                                        if (!TextUtils.isEmpty(cachePath) && !TextUtils.isEmpty(realPath)) {
+                                            realInCache = realPath.startsWith(cachePath);
+                                        }
+                                    }
+                                    String cacheFilePath = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
+                                    String realFilePath = realFile != null ? realFile.getAbsolutePath() : "null";
+                                    String cacheDirPath = cacheDir != null ? cacheDir.getAbsolutePath() : "null";
+                                    Log.d("wd", "自动预览-视频选文件 dc=" + document.dc_id + " id=" + document.id + " url=" + url + " filter=" + filter + " videoPath=" + cacheFilePath + " videoExists=" + videoExists + " realPath=" + realFilePath + " realExists=" + realExists + " realInCache=" + realInCache + " cacheDir=" + cacheDirPath);
+                                }
+                                if (realFile != null && realFile.exists()) {
+                                    File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
+                                    if (cacheDir == null || !realFile.getAbsolutePath().startsWith(cacheDir.getAbsolutePath())) {
+                                        cacheFile = realFile;
+                                    } else if (!cacheFile.exists()) {
                                         cacheFile = realFile;
                                     }
                                 }
@@ -3188,6 +3209,10 @@ public class ImageLoader {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_DOCUMENT), url);
                             }
                             if ((isAnimatedAvatar(filter) || AUTOPLAY_FILTER.equals(filter)) && !cacheFile.exists()) {
+                                if (BuildVars.LOGS_ENABLED) {
+                                    String curPath = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
+                                    Log.d("wd", "自动预览-改用temp dc=" + document.dc_id + " id=" + document.id + " 原文件不存在 path=" + curPath + " url=" + url);
+                                }
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), document.dc_id + "_" + document.id + ".temp");
                             }
                             if (document instanceof DocumentObject.ThemeDocument) {

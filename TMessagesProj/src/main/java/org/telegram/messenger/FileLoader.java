@@ -845,6 +845,12 @@ public class FileLoader extends BaseController {
         } else {
             fileName = null;
         }
+        if (cacheType == 10 && document != null && document.key == null && MessageObject.isVideoDocument(document)) {
+            File existing = getPathToAttach(document, null, false, false);
+            if (existing != null && existing.exists() && (document.size <= 0 || existing.length() == document.size)) {
+                return null;
+            }
+        }
         if (fileName == null || fileName.contains("" + Integer.MIN_VALUE)) {
             return null;
         }
@@ -1422,13 +1428,27 @@ public class FileLoader extends BaseController {
         long documentId = 0;
         int dcId = 0;
         int type = 0;
+        File existingLocalFile = null;
         if (attach instanceof TLRPC.Document) {
             TLRPC.Document document = (TLRPC.Document) attach;
             //wd 优先验证数据库中记录的本地路径是否有效，防止文件被移动后 localPath 仍指向旧路径导致“假下载”状态
             if (!TextUtils.isEmpty(document.localPath)) {
                 File localFile = new File(document.localPath);
                 if (localFile.exists()) {
-                    return localFile;
+                    if (!MessageObject.isVideoDocument(document)) {
+                        return localFile;
+                    }
+                    File cacheDir = getDirectory(MEDIA_DIR_CACHE);
+                    if (cacheDir == null) {
+                        return localFile;
+                    }
+                    String cachePath = cacheDir.getAbsolutePath();
+                    String localPath = localFile.getAbsolutePath();
+                    if (!TextUtils.isEmpty(cachePath) && localPath.startsWith(cachePath)) {
+                        existingLocalFile = localFile;
+                    } else {
+                        return localFile;
+                    }
                 }
                 document.localPath = null;
             }
@@ -1514,7 +1534,25 @@ public class FileLoader extends BaseController {
             if (path != null) {
                 File file = new File(path);
                 if (file.exists()) {
+                    if (type == MEDIA_DIR_VIDEO) {
+                        File cacheDir = getDirectory(MEDIA_DIR_CACHE);
+                        if (cacheDir != null) {
+                            String cachePath = cacheDir.getAbsolutePath();
+                            String filePath = file.getAbsolutePath();
+                            if (!TextUtils.isEmpty(cachePath) && !TextUtils.isEmpty(filePath) && filePath.startsWith(cachePath)) {
+                                existingLocalFile = file;
+                                if (BuildVars.LOGS_ENABLED) {
+                                    Log.d("wd", "预览查找-忽略db缓存路径 dc=" + dcId + " id=" + documentId + " path=" + filePath);
+                                }
+                            } else {
+                                return file;
+                            }
+                        } else {
+                            return file;
+                        }
+                    } else {
                     return file;
+                    }
                 }
             }
         }
@@ -1522,28 +1560,75 @@ public class FileLoader extends BaseController {
         String attachFileName = getAttachFileName(attach, ext);
         File attachFile = new File(dir, attachFileName);
 
-        if (!attachFile.exists() && type == MEDIA_DIR_VIDEO && attach instanceof TLRPC.Document) {
+        if (!attachFile.exists() && attach instanceof TLRPC.Document) {
             TLRPC.Document document = (TLRPC.Document) attach;
-            if (MessageObject.isVideoDocument(document)) {
+            if (document.key == null && MessageObject.isVideoDocument(document) && (type == MEDIA_DIR_VIDEO || forceCache)) {
+                if (BuildVars.LOGS_ENABLED) {
+                    String dirPath = dir != null ? dir.getAbsolutePath() : "null";
+                    String cacheDirPath = getDirectory(MEDIA_DIR_CACHE) != null ? getDirectory(MEDIA_DIR_CACHE).getAbsolutePath() : "null";
+                    String localCachePath = existingLocalFile != null ? existingLocalFile.getAbsolutePath() : "null";
+                    Log.d("wd", "预览查找-开始 dc=" + document.dc_id + " id=" + document.id + " type=" + type + " forceCache=" + forceCache + " dir=" + dirPath + " attach=" + attachFileName + " docName=" + getDocumentFileName(document) + " localCache=" + localCachePath + " cacheDir=" + cacheDirPath);
+                }
                 File videoDir = checkDirectory(MEDIA_DIR_VIDEO);
                 if (videoDir == null) {
                     try {
-                        File baseDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                        if (baseDir == null) {
-                            baseDir = ApplicationLoader.applicationContext.getFilesDir();
+                        File[] externalFilesDirs = ApplicationLoader.applicationContext.getExternalFilesDirs(null);
+                        File baseDir = null;
+                        if (externalFilesDirs != null && externalFilesDirs.length > 0) {
+                            if (!TextUtils.isEmpty(SharedConfig.storageCacheDir)) {
+                                for (int i = 0; i < externalFilesDirs.length; i++) {
+                                    File dirCandidate = externalFilesDirs[i];
+                                    if (dirCandidate == null) {
+                                        continue;
+                                    }
+                                    if (dirCandidate.getAbsolutePath().startsWith(SharedConfig.storageCacheDir)) {
+                                        baseDir = dirCandidate;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (baseDir == null) {
+                                for (int i = 0; i < externalFilesDirs.length; i++) {
+                                    File dirCandidate = externalFilesDirs[i];
+                                    if (dirCandidate == null) {
+                                        continue;
+                                    }
+                                    File telegramPath = new File(dirCandidate, "Nnngram");
+                                    File fallbackVideoDir = new File(telegramPath, "Nnngram Video");
+                                    if (fallbackVideoDir.isDirectory()) {
+                                        videoDir = fallbackVideoDir;
+                                        break;
+                                    }
+                                }
+                            }
                         }
-                        File telegramPath = new File(baseDir, "Nnngram");
-                        File fallbackVideoDir = new File(telegramPath, "Nnngram Video");
-                        if (fallbackVideoDir.isDirectory()) {
-                            videoDir = fallbackVideoDir;
+                        if (videoDir == null && baseDir == null) {
+                            baseDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+                            if (baseDir == null) {
+                                baseDir = ApplicationLoader.applicationContext.getFilesDir();
+                            }
+                        }
+                        if (videoDir == null && baseDir != null) {
+                            File telegramPath = new File(baseDir, "Nnngram");
+                            File fallbackVideoDir = new File(telegramPath, "Nnngram Video");
+                            if (fallbackVideoDir.isDirectory()) {
+                                videoDir = fallbackVideoDir;
+                            }
                         }
                     } catch (Exception ignore) {
                     }
+                }
+                if (BuildVars.LOGS_ENABLED) {
+                    String v1 = videoDir != null ? videoDir.getAbsolutePath() : "null";
+                    Log.d("wd", "预览查找-视频目录 videoDir=" + v1);
                 }
                 if (videoDir != null && !videoDir.equals(dir)) {
                     File candidate = new File(videoDir, attachFileName);
                     if (candidate.exists()) {
                         filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                        if (BuildVars.LOGS_ENABLED) {
+                            Log.d("wd", "预览查找-命中按attach名 " + candidate.getAbsolutePath());
+                        }
                         return candidate;
                     }
                 }
@@ -1576,19 +1661,26 @@ public class FileLoader extends BaseController {
                     File candidate = new File(videoPublicDir, attachFileName);
                     if (candidate.exists()) {
                         filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                        if (BuildVars.LOGS_ENABLED) {
+                            Log.d("wd", "预览查找-命中public按attach名 " + candidate.getAbsolutePath());
+                        }
                         return candidate;
                     }
                 }
 
-                if (BuildVars.NO_SCOPED_STORAGE) {
+                try {
                     File legacyVideoDir = new File(new File(Environment.getExternalStorageDirectory(), "Nnngram"), "Nnngram Video");
                     if (legacyVideoDir.isDirectory()) {
                         File candidate = new File(legacyVideoDir, attachFileName);
                         if (candidate.exists()) {
                             filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                            if (BuildVars.LOGS_ENABLED) {
+                                Log.d("wd", "预览查找-命中旧目录按attach名 " + candidate.getAbsolutePath());
+                            }
                             return candidate;
                         }
                     }
+                } catch (Exception ignore) {
                 }
 
                 String documentFileName = getDocumentFileName(document);
@@ -1597,6 +1689,9 @@ public class FileLoader extends BaseController {
                         File candidate = new File(videoDir, documentFileName);
                         if (candidate.exists()) {
                             filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                            if (BuildVars.LOGS_ENABLED) {
+                                Log.d("wd", "预览查找-命中按原名 " + candidate.getAbsolutePath());
+                            }
                             return candidate;
                         }
                     }
@@ -1604,18 +1699,25 @@ public class FileLoader extends BaseController {
                         File candidate = new File(videoPublicDir, documentFileName);
                         if (candidate.exists()) {
                             filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                            if (BuildVars.LOGS_ENABLED) {
+                                Log.d("wd", "预览查找-命中public按原名 " + candidate.getAbsolutePath());
+                            }
                             return candidate;
                         }
                     }
-                    if (BuildVars.NO_SCOPED_STORAGE) {
+                    try {
                         File legacyVideoDir = new File(new File(Environment.getExternalStorageDirectory(), "Nnngram"), "Nnngram Video");
                         if (legacyVideoDir.isDirectory()) {
                             File candidate = new File(legacyVideoDir, documentFileName);
                             if (candidate.exists()) {
                                 filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                                if (BuildVars.LOGS_ENABLED) {
+                                    Log.d("wd", "预览查找-命中旧目录按原名 " + candidate.getAbsolutePath());
+                                }
                                 return candidate;
                             }
                         }
+                    } catch (Exception ignore) {
                     }
                 }
             }
@@ -1623,6 +1725,9 @@ public class FileLoader extends BaseController {
 
         if (!attachFile.exists() && !dir.equals(getDirectory(MEDIA_DIR_CACHE))) {
             attachFile = new File(getDirectory(MEDIA_DIR_CACHE), attachFileName);
+        }
+        if (!attachFile.exists() && existingLocalFile != null && existingLocalFile.exists()) {
+            return existingLocalFile;
         }
         return attachFile;
     }
