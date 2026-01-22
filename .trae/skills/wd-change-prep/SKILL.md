@@ -118,6 +118,9 @@ description: 固化代码改动前的需求澄清、影响评估、方案设计�
 
 ### 5.1 必跑命令（Windows PowerShell）
 
+**要求**：在进入“实现完成/可交付”之前，必须在本机真实执行下列命令；将关键输出（成功/失败信息、末尾 20 行日志）粘贴到改动说明中，避免“只写了命令但未验证”。
+
+- `adb devices`
 - `.\gradlew clean`
 - `.\gradlew :TMessagesProj:installDebug`
 - `adb shell am start -n xyz.nextalone.nnngram/org.telegram.ui.LaunchActivity`

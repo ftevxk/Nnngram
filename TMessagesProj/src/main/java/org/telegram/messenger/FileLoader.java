@@ -19,6 +19,7 @@
 
 package org.telegram.messenger;
 
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
@@ -1518,10 +1519,110 @@ public class FileLoader extends BaseController {
             }
         }
         //wd 文件对应目录获取不到尝试从缓存目录获取
-        File attachFile = new File(dir, getAttachFileName(attach, ext));
+        String attachFileName = getAttachFileName(attach, ext);
+        File attachFile = new File(dir, attachFileName);
+
+        if (!attachFile.exists() && type == MEDIA_DIR_VIDEO && attach instanceof TLRPC.Document) {
+            TLRPC.Document document = (TLRPC.Document) attach;
+            if (MessageObject.isVideoDocument(document)) {
+                File videoDir = checkDirectory(MEDIA_DIR_VIDEO);
+                if (videoDir == null) {
+                    try {
+                        File baseDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+                        if (baseDir == null) {
+                            baseDir = ApplicationLoader.applicationContext.getFilesDir();
+                        }
+                        File telegramPath = new File(baseDir, "Nnngram");
+                        File fallbackVideoDir = new File(telegramPath, "Nnngram Video");
+                        if (fallbackVideoDir.isDirectory()) {
+                            videoDir = fallbackVideoDir;
+                        }
+                    } catch (Exception ignore) {
+                    }
+                }
+                if (videoDir != null && !videoDir.equals(dir)) {
+                    File candidate = new File(videoDir, attachFileName);
+                    if (candidate.exists()) {
+                        filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                        return candidate;
+                    }
+                }
+
+                File videoPublicDir = checkDirectory(MEDIA_DIR_VIDEO_PUBLIC);
+                if (videoPublicDir == null) {
+                    try {
+                        File[] externalMediaDirs = ApplicationLoader.applicationContext.getExternalMediaDirs();
+                        if (externalMediaDirs != null) {
+                            for (int i = 0; i < externalMediaDirs.length; i++) {
+                                File dirCandidate = externalMediaDirs[i];
+                                if (dirCandidate == null) {
+                                    continue;
+                                }
+                                if (!TextUtils.isEmpty(SharedConfig.storageCacheDir) && !dirCandidate.getPath().startsWith(SharedConfig.storageCacheDir)) {
+                                    continue;
+                                }
+                                File telegramPath = new File(dirCandidate, "Nnngram");
+                                File fallbackVideoDir = new File(telegramPath, "Nnngram Video");
+                                if (fallbackVideoDir.isDirectory()) {
+                                    videoPublicDir = fallbackVideoDir;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (Exception ignore) {
+                    }
+                }
+                if (videoPublicDir != null && !videoPublicDir.equals(dir)) {
+                    File candidate = new File(videoPublicDir, attachFileName);
+                    if (candidate.exists()) {
+                        filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                        return candidate;
+                    }
+                }
+
+                if (BuildVars.NO_SCOPED_STORAGE) {
+                    File legacyVideoDir = new File(new File(Environment.getExternalStorageDirectory(), "Nnngram"), "Nnngram Video");
+                    if (legacyVideoDir.isDirectory()) {
+                        File candidate = new File(legacyVideoDir, attachFileName);
+                        if (candidate.exists()) {
+                            filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                            return candidate;
+                        }
+                    }
+                }
+
+                String documentFileName = getDocumentFileName(document);
+                if (!TextUtils.isEmpty(documentFileName) && !documentFileName.equals(attachFileName)) {
+                    if (videoDir != null) {
+                        File candidate = new File(videoDir, documentFileName);
+                        if (candidate.exists()) {
+                            filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                            return candidate;
+                        }
+                    }
+                    if (videoPublicDir != null) {
+                        File candidate = new File(videoPublicDir, documentFileName);
+                        if (candidate.exists()) {
+                            filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                            return candidate;
+                        }
+                    }
+                    if (BuildVars.NO_SCOPED_STORAGE) {
+                        File legacyVideoDir = new File(new File(Environment.getExternalStorageDirectory(), "Nnngram"), "Nnngram Video");
+                        if (legacyVideoDir.isDirectory()) {
+                            File candidate = new File(legacyVideoDir, documentFileName);
+                            if (candidate.exists()) {
+                                filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
+                                return candidate;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if (!attachFile.exists() && !dir.equals(getDirectory(MEDIA_DIR_CACHE))) {
-            attachFile = new File(getDirectory(MEDIA_DIR_CACHE), getAttachFileName(attach, ext));
+            attachFile = new File(getDirectory(MEDIA_DIR_CACHE), attachFileName);
         }
         return attachFile;
     }
