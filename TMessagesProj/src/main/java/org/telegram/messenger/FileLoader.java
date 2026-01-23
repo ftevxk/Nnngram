@@ -1643,27 +1643,10 @@ public class FileLoader extends BaseController {
                 }
 
                 File videoPublicDir = checkDirectory(MEDIA_DIR_VIDEO_PUBLIC);
-                if (videoPublicDir == null) {
-                    try {
-                        File[] externalMediaDirs = ApplicationLoader.applicationContext.getExternalMediaDirs();
-                        if (externalMediaDirs != null) {
-                            for (int i = 0; i < externalMediaDirs.length; i++) {
-                                File dirCandidate = externalMediaDirs[i];
-                                if (dirCandidate == null) {
-                                    continue;
-                                }
-                                if (!TextUtils.isEmpty(SharedConfig.storageCacheDir) && !dirCandidate.getPath().startsWith(SharedConfig.storageCacheDir)) {
-                                    continue;
-                                }
-                                File telegramPath = new File(dirCandidate, "Nnngram");
-                                File fallbackVideoDir = new File(telegramPath, "Nnngram Video");
-                                if (fallbackVideoDir.isDirectory()) {
-                                    videoPublicDir = fallbackVideoDir;
-                                    break;
-                                }
-                            }
-                        }
-                    } catch (Exception ignore) {
+                if (videoPublicDir != null) {
+                    String publicPath = videoPublicDir.getAbsolutePath();
+                    if (publicPath.contains(File.separator + "Android" + File.separator + "media" + File.separator)) {
+                        videoPublicDir = null;
                     }
                 }
                 if (videoPublicDir != null && !videoPublicDir.equals(dir)) {
