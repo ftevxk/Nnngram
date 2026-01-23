@@ -54,7 +54,6 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.transition.ChangeBounds;
 import android.transition.TransitionManager;
-import android.util.Log;
 import android.util.TypedValue;
 import android.util.LongSparseArray;
 import android.util.Property;
@@ -6645,7 +6644,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     searchViewPager.onTextChanged(lastSearchString);
                 }
             } catch (Exception e) {
-                Log.e("wd", "刷新搜索结果失败", e);
+                FileLog.e("wd 刷新搜索结果失败", e);
             }
         }
     }

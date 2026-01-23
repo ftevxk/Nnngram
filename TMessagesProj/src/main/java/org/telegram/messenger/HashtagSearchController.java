@@ -22,7 +22,6 @@ package org.telegram.messenger;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -369,7 +368,7 @@ public class HashtagSearchController {
 
     //wd 本地搜索后备：当网络搜索因Premium限制失败时使用本地数据库搜索
     private void loadLocalHashtagSearch(String query, int guid, int searchType, SearchResult search) {
-        Log.d("wd", "HashtagSearchController.loadLocalHashtagSearch: 开始本地搜索, query=" + query + ", searchType=" + searchType);
+        FileLog.d("wd HashtagSearchController.loadLocalHashtagSearch: 开始本地搜索, query=" + query + ", searchType=" + searchType);
         
         MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 100, 0, (localMessages, localUsers, localChats, localDocs) -> {
             if (!TextUtils.equals(search.lastHashtag, query)) {
@@ -412,7 +411,7 @@ public class HashtagSearchController {
                 search.endReached = true;
                 search.count = search.messages.size();
                 
-                Log.d("wd", "HashtagSearchController.loadLocalHashtagSearch: 本地搜索完成，找到 " + search.messages.size() + " 条消息");
+                FileLog.d("wd HashtagSearchController.loadLocalHashtagSearch: 本地搜索完成，找到 " + search.messages.size() + " 条消息");
                 
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.hashtagSearchUpdated, guid, search.count, search.endReached, search.getMask(), search.selectedIndex, 0);
             });

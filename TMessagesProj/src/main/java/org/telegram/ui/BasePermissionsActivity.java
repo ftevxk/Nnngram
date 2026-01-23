@@ -3,7 +3,6 @@ package org.telegram.ui;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.RawRes;
 import androidx.fragment.app.FragmentActivity;
@@ -30,7 +29,7 @@ public class BasePermissionsActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         //wd 当前Activity
-        Log.d("wd", "当前Activity: " + getClass().getSimpleName());
+        FileLog.d("wd 当前Activity: " + getClass().getSimpleName());
     }
     public final static int REQUEST_CODE_GEOLOCATION = 2,
             REQUEST_CODE_EXTERNAL_STORAGE = 4,

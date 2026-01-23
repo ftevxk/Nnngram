@@ -38,7 +38,6 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -57,6 +56,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
@@ -370,19 +370,19 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 //wd 检查当前对话是否已设置直接打开媒体对话
                 String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
                 boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
-                Log.d("wd", "MediaActivity: 初始化openMediaDirectlyItem，openMediaConfig=" + openMediaConfig + ", dialogId=" + dialogId + ", isEnabled=" + isEnabled);
+                FileLog.d("wd MediaActivity: 初始化openMediaDirectlyItem，openMediaConfig=" + openMediaConfig + ", dialogId=" + dialogId + ", isEnabled=" + isEnabled);
                 openMediaDirectlyItem.setChecked(isEnabled);
                 openMediaDirectlyItem.setOnClickListener(e -> {
                     //wd 切换直接打开媒体对话设置
                     String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                    Log.d("wd", "MediaActivity: 点击openMediaDirectlyItem，currentConfig=" + currentConfig + ", dialogId=" + dialogId);
+                    FileLog.d("wd MediaActivity: 点击openMediaDirectlyItem，currentConfig=" + currentConfig + ", dialogId=" + dialogId);
                     StringBuilder newConfig = new StringBuilder();
                     boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialogId + ",");
-                    Log.d("wd", "MediaActivity: wasEnabled=" + wasEnabled);
+                    FileLog.d("wd MediaActivity: wasEnabled=" + wasEnabled);
 
                     if (wasEnabled) {
                         //wd 移除当前对话ID
-                        Log.d("wd", "MediaActivity: 移除对话ID=" + dialogId);
+                        FileLog.d("wd MediaActivity: 移除对话ID=" + dialogId);
                         if (currentConfig.equals(String.valueOf(dialogId))) {
                             newConfig.append("");
                         } else {
@@ -397,7 +397,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                         }
                     } else {
                         //wd 添加当前对话ID
-                        Log.d("wd", "MediaActivity: 添加对话ID=" + dialogId);
+                        FileLog.d("wd MediaActivity: 添加对话ID=" + dialogId);
                         if (currentConfig.isEmpty()) {
                             newConfig.append(dialogId);
                         } else {
@@ -407,7 +407,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
                     //wd 保存更新后的配置
                     String finalConfig = newConfig.toString();
-                    Log.d("wd", "MediaActivity: 保存配置，finalConfig=" + finalConfig);
+                    FileLog.d("wd MediaActivity: 保存配置，finalConfig=" + finalConfig);
                     ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
                     //wd 更新菜单项状态
                     openMediaDirectlyItem.setChecked(!wasEnabled);

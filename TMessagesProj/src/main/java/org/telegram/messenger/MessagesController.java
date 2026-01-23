@@ -20291,7 +20291,7 @@ public class MessagesController extends BaseController implements NotificationCe
             try {
                 pattern = Pattern.compile(filterText, Pattern.CASE_INSENSITIVE);
             } catch (Exception e) {
-                Log.e("wd", "无效的消息过滤正则表达式: " + filterText, e);
+                FileLog.e("wd 无效的消息过滤正则表达式: " + filterText, e);
             }
 
             String[] filterTokens = filterText.split("\\|");
@@ -21706,10 +21706,10 @@ public class MessagesController extends BaseController implements NotificationCe
             //wd 检查是否需要直接打开媒体页面
             String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
             boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
-            Log.d("wd", "MessagesController.openChatOrProfileWith: openMediaConfig=" + openMediaConfig + ", dialogId=" + dialogId + ", isEnabled=" + isEnabled + ", type=" + type);
+            FileLog.d("wd MessagesController.openChatOrProfileWith: openMediaConfig=" + openMediaConfig + ", dialogId=" + dialogId + ", isEnabled=" + isEnabled + ", type=" + type);
             if (isEnabled && type != 0) {
                 //wd 直接打开媒体页面
-                Log.d("wd", "MessagesController.openChatOrProfileWith: 直接打开媒体页面，dialogId=" + dialogId);
+                FileLog.d("wd MessagesController.openChatOrProfileWith: 直接打开媒体页面，dialogId=" + dialogId);
                 Bundle mediaArgs = new Bundle();
                 mediaArgs.putInt("type", MediaActivity.TYPE_MEDIA);
                 mediaArgs.putLong("dialog_id", dialogId);

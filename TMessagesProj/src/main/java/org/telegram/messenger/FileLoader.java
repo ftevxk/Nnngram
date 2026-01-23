@@ -21,7 +21,6 @@ package org.telegram.messenger;
 
 import android.os.Environment;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.SparseArray;
 
 import org.telegram.tgnet.ConnectionsManager;
@@ -1077,7 +1076,7 @@ public class FileLoader extends BaseController {
                                     }
                                 }
                                 if (!moved && BuildVars.LOGS_ENABLED) {
-                                    Log.d("wd", "文件搬运失败 name=" + resultFile.getName() + " targetDir=" + targetDir.getName());
+                                    FileLog.d("wd 文件搬运失败 name=" + resultFile.getName() + " targetDir=" + targetDir.getName());
                                 }
                                 if (finalDocumentId != 0 && resultFile != null && resultFile.exists()) {
                                     getFileDatabase().putPath(finalDocumentId, finalDcId, finalType, 0, resultFile.getAbsolutePath());
@@ -1542,7 +1541,7 @@ public class FileLoader extends BaseController {
                             if (!TextUtils.isEmpty(cachePath) && !TextUtils.isEmpty(filePath) && filePath.startsWith(cachePath)) {
                                 existingLocalFile = file;
                                 if (BuildVars.LOGS_ENABLED) {
-                                    Log.d("wd", "预览查找-忽略db缓存路径 dc=" + dcId + " id=" + documentId + " path=" + filePath);
+                                    FileLog.d("wd 预览查找-忽略db缓存路径 dc=" + dcId + " id=" + documentId + " path=" + filePath);
                                 }
                             } else {
                                 return file;
@@ -1567,7 +1566,7 @@ public class FileLoader extends BaseController {
                     String dirPath = dir != null ? dir.getAbsolutePath() : "null";
                     String cacheDirPath = getDirectory(MEDIA_DIR_CACHE) != null ? getDirectory(MEDIA_DIR_CACHE).getAbsolutePath() : "null";
                     String localCachePath = existingLocalFile != null ? existingLocalFile.getAbsolutePath() : "null";
-                    Log.d("wd", "预览查找-开始 dc=" + document.dc_id + " id=" + document.id + " type=" + type + " forceCache=" + forceCache + " dir=" + dirPath + " attach=" + attachFileName + " docName=" + getDocumentFileName(document) + " localCache=" + localCachePath + " cacheDir=" + cacheDirPath);
+                    FileLog.d("wd 预览查找-开始 dc=" + document.dc_id + " id=" + document.id + " type=" + type + " forceCache=" + forceCache + " dir=" + dirPath + " attach=" + attachFileName + " docName=" + getDocumentFileName(document) + " localCache=" + localCachePath + " cacheDir=" + cacheDirPath);
                 }
                 File videoDir = checkDirectory(MEDIA_DIR_VIDEO);
                 if (videoDir == null) {
@@ -1620,14 +1619,14 @@ public class FileLoader extends BaseController {
                 }
                 if (BuildVars.LOGS_ENABLED) {
                     String v1 = videoDir != null ? videoDir.getAbsolutePath() : "null";
-                    Log.d("wd", "预览查找-视频目录 videoDir=" + v1);
+                    FileLog.d("wd 预览查找-视频目录 videoDir=" + v1);
                 }
                 if (videoDir != null && !videoDir.equals(dir)) {
                     File candidate = new File(videoDir, attachFileName);
                     if (candidate.exists()) {
                         filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
                         if (BuildVars.LOGS_ENABLED) {
-                            Log.d("wd", "预览查找-命中按attach名 " + candidate.getAbsolutePath());
+                            FileLog.d("wd 预览查找-命中按attach名 " + candidate.getAbsolutePath());
                         }
                         return candidate;
                     }
@@ -1662,7 +1661,7 @@ public class FileLoader extends BaseController {
                     if (candidate.exists()) {
                         filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
                         if (BuildVars.LOGS_ENABLED) {
-                            Log.d("wd", "预览查找-命中public按attach名 " + candidate.getAbsolutePath());
+                            FileLog.d("wd 预览查找-命中public按attach名 " + candidate.getAbsolutePath());
                         }
                         return candidate;
                     }
@@ -1675,7 +1674,7 @@ public class FileLoader extends BaseController {
                         if (candidate.exists()) {
                             filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
                             if (BuildVars.LOGS_ENABLED) {
-                                Log.d("wd", "预览查找-命中旧目录按attach名 " + candidate.getAbsolutePath());
+                                FileLog.d("wd 预览查找-命中旧目录按attach名 " + candidate.getAbsolutePath());
                             }
                             return candidate;
                         }
@@ -1690,7 +1689,7 @@ public class FileLoader extends BaseController {
                         if (candidate.exists()) {
                             filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
                             if (BuildVars.LOGS_ENABLED) {
-                                Log.d("wd", "预览查找-命中按原名 " + candidate.getAbsolutePath());
+                                FileLog.d("wd 预览查找-命中按原名 " + candidate.getAbsolutePath());
                             }
                             return candidate;
                         }
@@ -1700,7 +1699,7 @@ public class FileLoader extends BaseController {
                         if (candidate.exists()) {
                             filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
                             if (BuildVars.LOGS_ENABLED) {
-                                Log.d("wd", "预览查找-命中public按原名 " + candidate.getAbsolutePath());
+                                FileLog.d("wd 预览查找-命中public按原名 " + candidate.getAbsolutePath());
                             }
                             return candidate;
                         }
@@ -1712,7 +1711,7 @@ public class FileLoader extends BaseController {
                             if (candidate.exists()) {
                                 filePathDatabase.putPath(document.id, document.dc_id, MEDIA_DIR_VIDEO, 0, candidate.getAbsolutePath());
                                 if (BuildVars.LOGS_ENABLED) {
-                                    Log.d("wd", "预览查找-命中旧目录按原名 " + candidate.getAbsolutePath());
+                                    FileLog.d("wd 预览查找-命中旧目录按原名 " + candidate.getAbsolutePath());
                                 }
                                 return candidate;
                             }

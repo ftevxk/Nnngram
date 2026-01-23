@@ -35,7 +35,6 @@ import android.os.Build;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.View;
@@ -804,12 +803,12 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                         emptyView.subtitle.setText(LocaleController.getString(R.string.SearchEmptyViewFilteredSubtitle2));
                         emptyView.showProgress(false, true);
                         if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
-                            Log.d("wd", "========== 加载更多完成汇总 ==========");
-                            Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
-                            Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size());
-                            Log.d("wd", "网络请求匹配数量: " + finalN);
-                            Log.d("wd", "最终显示数量: " + searchResultMessages.size());
-                            Log.d("wd", "=====================================");
+                            FileLog.d("wd ========== 加载更多完成汇总 ==========");
+                            FileLog.d("wd 数据库匹配数量: " + searchLocalResultMessages.size());
+                            FileLog.d("wd 缓存结果数量: " + searchLocalResultMessages.size());
+                            FileLog.d("wd 网络请求匹配数量: " + finalN);
+                            FileLog.d("wd 最终显示数量: " + searchResultMessages.size());
+                            FileLog.d("wd =====================================");
                         }
                         return;
                     }
@@ -839,9 +838,9 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                     currentDataQuery = finalQuery;
                     int n = messageObjects.size();
                     long minDuration = Config.getSearchVideoMinDuration();
-                    Log.d("wd", "========== 开始处理搜索结果 ==========");
-                    Log.d("wd", "搜索字符串: " + (finalQuery.isEmpty() ? "(空)" : finalQuery));
-                    Log.d("wd", "消息总数: " + n);
+                    FileLog.d("wd ========== 开始处理搜索结果 ==========");
+                    FileLog.d("wd 搜索字符串: " + (finalQuery.isEmpty() ? "(空)" : finalQuery));
+                    FileLog.d("wd 消息总数: " + n);
                     String filterTypeName = "null";
                     if (currentSearchFilter != null) {
                         switch (currentSearchFilter.filterType) {
@@ -865,8 +864,8 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                                 break;
                         }
                     }
-                    Log.d("wd", "过滤器类型: " + filterTypeName);
-                    Log.d("wd", "最小时长设置: " + minDuration + " 秒");
+                    FileLog.d("wd 过滤器类型: " + filterTypeName);
+                    FileLog.d("wd 最小时长设置: " + minDuration + " 秒");
                     int videoCount = 0;
                     int shortVideoCount = 0;
                     int nonVideoCount = 0;
@@ -914,14 +913,14 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
                             }
                         }
                     }
-                    Log.d("wd", "========== 过滤结果汇总 ==========");
-                    Log.d("wd", "总消息数: " + n);
-                    Log.d("wd", "保留视频数: " + videoCount);
-                    Log.d("wd", "过滤短视频数: " + shortVideoCount);
-                    Log.d("wd", "过滤非视频数: " + nonVideoCount);
-                    Log.d("wd", "移除总数: " + removeCount);
-                    Log.d("wd", "最终消息数: " + messages.size());
-                    Log.d("wd", "===================================");
+                    FileLog.d("wd ========== 过滤结果汇总 ==========");
+                    FileLog.d("wd 总消息数: " + n);
+                    FileLog.d("wd 保留视频数: " + videoCount);
+                    FileLog.d("wd 过滤短视频数: " + shortVideoCount);
+                    FileLog.d("wd 过滤非视频数: " + nonVideoCount);
+                    FileLog.d("wd 移除总数: " + removeCount);
+                    FileLog.d("wd 最终消息数: " + messages.size());
+                    FileLog.d("wd ===================================");
                     totalCount -= removeCount;
                     if (messages.size() > totalCount) {
                         totalCount = messages.size();
@@ -931,12 +930,12 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 
                     if (currentSearchFilter != null && currentSearchFilter.filterType == FiltersView.FILTER_TYPE_MEDIA) {
                         //wd 打印完整的搜索汇总（包括本地和网络结果）
-                        Log.d("wd", "========== 加载更多完成汇总 ==========");
-                        Log.d("wd", "数据库匹配数量: " + searchLocalResultMessages.size());
-                        Log.d("wd", "缓存结果数量: " + searchLocalResultMessages.size()); // User's requested format
-                        Log.d("wd", "网络请求匹配数量: " + finalN);
-                        Log.d("wd", "最终显示数量: " + searchResultMessages.size());
-                        Log.d("wd", "=====================================");
+                        FileLog.d("wd ========== 加载更多完成汇总 ==========");
+                        FileLog.d("wd 数据库匹配数量: " + searchLocalResultMessages.size());
+                        FileLog.d("wd 缓存结果数量: " + searchLocalResultMessages.size()); // User's requested format
+                        FileLog.d("wd 网络请求匹配数量: " + finalN);
+                        FileLog.d("wd 最终显示数量: " + searchResultMessages.size());
+                        FileLog.d("wd =====================================");
                     }
 
                     if (messages.isEmpty()) {

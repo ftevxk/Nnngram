@@ -41,7 +41,6 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
@@ -3195,7 +3194,7 @@ public class ImageLoader {
                                     String cacheFilePath = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
                                     String realFilePath = realFile != null ? realFile.getAbsolutePath() : "null";
                                     String cacheDirPath = cacheDir != null ? cacheDir.getAbsolutePath() : "null";
-                                    Log.d("wd", "自动预览-视频选文件 dc=" + document.dc_id + " id=" + document.id + " url=" + url + " filter=" + filter + " videoPath=" + cacheFilePath + " videoExists=" + videoExists + " realPath=" + realFilePath + " realExists=" + realExists + " realInCache=" + realInCache + " cacheDir=" + cacheDirPath);
+                                    FileLog.d("wd 自动预览-视频选文件 dc=" + document.dc_id + " id=" + document.id + " url=" + url + " filter=" + filter + " videoPath=" + cacheFilePath + " videoExists=" + videoExists + " realPath=" + realFilePath + " realExists=" + realExists + " realInCache=" + realInCache + " cacheDir=" + cacheDirPath);
                                 }
                                 if (realFile != null && realFile.exists()) {
                                     File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
@@ -3211,7 +3210,7 @@ public class ImageLoader {
                             if ((isAnimatedAvatar(filter) || AUTOPLAY_FILTER.equals(filter)) && !cacheFile.exists()) {
                                 if (BuildVars.LOGS_ENABLED) {
                                     String curPath = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
-                                    Log.d("wd", "自动预览-改用temp dc=" + document.dc_id + " id=" + document.id + " 原文件不存在 path=" + curPath + " url=" + url);
+                                        FileLog.d("wd 自动预览-改用temp dc=" + document.dc_id + " id=" + document.id + " 原文件不存在 path=" + curPath + " url=" + url);
                                 }
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), document.dc_id + "_" + document.id + ".temp");
                             }

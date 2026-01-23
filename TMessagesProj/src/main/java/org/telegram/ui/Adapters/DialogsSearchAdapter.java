@@ -28,7 +28,6 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -768,7 +767,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     //wd 本地搜索后备：当网络搜索因Premium限制失败时使用本地数据库搜索
     private void loadLocalMessagesSearch(String query, int searchId) {
-        Log.d("wd", "DialogsSearchAdapter.loadLocalMessagesSearch: 开始本地搜索, query=" + query);
+        FileLog.d("wd DialogsSearchAdapter.loadLocalMessagesSearch: 开始本地搜索, query=" + query);
         
         MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 50, 0, (localMessages, localUsers, localChats, localDocs) -> {
             AndroidUtilities.runOnUIThread(() -> {
@@ -797,7 +796,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 searchWas = true;
                 forceLoadingMessages = false;
                 
-                Log.d("wd", "DialogsSearchAdapter.loadLocalMessagesSearch: 本地搜索完成，找到 " + searchResultMessages.size() + " 条消息");
+                FileLog.d("wd DialogsSearchAdapter.loadLocalMessagesSearch: 本地搜索完成，找到 " + searchResultMessages.size() + " 条消息");
                 
                 waitingResponseCount--;
                 if (delegate != null) {

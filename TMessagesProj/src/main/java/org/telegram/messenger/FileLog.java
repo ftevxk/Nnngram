@@ -102,7 +102,11 @@ public class FileLog {
      */
     @Deprecated
     public static void e(final String message, final Throwable exception) {
-        Log.e(message, exception);
+        if (message != null && message.startsWith("wd ")) {
+            Log.e("wd", message.substring(3).trim() + "\n" + android.util.Log.getStackTraceString(exception));
+        } else {
+            Log.e(message, exception);
+        }
     }
 
     /**
@@ -110,7 +114,11 @@ public class FileLog {
      */
     @Deprecated
     public static void e(final String message) {
-        Log.e(message);
+        if (message != null && message.startsWith("wd ")) {
+            Log.e("wd", message.substring(3).trim());
+        } else {
+            Log.e(message);
+        }
     }
 
     /**
@@ -185,7 +193,11 @@ public class FileLog {
      */
     @Deprecated
     public static void d(final String message) {
-        Log.d(message);
+        if (message != null && message.startsWith("wd ")) {
+            Log.d("wd", message.substring(3).trim());
+        } else {
+            Log.d(message);
+        }
     }
 
     /**

@@ -46,6 +46,14 @@ object Log {
             }
         }
     }
+    private val wdLogFile: File by lazy {
+        File(AndroidUtilities.getLogsDir(), "wd-log-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.txt").also { f ->
+            if (!f.exists()) {
+                f.createNewFile()
+                f.init()
+            }
+        }
+    }
 
     private fun File.init() {
         appendText("Current version: ${BuildConfig.VERSION_NAME}\n")
@@ -82,6 +90,8 @@ object Log {
             }
             logFile.appendText(">>>> Log start at ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())}\n", Charset.forName("UTF-8"))
             logFile.appendText("Current version: ${BuildConfig.VERSION_NAME}\n")
+            wdLogFile.appendText(">>>> Log start at ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())}\n", Charset.forName("UTF-8"))
+            wdLogFile.appendText("Current version: ${BuildConfig.VERSION_NAME}\n")
 
 
         }.onFailure {
@@ -92,22 +102,30 @@ object Log {
         }
     }
 
+    private fun appendToFile(file: File, level: Level, tag: String?, msg: String) {
+        file.apply {
+            if (!exists()) {
+                createNewFile()
+                setWritable(true)
+                init()
+                appendText(">>>> Log start at ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())}\n", Charset.forName("UTF-8"))
+                appendText("Current version: ${BuildConfig.VERSION_NAME}\n")
+            }
+            if (readAttributes().size() > 1024 * 1024 * 10) {
+                refreshLog()
+            }
+            appendText("${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())} ${level.name} ${tag ?: ""}: $msg\n", Charset.forName("UTF-8"))
+        }
+    }
+
     private fun writeToFile(level: Level, tag: String?, msg: String) {
+        val writeToWd = tag == "wd" || msg.startsWith("wd ")
+        val wdMsg = if (tag == null && msg.startsWith("wd ")) msg.removePrefix("wd ").trimStart() else msg
         CoroutineScope(Dispatchers.IO).launch {
             runCatching {
-                logFile.apply {
-                    if (!exists()) {
-                        createNewFile()
-                        setWritable(true)
-                        init()
-                        appendText(">>>> Log start at ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())}\n", Charset.forName("UTF-8"))
-                        appendText("Current version: ${BuildConfig.VERSION_NAME}\n")
-
-                    }
-                    if (readAttributes().size() > 1024 * 1024 * 10) { // 10MB
-                        refreshLog()
-                    }
-                    appendText("${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())} ${level.name} ${tag ?: ""}: $msg\n", Charset.forName("UTF-8"))
+                appendToFile(logFile, level, tag, msg)
+                if (writeToWd) {
+                    appendToFile(wdLogFile, level, "wd", wdMsg)
                 }
             }.onFailure {
                 if (it is Exception && AndroidUtilities.isENOSPC(it)) {
@@ -126,6 +144,13 @@ object Log {
         synchronized(logFile) {
             runCatching {
                 logFile.apply {
+                    delete()
+                    createNewFile()
+                    init()
+                    appendText(">>>> Log start at ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())}\n", Charset.forName("UTF-8"))
+                    appendText("Current version: ${BuildConfig.VERSION_NAME}\n")
+                }
+                wdLogFile.apply {
                     delete()
                     createNewFile()
                     init()

@@ -22,7 +22,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -501,7 +500,7 @@ public abstract class BaseFragment {
     public void onResume() {
         isPaused = false;
         //wd 当前Fragment
-        Log.d("wd", "当前Fragment: " + getClass().getSimpleName());
+        FileLog.d("wd 当前Fragment: " + getClass().getSimpleName());
         if (actionBar != null) {
             actionBar.onResume();
         }

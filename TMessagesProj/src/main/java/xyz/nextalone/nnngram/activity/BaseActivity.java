@@ -26,7 +26,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -38,6 +37,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -119,7 +119,7 @@ public abstract class BaseActivity extends BaseFragment {
     public void onResume() {
         super.onResume();
         //wd 当前Activity
-        Log.d("wd", "当前Activity: " + getClass().getSimpleName());
+        FileLog.d("wd 当前Activity: " + getClass().getSimpleName());
         if (listAdapter != null) {
             listAdapter.notifyDataSetChanged();
         }

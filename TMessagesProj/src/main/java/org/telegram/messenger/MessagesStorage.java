@@ -1125,9 +1125,9 @@ public class MessagesStorage extends BaseController {
         try {
             database.executeFast("DELETE FROM messages_v2 WHERE mid IN (" + ids + ")").stepThis().dispose();
             database.executeFast("DELETE FROM media_v4 WHERE mid IN (" + ids + ")").stepThis().dispose();
-            android.util.Log.d("wd", "Cleaned up " + ids.split(",").length + " corrupted messages");
+            FileLog.d("wd 清理损坏消息完成 count=" + ids.split(",").length);
         } catch (Exception e) {
-            android.util.Log.e("wd", "Failed to cleanup corrupted messages", e);
+            FileLog.e("wd 清理损坏消息失败", e);
         }
     }
 
@@ -5142,7 +5142,7 @@ public class MessagesStorage extends BaseController {
             SQLitePreparedStatement state = null;
             SQLiteCursor cursor = null;
             try {
-                Log.d("wd", "searchMessagesByText开始执行: dialogId=" + dialogId + ", query=" + query + ", limit=" + limit + ", offset=" + offset);
+                FileLog.d("wd searchMessagesByText开始执行: dialogId=" + dialogId + ", query=" + query + ", limit=" + limit + ", offset=" + offset);
                 //wd 查询messages_v2表获取消息，由于文本内容存储在BLOB中，需要反序列化后检查
                 //wd 增加查询范围以确保能找到匹配的消息
                 String querySQL;
@@ -5153,7 +5153,7 @@ public class MessagesStorage extends BaseController {
                     //wd 全局搜索：查询所有对话
                     querySQL = "SELECT data, replydata FROM messages_v2 WHERE 1=1 ORDER BY mid DESC LIMIT ? OFFSET ?";
                     state = database.executeFast(querySQL);
-                    Log.d("wd", "执行全局搜索查询: 1=1");
+                    FileLog.d("wd 执行全局搜索查询: 1=1");
                 } else {
                     //wd 特定对话搜索：查询指定uid的对话
                     querySQL = "SELECT data, replydata FROM messages_v2 WHERE uid = ? ORDER BY mid DESC LIMIT ? OFFSET ?";
@@ -5166,7 +5166,7 @@ public class MessagesStorage extends BaseController {
                         uidToSearch = dialogId;
                     }
                     state.bindLong(pointer++, uidToSearch);
-                    Log.d("wd", "执行特定对话搜索: uid=" + uidToSearch);
+                    FileLog.d("wd 执行特定对话搜索: uid=" + uidToSearch);
                 }
 
                 ArrayList<TLRPC.User> users = new ArrayList<>();
@@ -5179,7 +5179,7 @@ public class MessagesStorage extends BaseController {
                 int scanLimit = limit * 10;
                 state.bindInteger(pointer++, scanLimit);
                 state.bindInteger(pointer++, offset);
-                Log.d("wd", "数据库查询: scanLimit=" + scanLimit + ", offset=" + offset);
+                FileLog.d("wd 数据库查询: scanLimit=" + scanLimit + ", offset=" + offset);
 
                 cursor = state.query(new Object[]{});
                 state = null;
@@ -5194,7 +5194,7 @@ public class MessagesStorage extends BaseController {
                     if (data == null) continue;
                     TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                     if (message == null) {
-                        Log.d("wd", "消息反序列化失败，跳过");
+                        FileLog.d("wd 消息反序列化失败，跳过");
                         data.reuse();
                         continue;
                     }
@@ -5250,11 +5250,11 @@ public class MessagesStorage extends BaseController {
                     getAnimatedEmoji(TextUtils.join(",", animatedEmojiToLoad), animatedEmoji);
                 }
 
-                Log.d("wd", "searchMessagesByText: 准备调用回调, messageObjects.size=" + messageObjects.size());
+                FileLog.d("wd searchMessagesByText: 准备调用回调, messageObjects.size=" + messageObjects.size());
                 AndroidUtilities.runOnUIThread(() -> {
-                    Log.d("wd", "searchMessagesByText: 开始执行回调");
+                    FileLog.d("wd searchMessagesByText: 开始执行回调");
                     done.run(messageObjects, users, chats, animatedEmoji);
-                    Log.d("wd", "searchMessagesByText: 回调执行完成");
+                    FileLog.d("wd searchMessagesByText: 回调执行完成");
                 });
 
             } catch (Exception e) {
@@ -14562,7 +14562,7 @@ public class MessagesStorage extends BaseController {
                             }
                         }
                     } catch (Exception e) {
-                        Log.e("wd", "Failed to parse message from database for dialog " + dialogId, e);
+                        FileLog.e("wd 解析数据库消息失败 dialogId=" + dialogId, e);
                         markMessageAsCorrupted(cursor.intValue(6));
                         if (data != null) {
                             try {
@@ -14647,7 +14647,7 @@ public class MessagesStorage extends BaseController {
                                 }
                             }
                         } catch (Exception e) {
-                            Log.e("wd", "Failed to parse group message from database for dialog " + dialogId, e);
+                            FileLog.e("wd 解析数据库群消息失败 dialogId=" + dialogId, e);
                             markMessageAsCorrupted(cursor.intValue(3));
                             if (data != null) {
                                 try {

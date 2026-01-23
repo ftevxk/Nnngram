@@ -41,7 +41,6 @@ import android.transition.TransitionManager;
 import android.transition.TransitionSet;
 import android.transition.TransitionValues;
 import android.transition.Visibility;
-import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.Pair;
 import android.util.SparseArray;
@@ -2247,19 +2246,19 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 //wd 检查当前对话是否已设置直接打开媒体对话
                 String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
                 boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
-                Log.d("wd", "SharedMediaLayout: 初始化openMediaDirectlyItem，openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
+                FileLog.d("wd SharedMediaLayout: 初始化openMediaDirectlyItem，openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
                 openMediaDirectlyItem.setChecked(isEnabled);
                 openMediaDirectlyItem.setOnClickListener(v -> {
                     //wd 切换直接打开媒体对话设置
                     String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                    Log.d("wd", "SharedMediaLayout: 点击openMediaDirectlyItem，currentConfig=" + currentConfig + ", dialog_id=" + dialog_id);
+                    FileLog.d("wd SharedMediaLayout: 点击openMediaDirectlyItem，currentConfig=" + currentConfig + ", dialog_id=" + dialog_id);
                     StringBuilder newConfig = new StringBuilder();
                     boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialog_id + ",");
-                    Log.d("wd", "SharedMediaLayout: wasEnabled=" + wasEnabled);
+                    FileLog.d("wd SharedMediaLayout: wasEnabled=" + wasEnabled);
                     
                     if (wasEnabled) {
                         //wd 移除当前对话ID
-                        Log.d("wd", "SharedMediaLayout: 移除对话ID=" + dialog_id);
+                        FileLog.d("wd SharedMediaLayout: 移除对话ID=" + dialog_id);
                         if (currentConfig.equals(String.valueOf(dialog_id))) {
                             newConfig.append("");
                         } else {
@@ -2274,7 +2273,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         }
                     } else {
                         //wd 添加当前对话ID
-                        Log.d("wd", "SharedMediaLayout: 添加对话ID=" + dialog_id);
+                        FileLog.d("wd SharedMediaLayout: 添加对话ID=" + dialog_id);
                         if (currentConfig.isEmpty()) {
                             newConfig.append(dialog_id);
                         } else {
@@ -2284,7 +2283,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     
                     //wd 保存更新后的配置
                     String finalConfig = newConfig.toString();
-                    Log.d("wd", "SharedMediaLayout: 保存配置，finalConfig=" + finalConfig);
+                    FileLog.d("wd SharedMediaLayout: 保存配置，finalConfig=" + finalConfig);
                     ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
                     //wd 更新菜单项状态
                     openMediaDirectlyItem.setChecked(!wasEnabled);

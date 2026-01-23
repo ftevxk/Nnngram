@@ -2782,7 +2782,7 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public boolean onFragmentCreate() {
-        Log.d("wd", "ChatActivity.onFragmentCreate()");
+        FileLog.d("wd ChatActivity 创建Fragment");
         final long chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
@@ -3186,9 +3186,9 @@ public class ChatActivity extends BaseFragment implements
         //wd 直接打开媒体对话，检查配置并设置标志位
         String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
         boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
-        Log.d("wd", "ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
+        FileLog.d("wd ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
         if (isEnabled && dialog_id != 0) {
-            Log.d("wd", "ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
+            FileLog.d("wd ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
             needOpenMediaDirectly = true;
         }
 
@@ -3786,7 +3786,7 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public View createView(Context context) {
-        Log.d("wd", "ChatActivity.createView()");
+        FileLog.d("wd ChatActivity 创建View");
         Timer t = Timer.create("ChatActivity.createView");
 
         blurredBackgroundColorProvider = new BlurredBackgroundColorProviderThemed(themeDelegate, Theme.key_chat_messagePanelBackground);
@@ -20366,7 +20366,7 @@ public class ChatActivity extends BaseFragment implements
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.mediaCountsDidLoad) {
             //wd 媒体数据加载完成，标记需要直接打开媒体页面（在onTransitionAnimationStart中处理）
-            Log.d("wd", "ChatActivity.didReceivedNotification: 收到mediaCountsDidLoad通知，needOpenMediaDirectly=" + needOpenMediaDirectly);
+            FileLog.d("wd ChatActivity.didReceivedNotification: 收到mediaCountsDidLoad通知，needOpenMediaDirectly=" + needOpenMediaDirectly);
         } else if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid != classGuid) {
@@ -26772,7 +26772,7 @@ public class ChatActivity extends BaseFragment implements
                 updateMessagesVisiblePart(false);
                 //wd 检查是否需要直接打开媒体页（使用延迟执行避免阻塞 UI）
                 if (needOpenMediaDirectly && dialog_id != 0) {
-                    Log.d("wd", "ChatActivity: 在fragmentOpened后打开媒体页，dialog_id=" + dialog_id);
+                    FileLog.d("wd ChatActivity: 在fragmentOpened后打开媒体页，dialog_id=" + dialog_id);
                     needOpenMediaDirectly = false;
                     AndroidUtilities.runOnUIThread(() -> {
                         if (getParentActivity() == null || getParentLayout() == null) {

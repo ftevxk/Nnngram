@@ -33,7 +33,6 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -202,31 +201,31 @@ public class PostsSearchContainer extends FrameLayout {
 
     private void load(final boolean pay) {
         if (loading) {
-            Log.d("wd", "PostsSearchContainer.load: 已经在加载中，跳过");
+            FileLog.d("wd PostsSearchContainer.load: 已经在加载中，跳过");
             return;
         }
 
         final boolean news = TextUtils.isEmpty(lastQuery);
-        Log.d("wd", "PostsSearchContainer.load: 开始加载, news=" + news + ", lastQuery=" + lastQuery);
+        FileLog.d("wd PostsSearchContainer.load: 开始加载, news=" + news + ", lastQuery=" + lastQuery);
         
         if (news && newsMessagesEndReached) {
-            Log.d("wd", "PostsSearchContainer.load: news模式已到达末尾");
+            FileLog.d("wd PostsSearchContainer.load: news模式已到达末尾");
             return;
         }
         if (!news && endReached) {
-            Log.d("wd", "PostsSearchContainer.load: 非news模式已到达末尾");
+            FileLog.d("wd PostsSearchContainer.load: 非news模式已到达末尾");
             return;
         }
         
         //wd 检查是否需要进行本地搜索加载更多
         if (!news && flood == null && !TextUtils.isEmpty(lastQuery)) {
-            Log.d("wd", "PostsSearchContainer.load: 本地搜索加载更多，直接调用loadLocalSearch");
+            FileLog.d("wd PostsSearchContainer.load: 本地搜索加载更多，直接调用loadLocalSearch");
             loadLocalSearch(lastQuery, news);
             return;
         }
         
         if (!news && flood == null) {
-            Log.d("wd", "PostsSearchContainer.load: flood为null，需要先获取flood");
+            FileLog.d("wd PostsSearchContainer.load: flood为null，需要先获取flood");
             return;
         }
 
@@ -271,11 +270,11 @@ public class PostsSearchContainer extends FrameLayout {
             loading = false;
             emptyButton.setLoading(false);
             
-            Log.d("wd", "PostsSearchContainer.load: 请求回调, res=" + (res != null ? res.getClass().getSimpleName() : "null") + ", err=" + (err != null ? err.text : "null"));
+            FileLog.d("wd PostsSearchContainer.load: 请求回调, res=" + (res != null ? res.getClass().getSimpleName() : "null") + ", err=" + (err != null ? err.text : "null"));
             
             if (res instanceof TLRPC.messages_Messages) {
                 final TLRPC.messages_Messages r = (TLRPC.messages_Messages) res;
-                Log.d("wd", "PostsSearchContainer.load: 收到消息响应, messages.size=" + r.messages.size());
+                FileLog.d("wd PostsSearchContainer.load: 收到消息响应, messages.size=" + r.messages.size());
                 messagesController.putUsers(r.users, false);
                 messagesController.putChats(r.chats, false);
 
@@ -287,36 +286,36 @@ public class PostsSearchContainer extends FrameLayout {
                 final int networkResultsCount = r.messages.size();
                 final int existingCount = messages.size();
                 
-                Log.d("wd", "========== 加载更多完成汇总 ==========");
-                Log.d("wd", "数据库匹配数量: 0");
-                Log.d("wd", "缓存结果数量: " + existingCount);
-                Log.d("wd", "网络请求匹配数量: " + networkResultsCount);
-                Log.d("wd", "最终显示数量: " + (existingCount + networkResultsCount));
-                Log.d("wd", "=====================================");
-                Log.d("wd", "searchMessagesByText: 准备调用回调, messageObjects.size=" + networkResultsCount);
-                Log.d("wd", "searchMessagesByText: 开始执行回调");
-                Log.d("wd", "数据库搜索结果: 频道中找到 0 条匹配消息");
-                Log.d("wd", "回调中 messages 对象: 非空, 大小: " + networkResultsCount);
-                Log.d("wd", "设置 searchLocalResultMessages: 0 条消息");
-                Log.d("wd", "设置后 searchLocalResultMessages size: 0");
-                Log.d("wd", "updateSearchResults开始执行");
-                Log.d("wd", "loadedMessages size: " + networkResultsCount);
-                Log.d("wd", "lastDialogId: 0");
-                Log.d("wd", "lastSearchQuery: " + req.query);
-                Log.d("wd", "searchLocalResultMessages size: 0");
-                Log.d("wd", "本地数据库搜索结果添加数量: 0");
-                Log.d("wd", "已加载消息列表添加数量: " + existingCount);
-                Log.d("wd", "searchServerResultMessages size: " + networkResultsCount);
-                Log.d("wd", "服务器搜索结果添加数量: " + networkResultsCount);
-                Log.d("wd", "updateSearchResults执行完成，总结果数量: " + (existingCount + networkResultsCount));
-                Log.d("wd", "本地数据库结果: 0，已加载消息补充: " + existingCount + "，服务器结果: " + networkResultsCount);
-                Log.d("wd", "updateSearchResults: 发送UI通知, guid=" + queryid + ", dialogId=0, count=" + (existingCount + networkResultsCount));
-                Log.d("wd", "========== 本地搜索完成汇总 ==========");
-                Log.d("wd", "数据库匹配数量: 0");
-                Log.d("wd", "缓存结果数量: " + (existingCount + networkResultsCount));
-                Log.d("wd", "最终显示数量: " + (existingCount + networkResultsCount));
-                Log.d("wd", "===================================");
-                Log.d("wd", "searchMessagesByText: 回调执行完成");
+                FileLog.d("wd ========== 加载更多完成汇总 ==========");
+                FileLog.d("wd 数据库匹配数量: 0");
+                FileLog.d("wd 缓存结果数量: " + existingCount);
+                FileLog.d("wd 网络请求匹配数量: " + networkResultsCount);
+                FileLog.d("wd 最终显示数量: " + (existingCount + networkResultsCount));
+                FileLog.d("wd =====================================");
+                FileLog.d("wd searchMessagesByText: 准备调用回调, messageObjects.size=" + networkResultsCount);
+                FileLog.d("wd searchMessagesByText: 开始执行回调");
+                FileLog.d("wd 数据库搜索结果: 频道中找到 0 条匹配消息");
+                FileLog.d("wd 回调中 messages 对象: 非空, 大小: " + networkResultsCount);
+                FileLog.d("wd 设置 searchLocalResultMessages: 0 条消息");
+                FileLog.d("wd 设置后 searchLocalResultMessages size: 0");
+                FileLog.d("wd updateSearchResults开始执行");
+                FileLog.d("wd loadedMessages size: " + networkResultsCount);
+                FileLog.d("wd lastDialogId: 0");
+                FileLog.d("wd lastSearchQuery: " + req.query);
+                FileLog.d("wd searchLocalResultMessages size: 0");
+                FileLog.d("wd 本地数据库搜索结果添加数量: 0");
+                FileLog.d("wd 已加载消息列表添加数量: " + existingCount);
+                FileLog.d("wd searchServerResultMessages size: " + networkResultsCount);
+                FileLog.d("wd 服务器搜索结果添加数量: " + networkResultsCount);
+                FileLog.d("wd updateSearchResults执行完成，总结果数量: " + (existingCount + networkResultsCount));
+                FileLog.d("wd 本地数据库结果: 0，已加载消息补充: " + existingCount + "，服务器结果: " + networkResultsCount);
+                FileLog.d("wd updateSearchResults: 发送UI通知, guid=" + queryid + ", dialogId=0, count=" + (existingCount + networkResultsCount));
+                FileLog.d("wd ========== 本地搜索完成汇总 ==========");
+                FileLog.d("wd 数据库匹配数量: 0");
+                FileLog.d("wd 缓存结果数量: " + (existingCount + networkResultsCount));
+                FileLog.d("wd 最终显示数量: " + (existingCount + networkResultsCount));
+                FileLog.d("wd ===================================");
+                FileLog.d("wd searchMessagesByText: 回调执行完成");
                 
                 //wd 处理网络搜索结果，添加到现有列表中（不覆盖本地结果）
                 for (TLRPC.Message message : r.messages) {
@@ -351,7 +350,7 @@ public class PostsSearchContainer extends FrameLayout {
                     }
                 }
 
-                Log.d("wd", "PostsSearchContainer.load: 合并搜索结果, 本地结果=" + existingCount + ", 网络结果=" + networkResultsCount + ", 总结果=" + messages.size());
+                FileLog.d("wd PostsSearchContainer.load: 合并搜索结果, 本地结果=" + existingCount + ", 网络结果=" + networkResultsCount + ", 总结果=" + messages.size());
                 
                 updateEmptyView();
                 if (existingCount == 0) {
@@ -416,7 +415,7 @@ public class PostsSearchContainer extends FrameLayout {
         
         final int limit = 50;
         final int offset = news ? localNewsSearchOffset : localSearchOffset;
-        Log.d("wd", "PostsSearchContainer.loadLocalSearch: 开始本地搜索, query=" + query + ", offset=" + offset + ", limit=" + limit);
+        FileLog.d("wd PostsSearchContainer.loadLocalSearch: 开始本地搜索, query=" + query + ", offset=" + offset + ", limit=" + limit);
         
         MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, limit, offset, (localMessages, localUsers, localChats, localDocs) -> {
             AndroidUtilities.runOnUIThread(() -> {
@@ -430,12 +429,12 @@ public class PostsSearchContainer extends FrameLayout {
                 final boolean firstMessages = targetMessages.isEmpty();
                 final int previousSize = targetMessages.size();
                 
-                Log.d("wd", "========== 加载更多完成汇总 ==========");
-                Log.d("wd", "数据库匹配数量: " + (localMessages != null ? localMessages.size() : 0));
-                Log.d("wd", "缓存结果数量: " + previousSize);
-                Log.d("wd", "网络请求匹配数量: 0");
-                Log.d("wd", "最终显示数量: " + (previousSize + (localMessages != null ? localMessages.size() : 0)));
-                Log.d("wd", "=====================================");
+                FileLog.d("wd ========== 加载更多完成汇总 ==========");
+                FileLog.d("wd 数据库匹配数量: " + (localMessages != null ? localMessages.size() : 0));
+                FileLog.d("wd 缓存结果数量: " + previousSize);
+                FileLog.d("wd 网络请求匹配数量: 0");
+                FileLog.d("wd 最终显示数量: " + (previousSize + (localMessages != null ? localMessages.size() : 0)));
+                FileLog.d("wd =====================================");
                 
                 if (localMessages != null && !localMessages.isEmpty()) {
                     for (MessageObject message : localMessages) {
@@ -445,30 +444,30 @@ public class PostsSearchContainer extends FrameLayout {
                         targetMessages.add(message);
                     }
                     
-                    Log.d("wd", "searchMessagesByText: 准备调用回调, messageObjects.size=" + localMessages.size());
-                    Log.d("wd", "searchMessagesByText: 开始执行回调");
-                    Log.d("wd", "数据库搜索结果: 频道中找到 " + localMessages.size() + " 条匹配消息");
-                    Log.d("wd", "回调中 messages 对象: 非空, 大小: " + localMessages.size());
-                    Log.d("wd", "设置 searchLocalResultMessages: " + localMessages.size() + " 条消息");
-                    Log.d("wd", "设置后 searchLocalResultMessages size: " + localMessages.size());
-                    Log.d("wd", "updateSearchResults开始执行");
-                    Log.d("wd", "loadedMessages size: " + localMessages.size());
-                    Log.d("wd", "lastDialogId: 0");
-                    Log.d("wd", "lastSearchQuery: " + query);
-                    Log.d("wd", "searchLocalResultMessages size: " + localMessages.size());
-                    Log.d("wd", "本地数据库搜索结果添加数量: " + localMessages.size());
-                    Log.d("wd", "已加载消息列表添加数量: " + localMessages.size());
-                    Log.d("wd", "searchServerResultMessages size: 0");
-                    Log.d("wd", "服务器搜索结果添加数量: 0");
-                    Log.d("wd", "updateSearchResults执行完成，总结果数量: " + targetMessages.size());
-                    Log.d("wd", "本地数据库结果: " + localMessages.size() + "，已加载消息补充: " + localMessages.size() + "，服务器结果: 0");
-                    Log.d("wd", "updateSearchResults: 发送UI通知, guid=" + queryid + ", dialogId=0, count=" + targetMessages.size());
-                    Log.d("wd", "========== 本地搜索完成汇总 ==========");
-                    Log.d("wd", "数据库匹配数量: " + localMessages.size());
-                    Log.d("wd", "缓存结果数量: " + localMessages.size());
-                    Log.d("wd", "最终显示数量: " + targetMessages.size());
-                    Log.d("wd", "===================================");
-                    Log.d("wd", "searchMessagesByText: 回调执行完成");
+                    FileLog.d("wd searchMessagesByText: 准备调用回调, messageObjects.size=" + localMessages.size());
+                    FileLog.d("wd searchMessagesByText: 开始执行回调");
+                    FileLog.d("wd 数据库搜索结果: 频道中找到 " + localMessages.size() + " 条匹配消息");
+                    FileLog.d("wd 回调中 messages 对象: 非空, 大小: " + localMessages.size());
+                    FileLog.d("wd 设置 searchLocalResultMessages: " + localMessages.size() + " 条消息");
+                    FileLog.d("wd 设置后 searchLocalResultMessages size: " + localMessages.size());
+                    FileLog.d("wd updateSearchResults开始执行");
+                    FileLog.d("wd loadedMessages size: " + localMessages.size());
+                    FileLog.d("wd lastDialogId: 0");
+                    FileLog.d("wd lastSearchQuery: " + query);
+                    FileLog.d("wd searchLocalResultMessages size: " + localMessages.size());
+                    FileLog.d("wd 本地数据库搜索结果添加数量: " + localMessages.size());
+                    FileLog.d("wd 已加载消息列表添加数量: " + localMessages.size());
+                    FileLog.d("wd searchServerResultMessages size: 0");
+                    FileLog.d("wd 服务器搜索结果添加数量: 0");
+                    FileLog.d("wd updateSearchResults执行完成，总结果数量: " + targetMessages.size());
+                    FileLog.d("wd 本地数据库结果: " + localMessages.size() + "，已加载消息补充: " + localMessages.size() + "，服务器结果: 0");
+                    FileLog.d("wd updateSearchResults: 发送UI通知, guid=" + queryid + ", dialogId=0, count=" + targetMessages.size());
+                    FileLog.d("wd ========== 本地搜索完成汇总 ==========");
+                    FileLog.d("wd 数据库匹配数量: " + localMessages.size());
+                    FileLog.d("wd 缓存结果数量: " + localMessages.size());
+                    FileLog.d("wd 最终显示数量: " + targetMessages.size());
+                    FileLog.d("wd ===================================");
+                    FileLog.d("wd searchMessagesByText: 回调执行完成");
                     
                     // 更新offset为当前列表大小，用于下一次加载
                     if (news) {
