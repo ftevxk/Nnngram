@@ -207,6 +207,26 @@ object Defines {
     const val restrictedLanguages = "restrictedLanguagesFix"
     @BooleanConfig const val autoTranslate = "autoTranslate"
 
+    // LLM Translate
+    @IntConfig(0) const val llmProvider = "llmProvider"
+    @StringConfig("") const val llmApiUrl = "llmApiUrl"
+    @StringConfig("") const val llmApiKey = "llmApiKey"
+    @StringConfig("") const val llmModelName = "llmModelName"
+    @StringConfig("") const val llmSystemPrompt = "llmSystemPrompt"
+    @StringConfig("") const val llmOpenAIKey = "llmOpenAIKey"
+    @StringConfig("") const val llmOpenAIModel = "llmOpenAIModel"
+    @StringConfig("") const val llmGeminiKey = "llmGeminiKey"
+    @StringConfig("") const val llmGeminiModel = "llmGeminiModel"
+    @StringConfig("") const val llmGroqKey = "llmGroqKey"
+    @StringConfig("") const val llmGroqModel = "llmGroqModel"
+    @StringConfig("") const val llmDeepSeekKey = "llmDeepSeekKey"
+    @StringConfig("") const val llmDeepSeekModel = "llmDeepSeekModel"
+    @StringConfig("") const val llmXAIKey = "llmXAIKey"
+    @StringConfig("") const val llmXAIModel = "llmXAIModel"
+    @StringConfig("") const val llmZhipuAIKey = "llmZhipuAIKey"
+    @StringConfig("") const val llmZhipuAIModel = "llmZhipuAIModel"
+    const val llmTemperature = "llmTemperature"
+
     // Misc
     @JvmField
     val officialID = longArrayOf(
