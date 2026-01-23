@@ -3684,6 +3684,17 @@ public class AndroidUtilities {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
+    public static boolean isAndroidMediaPath(File dir) {
+        if (dir == null) {
+            return false;
+        }
+        String path = dir.getAbsolutePath();
+        if (TextUtils.isEmpty(path)) {
+            return false;
+        }
+        return path.contains(File.separator + "Android" + File.separator + "media" + File.separator);
+    }
+
     public static File generatePicturePath() {
         return generatePicturePath(false, null);
     }
@@ -3691,6 +3702,9 @@ public class AndroidUtilities {
     public static File generatePicturePath(boolean secretChat, String ext) {
         try {
             File publicDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC);
+            if (isAndroidMediaPath(publicDir)) {
+                publicDir = null;
+            }
             if (secretChat || publicDir == null) {
                 File storageDir = ApplicationLoader.applicationContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
                 return new File(storageDir, generateFileName(0, ext));

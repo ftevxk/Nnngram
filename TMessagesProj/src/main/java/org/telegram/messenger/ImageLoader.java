@@ -2450,19 +2450,6 @@ public class ImageLoader {
 
                 FileLog.d("external storage = " + path);
 
-                File publicMediaDir = null;
-                //wd 媒体根目录统一使用应用外部目录（Android/data/<包名>/files/）
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    try {
-                        if (ApplicationLoader.applicationContext.getExternalMediaDirs().length > 0) {
-                            publicMediaDir = getPublicStorageDir();
-                            publicMediaDir = new File(publicMediaDir, "Nnngram");
-                            publicMediaDir.mkdirs();
-                        }
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                }
                 File newPath = ApplicationLoader.applicationContext.getExternalFilesDir(null);
                 if (newPath == null) {
                     newPath = ApplicationLoader.applicationContext.getFilesDir();
@@ -2570,37 +2557,6 @@ public class ImageLoader {
                         FileLog.e(e);
                     }
                 }
-                if (publicMediaDir != null && publicMediaDir.isDirectory()) {
-                    try {
-                        File imagePath = new File(publicMediaDir, "Nnngram Images");
-                        imagePath.mkdir();
-                        if (imagePath.isDirectory() && canMoveFiles(cachePath, imagePath, FileLoader.MEDIA_DIR_IMAGE)) {
-                            //wd 添加屏蔽媒体文件
-                            AndroidUtilities.createEmptyFile(new File(imagePath, ".nomedia"));
-                            mediaDirs.put(FileLoader.MEDIA_DIR_IMAGE_PUBLIC, imagePath);
-                            if (BuildVars.LOGS_ENABLED) {
-                                FileLog.d("image path = " + imagePath);
-                            }
-                        }
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-
-                    try {
-                        File videoPath = new File(publicMediaDir, "Nnngram Video");
-                        videoPath.mkdir();
-                        if (videoPath.isDirectory() && canMoveFiles(cachePath, videoPath, FileLoader.MEDIA_DIR_VIDEO)) {
-                            //wd 添加屏蔽媒体文件
-                            AndroidUtilities.createEmptyFile(new File(videoPath, ".nomedia"));
-                            mediaDirs.put(FileLoader.MEDIA_DIR_VIDEO_PUBLIC, videoPath);
-                            if (BuildVars.LOGS_ENABLED) {
-                                FileLog.d("video path = " + videoPath);
-                            }
-                        }
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                }
             } else {
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("this Android can't rename files");
@@ -2612,20 +2568,6 @@ public class ImageLoader {
         }
 
         return mediaDirs;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private File getPublicStorageDir() {
-        File publicMediaDir = ApplicationLoader.applicationContext.getExternalMediaDirs()[0];
-        if (!TextUtils.isEmpty(SharedConfig.storageCacheDir)) {
-            for (int i = 0; i < ApplicationLoader.applicationContext.getExternalMediaDirs().length; i++) {
-                File f = ApplicationLoader.applicationContext.getExternalMediaDirs()[i];
-                if (f != null && f.getPath().startsWith(SharedConfig.storageCacheDir)) {
-                    publicMediaDir = ApplicationLoader.applicationContext.getExternalMediaDirs()[i];
-                }
-            }
-        }
-        return publicMediaDir;
     }
 
     private boolean canMoveFiles(File from, File to, int type) {

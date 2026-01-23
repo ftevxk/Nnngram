@@ -234,6 +234,14 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
     private static Long lastTotalSizeCalculated;
     private static Long lastDeviceTotalSize, lastDeviceTotalFreeSize;
 
+    private static File getSafeDirectory(int type) {
+        File dir = FileLoader.checkDirectory(type);
+        if (AndroidUtilities.isAndroidMediaPath(dir)) {
+            return null;
+        }
+        return dir;
+    }
+
     public static void calculateTotalSize(Utilities.Callback<Long> onDone) {
         if (onDone == null) {
             return;
@@ -249,9 +257,9 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             long cacheSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), 5);
             long cacheTempSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), 4);
             long photoSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE), 0);
-            photoSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), 0);
+            photoSize += getDirectorySize(getSafeDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), 0);
             long videoSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO), 0);
-            videoSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), 0);
+            videoSize += getDirectorySize(getSafeDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), 0);
             long documentsSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_DOCUMENT), 1);
             documentsSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_FILES), 1);
             long musicSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_DOCUMENT), 2);
@@ -357,12 +365,12 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             }
 
             photoSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE), 0);
-            photoSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), 0);
+            photoSize += getDirectorySize(getSafeDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), 0);
             if (canceled) {
                 return;
             }
             videoSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO), 0);
-            videoSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), 0);
+            videoSize += getDirectorySize(getSafeDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), 0);
             if (canceled) {
                 return;
             }
@@ -501,10 +509,10 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), TYPE_OTHER, dilogsFilesEntities, cacheModel);
 
             fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE), TYPE_PHOTOS, dilogsFilesEntities, cacheModel);
-            fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), TYPE_PHOTOS, dilogsFilesEntities, cacheModel);
+            fillDialogsEntitiesRecursive(getSafeDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), TYPE_PHOTOS, dilogsFilesEntities, cacheModel);
 
             fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO), TYPE_VIDEOS, dilogsFilesEntities, cacheModel);
-            fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), TYPE_VIDEOS, dilogsFilesEntities, cacheModel);
+            fillDialogsEntitiesRecursive(getSafeDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), TYPE_VIDEOS, dilogsFilesEntities, cacheModel);
 
             fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_AUDIO), TYPE_VOICE, dilogsFilesEntities, cacheModel);
             fillDialogsEntitiesRecursive(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), TYPE_OTHER, dilogsFilesEntities, cacheModel);
@@ -1074,7 +1082,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                 } else {
                     publicDirectoryType = FileLoader.MEDIA_DIR_VIDEO_PUBLIC;
                 }
-                file = FileLoader.checkDirectory(publicDirectoryType);
+                file = getSafeDirectory(publicDirectoryType);
 
                 if (file != null) {
                     cleanDirJava(file.getAbsolutePath(), documentsMusicType, null, updateProgress);
@@ -1112,10 +1120,10 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             } else if (type == FileLoader.MEDIA_DIR_IMAGE) {
                 imagesCleared = true;
                 photoSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE), documentsMusicType);
-                photoSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), documentsMusicType);
+                photoSize += getDirectorySize(getSafeDirectory(FileLoader.MEDIA_DIR_IMAGE_PUBLIC), documentsMusicType);
             } else if (type == FileLoader.MEDIA_DIR_VIDEO) {
                 videoSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO), documentsMusicType);
-                videoSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), documentsMusicType);
+                videoSize += getDirectorySize(getSafeDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC), documentsMusicType);
             } else if (type == 100) {
                 imagesCleared = true;
                 stickersCacheSize = getDirectorySize(new File(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), "acache"), documentsMusicType);
@@ -1634,10 +1642,11 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
     }
 
     private boolean pathContains(String path, int mediaDirType) {
-        if (path == null || FileLoader.checkDirectory(mediaDirType) == null) {
+        File dir = getSafeDirectory(mediaDirType);
+        if (path == null || dir == null) {
             return false;
         }
-        return path.contains(FileLoader.checkDirectory(mediaDirType).getAbsolutePath());
+        return path.contains(dir.getAbsolutePath());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)

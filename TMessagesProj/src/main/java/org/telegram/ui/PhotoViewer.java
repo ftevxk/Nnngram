@@ -10499,11 +10499,8 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         }
 
         File videoPublicDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_VIDEO_PUBLIC);
-        if (videoPublicDir != null) {
-            String publicPath = videoPublicDir.getAbsolutePath();
-            if (publicPath.contains(File.separator + "Android" + File.separator + "media" + File.separator)) {
-                videoPublicDir = null;
-            }
+        if (AndroidUtilities.isAndroidMediaPath(videoPublicDir)) {
+            videoPublicDir = null;
         }
         if (videoPublicDir != null) {
             if (!dirs.contains(videoPublicDir)) {
