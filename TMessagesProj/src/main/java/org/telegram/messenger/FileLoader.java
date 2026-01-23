@@ -846,8 +846,16 @@ public class FileLoader extends BaseController {
         }
         if (cacheType == 10 && document != null && document.key == null && MessageObject.isVideoDocument(document)) {
             File existing = getPathToAttach(document, null, false, false);
-            if (existing != null && existing.exists() && (document.size <= 0 || existing.length() == document.size)) {
-                return null;
+            if (existing != null && existing.exists()) {
+                long existingSize = existing.length();
+                if (document.size <= 0 || existingSize == document.size) {
+                    if (BuildVars.LOGS_ENABLED) {
+                        FileLog.d("wd 预加载视频跳过：本地已存在 fileName=" + fileName + " dc=" + document.dc_id + " id=" + document.id + " docSize=" + document.size + " localSize=" + existingSize + " path=" + existing.getAbsolutePath());
+                    }
+                    return null;
+                } else if (BuildVars.LOGS_ENABLED) {
+                    FileLog.d("wd 预加载视频继续：本地文件大小不一致 fileName=" + fileName + " dc=" + document.dc_id + " id=" + document.id + " docSize=" + document.size + " localSize=" + existingSize + " path=" + existing.getAbsolutePath());
+                }
             }
         }
         if (fileName == null || fileName.contains("" + Integer.MIN_VALUE)) {
@@ -1629,6 +1637,8 @@ public class FileLoader extends BaseController {
                             FileLog.d("wd 预览查找-命中按attach名 " + candidate.getAbsolutePath());
                         }
                         return candidate;
+                    } else if (BuildVars.LOGS_ENABLED) {
+                        FileLog.d("wd 预览查找-未命中按attach名 " + candidate.getAbsolutePath());
                     }
                 }
 
@@ -1664,6 +1674,8 @@ public class FileLoader extends BaseController {
                             FileLog.d("wd 预览查找-命中public按attach名 " + candidate.getAbsolutePath());
                         }
                         return candidate;
+                    } else if (BuildVars.LOGS_ENABLED) {
+                        FileLog.d("wd 预览查找-未命中public按attach名 " + candidate.getAbsolutePath());
                     }
                 }
 
@@ -1677,6 +1689,8 @@ public class FileLoader extends BaseController {
                                 FileLog.d("wd 预览查找-命中旧目录按attach名 " + candidate.getAbsolutePath());
                             }
                             return candidate;
+                        } else if (BuildVars.LOGS_ENABLED) {
+                            FileLog.d("wd 预览查找-未命中旧目录按attach名 " + candidate.getAbsolutePath());
                         }
                     }
                 } catch (Exception ignore) {
@@ -1692,6 +1706,8 @@ public class FileLoader extends BaseController {
                                 FileLog.d("wd 预览查找-命中按原名 " + candidate.getAbsolutePath());
                             }
                             return candidate;
+                        } else if (BuildVars.LOGS_ENABLED) {
+                            FileLog.d("wd 预览查找-未命中按原名 " + candidate.getAbsolutePath());
                         }
                     }
                     if (videoPublicDir != null) {
@@ -1702,6 +1718,8 @@ public class FileLoader extends BaseController {
                                 FileLog.d("wd 预览查找-命中public按原名 " + candidate.getAbsolutePath());
                             }
                             return candidate;
+                        } else if (BuildVars.LOGS_ENABLED) {
+                            FileLog.d("wd 预览查找-未命中public按原名 " + candidate.getAbsolutePath());
                         }
                     }
                     try {
@@ -1714,6 +1732,8 @@ public class FileLoader extends BaseController {
                                     FileLog.d("wd 预览查找-命中旧目录按原名 " + candidate.getAbsolutePath());
                                 }
                                 return candidate;
+                            } else if (BuildVars.LOGS_ENABLED) {
+                                FileLog.d("wd 预览查找-未命中旧目录按原名 " + candidate.getAbsolutePath());
                             }
                         }
                     } catch (Exception ignore) {
@@ -1726,6 +1746,9 @@ public class FileLoader extends BaseController {
             attachFile = new File(getDirectory(MEDIA_DIR_CACHE), attachFileName);
         }
         if (!attachFile.exists() && existingLocalFile != null && existingLocalFile.exists()) {
+            if (BuildVars.LOGS_ENABLED) {
+                FileLog.d("wd 预览查找-回退db缓存路径 " + existingLocalFile.getAbsolutePath());
+            }
             return existingLocalFile;
         }
         return attachFile;
