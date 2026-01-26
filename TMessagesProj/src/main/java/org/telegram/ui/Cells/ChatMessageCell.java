@@ -177,6 +177,7 @@ import org.telegram.ui.Components.EmptyStubSpan;
 import org.telegram.ui.Components.FloatSeekBarAccessibilityDelegate;
 import org.telegram.ui.Components.ForwardBackground;
 import org.telegram.ui.Components.InfiniteProgress;
+import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.Components.LinkPath;
 import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.LoadingDrawable;
@@ -10094,6 +10095,28 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             File localFile = FileLoader.getInstance(currentAccount).getPathToAttach(videoDocument, null, false, true);
                             localVideoExists = localFile != null && localFile.exists();
                         }
+                        if (!localVideoExists && messageObject.hasVideoQualities(true) && messageObject.videoQualities != null) {
+                            for (int i = 0; i < messageObject.videoQualities.size() && !localVideoExists; i++) {
+                                VideoPlayer.Quality q = messageObject.videoQualities.get(i);
+                                if (q == null || q.uris == null) {
+                                    continue;
+                                }
+                                for (int j = 0; j < q.uris.size(); j++) {
+                                    VideoPlayer.VideoUri uri = q.uris.get(j);
+                                    if (uri == null || uri.document == null) {
+                                        continue;
+                                    }
+                                    File localFile = FileLoader.getInstance(currentAccount).getPathToAttach(uri.document, null, false, true);
+                                    if (localFile != null && localFile.exists()) {
+                                        localVideoExists = true;
+                                        if (BuildVars.LOGS_ENABLED) {
+                                            FileLog.d("wd 自动预览-检测到本地视频(qualities) docId=" + uri.document.id + " dc=" + uri.document.dc_id + " path=" + localFile.getAbsolutePath());
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     }
                     if (!currentMessageObject.isHiddenSensitive() && SharedConfig.isAutoplayVideo() && !currentMessageObject.hasVideoCover() && !currentMessageObject.isRepostPreview && (!currentMessageObject.hasMediaSpoilers() || currentMessageObject.isMediaSpoilersRevealed || currentMessageObject.revealingMediaSpoilers) && (messageObject.type == MessageObject.TYPE_VIDEO /*|| messageObject.type == MessageObject.TYPE_STORY && messageObject.getDocument() != null*/) && !messageObject.needDrawBluredPreview() &&
                             ((currentMessageObject.mediaExists || currentMessageObject.attachPathExists || localVideoExists) || messageObject.canStreamVideo() && DownloadController.getInstance(currentAccount).canDownloadMedia(currentMessageObject))
@@ -10136,7 +10159,37 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             originalDocumentExists = file != null && file.exists();
                         }
                         if (!originalDocumentExists && messageObject.hasVideoQualities() && messageObject.thumbQuality != null) {
-                            document = messageObject.thumbQuality.document;
+                            TLRPC.Document localQualityDocument = null;
+                            if (messageObject.videoQualities != null) {
+                                for (int i = 0; i < messageObject.videoQualities.size() && localQualityDocument == null; i++) {
+                                    VideoPlayer.Quality q = messageObject.videoQualities.get(i);
+                                    if (q == null || q.uris == null) {
+                                        continue;
+                                    }
+                                    for (int j = 0; j < q.uris.size(); j++) {
+                                        VideoPlayer.VideoUri uri = q.uris.get(j);
+                                        if (uri == null || uri.document == null) {
+                                            continue;
+                                        }
+                                        File localFile = FileLoader.getInstance(currentAccount).getPathToAttach(uri.document, null, false, true);
+                                        if (localFile != null && localFile.exists()) {
+                                            localQualityDocument = uri.document;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (localQualityDocument != null) {
+                                if (BuildVars.LOGS_ENABLED) {
+                                    FileLog.d("wd 自动预览-命中本地清晰度 docId=" + localQualityDocument.id + " dc=" + localQualityDocument.dc_id);
+                                }
+                                document = localQualityDocument;
+                            } else {
+                                if (BuildVars.LOGS_ENABLED) {
+                                    FileLog.d("wd 自动预览-未命中本地清晰度 使用thumbQuality docId=" + messageObject.thumbQuality.document.id + " dc=" + messageObject.thumbQuality.document.dc_id);
+                                }
+                                document = messageObject.thumbQuality.document;
+                            }
                         }
 
                         if (currentMessageObject.videoEditedInfo != null && currentMessageObject.videoEditedInfo.canAutoPlaySourceVideo() && document != null) {
