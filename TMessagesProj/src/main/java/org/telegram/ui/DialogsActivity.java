@@ -8119,8 +8119,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 //        if (!show) {
 //            initialSearchType = -1;
 //        }
-        //wd 无关键词默认打开媒体页面
-        if (!show) {
+        //wd 无关键词默认打开媒体页面（仅在入口页面打开时触发，从会话页跳转不触发）
+        if (!show && isMainDialogList()) {
             if (TextUtils.isEmpty(searchString)) {
                 initialSearchType = 0;
             } else {

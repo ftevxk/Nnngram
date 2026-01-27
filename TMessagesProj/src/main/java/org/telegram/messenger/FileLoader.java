@@ -772,10 +772,13 @@ public class FileLoader extends BaseController {
     public File getLocalFile(ImageLocation imageLocation) {
         if (imageLocation == null) return null;
         String fileName;
+        //wd 新增判断是否为视频文档
+        boolean isVideoDocument = false;
         if (imageLocation.location != null) {
             fileName = getAttachFileName(imageLocation.location, null);
         } else if (imageLocation.document != null) {
             fileName = getAttachFileName(imageLocation.document);
+            isVideoDocument = MessageObject.isVideoDocument(imageLocation.document);
         } else if (imageLocation.webFile != null) {
             fileName = getAttachFileName(imageLocation.webFile);
         } else {
@@ -784,14 +787,21 @@ public class FileLoader extends BaseController {
         if (fileName == null) return null;
         File f;
 
-        f = new File(getDirectory(MEDIA_DIR_CACHE), fileName);
-        if (f.exists()) return f;
+        //wd 修改文件读取优先查找路径
+        if (isVideoDocument) {
+            f = new File(getDirectory(MEDIA_DIR_VIDEO), fileName);
+            if (f.exists()) return f;
 
-        f = new File(getDirectory(MEDIA_DIR_IMAGE), fileName);
-        if (f.exists()) return f;
+            f = new File(getDirectory(MEDIA_DIR_CACHE), fileName);
+            if (f.exists()) return f;
+        } else {
 
-        f = new File(getDirectory(MEDIA_DIR_VIDEO), fileName);
-        if (f.exists()) return f;
+            f = new File(getDirectory(MEDIA_DIR_IMAGE), fileName);
+            if (f.exists()) return f;
+            
+            f = new File(getDirectory(MEDIA_DIR_CACHE), fileName);
+            if (f.exists()) return f;
+        }
 
         f = new File(getDirectory(MEDIA_DIR_FILES), fileName);
         if (f.exists()) return f;
