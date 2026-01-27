@@ -37153,7 +37153,9 @@ public class ChatActivity extends BaseFragment implements
                 messages.removeIf(MessageObject::isBlockedMessage);
 
                 MessageObject message = messages.get(position - messagesStartRow);
+
                 View view = holder.itemView;
+                view.setVisibility(View.VISIBLE);
 
                 boolean fromUserBlocked = getMessagesController().blockePeers.indexOfKey(message.getFromChatId()) >= 0
                     && Config.ignoreBlockedUser;
@@ -37715,6 +37717,9 @@ public class ChatActivity extends BaseFragment implements
             if (holder.itemView instanceof ChatMessageCell) {
                 final ChatMessageCell messageCell = (ChatMessageCell) holder.itemView;
                 final MessageObject message = messageCell.getMessageObject();
+                if (message == null || holder.itemView.getVisibility() != View.VISIBLE) {
+                    return;
+                }
                 messageCell.isAllChats = isAllChats();
                 messageCell.isSideMenued = isSideMenued();
                 messageCell.isSideMenuEnabled = isSideMenuEnabled();

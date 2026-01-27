@@ -300,6 +300,11 @@ object Defines {
     @BooleanConfig(true) const val showTextTranslate = "showTextTranslate"
     @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
+    // AI Ad Filter
+    @BooleanConfig const val aiAdFilterEnabled = "aiAdFilterEnabled"
+    const val aiAdFilterThreshold = "aiAdFilterThreshold"
+    @BooleanConfig const val aiAdFilterStrictMode = "aiAdFilterStrictMode"
+
     /**
      * 数组中元素未找到的下标，值为-1
      */

@@ -39,7 +39,9 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
 import android.widget.FrameLayout;
+import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -50,6 +52,7 @@ import com.jakewharton.processphoenix.ProcessPhoenix;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessageAiAdFilter;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -83,6 +86,7 @@ import xyz.nextalone.nnngram.ui.sortList.ItemTouchHelperCallback;
 import xyz.nextalone.nnngram.ui.sortList.SortListAdapter;
 import xyz.nextalone.nnngram.ui.sortList.TextStyleListAdapter;
 import xyz.nextalone.nnngram.utils.AlertUtil;
+import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.StringUtils;
 
@@ -129,6 +133,8 @@ public class ChatSettingActivity extends BaseActivity {
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
     private int messageFiltersRow;
+    private int aiAdFilterRow;
+    private int aiAdFilterThresholdRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
@@ -418,6 +424,17 @@ public class ChatSettingActivity extends BaseActivity {
             }
         } else if (position == messageFiltersRow) {
             createMessageFilterSetter(this, getContext(), resourcesProvider);
+        } else if (position == aiAdFilterRow) {
+            boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false);
+            ConfigManager.putBoolean(Defines.aiAdFilterEnabled, newValue);
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(newValue);
+            }
+            if (newValue) {
+                MessageAiAdFilter.getInstance(getContext()).initialize();
+            }
+        } else if (position == aiAdFilterThresholdRow) {
+            showAiAdFilterThresholdDialog();
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
             if (view instanceof TextCheckCell) {
@@ -573,6 +590,8 @@ public class ChatSettingActivity extends BaseActivity {
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
         messageFiltersRow = addRow("messageFilters");
+        aiAdFilterRow = addRow("aiAdFilter");
+        aiAdFilterThresholdRow = addRow("aiAdFilterThreshold");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
@@ -685,6 +704,11 @@ public class ChatSettingActivity extends BaseActivity {
                             position + 1 != markdown2Row);
                     } else if (position == messageFiltersRow) {
                         textCell.setText(LocaleController.getString("MessageFilter", R.string.MessageFilter), payload);
+                    } else if (position == aiAdFilterThresholdRow) {
+                        MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
+                        float threshold = filter != null ? filter.getThreshold() : 0.85f;
+                        textCell.setTextAndValue(LocaleController.getString("AiAdFilterThreshold", R.string.AiAdFilterThreshold), 
+                            String.valueOf((int) (threshold * 100)) + "%", payload, true);
                     }
                     break;
                 }
@@ -786,6 +810,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.cancelLoadingVideoWhenClose), Config.cancelLoadingVideoWhenClose, true);
                     } else if (position == hideSavedAndArchivedMessagesInListRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.hideSavedAndArchivedMessagesInList), Config.hideSavedAndArchivedMessagesInList, true);
+                    } else if (position == aiAdFilterRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("AiAdFilter", R.string.AiAdFilter), ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false), true);
                     }
                     break;
                 }
@@ -876,7 +902,7 @@ public class ChatSettingActivity extends BaseActivity {
             if (position == chat2Row || position == stickerSize2Row) {
                 return TYPE_SHADOW;
             } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow
-                || position == messageFiltersRow || position == textStyleSettingsRow) {
+                || position == messageFiltersRow || position == textStyleSettingsRow || position == aiAdFilterThresholdRow) {
                 return TYPE_SETTINGS;
             } else if (position == chatRow || position == stickerSizeHeaderRow || position == markdownRow || position == gifSizeHeaderRow) {
                 return TYPE_HEADER;
@@ -1378,5 +1404,65 @@ public class ChatSettingActivity extends BaseActivity {
         public boolean performAccessibilityAction(int action, Bundle arguments) {
             return super.performAccessibilityAction(action, arguments) || sizeBar.getSeekBarAccessibilityDelegate().performAccessibilityActionInternal(this, action, arguments);
         }
+    }
+
+    private void showAiAdFilterThresholdDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(LocaleController.getString("AiAdFilterThreshold", R.string.AiAdFilterThreshold));
+
+        LinearLayout contentLayout = new LinearLayout(getContext());
+        contentLayout.setOrientation(LinearLayout.VERTICAL);
+        contentLayout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), 0);
+
+        TextView descView = new TextView(getContext());
+        descView.setText(LocaleController.getString("AiAdFilterThresholdDesc", R.string.AiAdFilterThresholdDesc));
+        descView.setTextColor(Theme.getColor(Theme.key_dialogTextGray));
+        descView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+        contentLayout.addView(descView);
+
+        EditTextBoldCursor editText = new EditTextBoldCursor(getContext());
+        MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
+        float currentThreshold = filter != null ? filter.getThreshold() : 0.85f;
+        editText.setText(String.valueOf((int) (currentThreshold * 100)));
+        editText.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        editText.setHint("0-100");
+        LinearLayout.LayoutParams editParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        editParams.topMargin = AndroidUtilities.dp(12);
+        contentLayout.addView(editText, editParams);
+
+        CheckBox checkBox = new CheckBox(getContext());
+        boolean currentStrictMode = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterStrictMode, false);
+        checkBox.setChecked(currentStrictMode);
+        checkBox.setText(LocaleController.getString("AiAdFilterStrictMode", R.string.AiAdFilterStrictMode));
+        checkBox.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        LinearLayout.LayoutParams checkParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        checkParams.topMargin = AndroidUtilities.dp(16);
+        contentLayout.addView(checkBox, checkParams);
+
+        builder.setView(contentLayout);
+        builder.setPositiveButton(LocaleController.getString("Save", R.string.Save), (dialog, which) -> {
+            try {
+                int value = Integer.parseInt(editText.getText().toString());
+                float threshold = Math.max(0, Math.min(100, value)) / 100f;
+                boolean strictMode = checkBox.isChecked();
+                MessageAiAdFilter filter4 = MessageAiAdFilter.getInstance();
+                if (filter4 != null) {
+                    filter4.setThreshold(threshold);
+                    filter4.setStrictMode(strictMode);
+                }
+                ConfigManager.putFloat(Defines.aiAdFilterThreshold, threshold);
+                ConfigManager.putBoolean(Defines.aiAdFilterStrictMode, strictMode);
+            } catch (NumberFormatException e) {
+                AlertUtil.showToast("Invalid value");
+            }
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
     }
 }

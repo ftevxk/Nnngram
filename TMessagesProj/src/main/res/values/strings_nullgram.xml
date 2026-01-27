@@ -364,6 +364,12 @@ Usage Notes:
 - * matches 0 or more of the preceding character
 - + matches 1 or more of the preceding character
 - ? matches 0 or 1 of the preceding character</string>
+    <string name="AiAdFilter">AI Ad Filter</string>
+    <string name="AiAdFilterDesc">Use AI model to automatically filter gambling/promotion ads. Messages detected as ads will be hidden.</string>
+    <string name="AiAdFilterThreshold">AI Ad Filter Detection Sensitivity</string>
+    <string name="AiAdFilterThresholdDesc">Higher sensitivity may cause more false positives. Recommended: 0.85</string>
+    <string name="AiAdFilterStrictMode">Strict Mode</string>
+    <string name="AiAdFilterStrictModeDesc">More aggressive filtering, may block more legitimate messages.</string>
     <string name="SaveToDownloadCount_zero">Saving %1$d files to Download</string>
     <string name="SaveToDownloadCount_one">Saving %1$d file to Download</string>
     <string name="SaveToDownloadCount_two">Saving %1$d files to Download</string>

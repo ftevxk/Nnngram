@@ -109,6 +109,8 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
 
+    implementation(libs.tensorflow.lite)
+
     implementation(libs.kotlin.stdlib.common)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.serialization.json)

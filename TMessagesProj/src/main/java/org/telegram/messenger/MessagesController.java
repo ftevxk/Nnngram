@@ -2055,6 +2055,10 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
                 MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, false, false);
+                MessageAiAdFilter filter4 = MessageAiAdFilter.getInstance();
+                if (filter4 != null && filter4.shouldFilter(messageObject)) {
+                    continue;
+                }
                 newMessages.add(messageObject);
                 long dialogId = messageObject.getDialogId();
                 if (new_dialogMessage.containsKey(dialogId)) {
@@ -7645,7 +7649,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (!scheduled) {
                         message.unread = (message.out ? outboxValue : inboxValue) < message.id;
                     }
-                    objects.add(new MessageObject(currentAccount, message, usersLocal, chatsLocal, true, true));
+                    MessageObject msgObj = new MessageObject(currentAccount, message, usersLocal, chatsLocal, true, true);
+                    MessageAiAdFilter filter1 = MessageAiAdFilter.getInstance();
+                    if (filter1 != null && filter1.shouldFilter(msgObj)) {
+                        continue;
+                    }
+                    objects.add(msgObj);
                 }
 
                 ImageLoader.saveMessagesThumbs(messagesRes.messages);
@@ -15779,6 +15788,10 @@ public class MessagesController extends BaseController implements NotificationCe
 
                                     boolean isDialogCreated = createdDialogIds.contains(dialogId);
                                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, isDialogCreated, isDialogCreated);
+                                    MessageAiAdFilter filter5 = MessageAiAdFilter.getInstance();
+                                    if (filter5 != null && filter5.shouldFilter(obj)) {
+                                        continue;
+                                    }
                                     if ((!obj.isOut() || obj.messageOwner.from_scheduled) && obj.isUnread()) {
                                         pushMessages.add(obj);
                                     }
@@ -16058,6 +16071,10 @@ public class MessagesController extends BaseController implements NotificationCe
 
                                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
+                                    MessageAiAdFilter filter6 = MessageAiAdFilter.getInstance();
+                                    if (filter6 != null && filter6.shouldFilter(obj)) {
+                                        continue;
+                                    }
 
                                     if ((!obj.isOut() || obj.messageOwner.from_scheduled) && obj.isUnread()) {
                                         pushMessages.add(obj);
@@ -17021,6 +17038,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     getMessagesStorage().setLastPtsValue(updates.pts);
                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                     MessageObject obj = new MessageObject(currentAccount, message, isDialogCreated, isDialogCreated);
+                    FileLog.d("wd AI ad filter: processing message " + obj.getId());
                     ArrayList<MessageObject> objArr = new ArrayList<>();
                     objArr.add(obj);
                     ArrayList<TLRPC.Message> arr = new ArrayList<>();
@@ -17680,6 +17698,12 @@ public class MessagesController extends BaseController implements NotificationCe
 
                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
+                    MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
+                    FileLog.d("wd debug: filter=" + (filter != null) + ", enabled=" + (filter != null ? filter.isEnabled() : "N/A"));
+                    if (filter != null && filter.shouldFilter(obj)) {
+                        FileLog.d("wd debug: filtered message " + obj.getId());
+                        continue;
+                    }
                     if (obj.type == MessageObject.TYPE_ACTION_PHOTO) {
                         interfaceUpdateMask |= UPDATE_MASK_CHAT_AVATAR;
                     } else if (obj.type == 10) {
@@ -18105,6 +18129,10 @@ public class MessagesController extends BaseController implements NotificationCe
                         messagesArr.add(message);
                         boolean isDialogCreated = createdDialogIds.contains(uid);
                         MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
+                        MessageAiAdFilter filter7 = MessageAiAdFilter.getInstance();
+                        if (filter7 != null && filter7.shouldFilter(obj)) {
+                            continue;
+                        }
                         arr.add(obj);
                         if (pushMessages == null) {
                             pushMessages = new ArrayList<>();
@@ -18486,6 +18514,10 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                 MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
+                MessageAiAdFilter filter8 = MessageAiAdFilter.getInstance();
+                if (filter8 != null && filter8.shouldFilter(obj)) {
+                    continue;
+                }
                 getTranslateController().invalidateTranslation(obj);
 
                 LongSparseArray<ArrayList<MessageObject>> array;
@@ -20369,14 +20401,36 @@ public class MessagesController extends BaseController implements NotificationCe
             return false;
         }
 
-        updateMessageFilterCache();
-        Pattern pattern = messageFilterPatternCached;
-        ArrayList<String> keywords = messageFilterKeywordsCached;
-        if (pattern == null && (keywords == null || keywords.isEmpty())) {
+        String filterText = buildFilterText(message);
+        if (TextUtils.isEmpty(filterText)) {
             return false;
         }
 
-        return isTextBlockedByFilter(buildFilterText(message), pattern, keywords);
+        updateMessageFilterCache();
+        Pattern pattern = messageFilterPatternCached;
+        ArrayList<String> keywords = messageFilterKeywordsCached;
+
+        boolean blockedByMessageFilter = false;
+        if (pattern != null || (keywords != null && !keywords.isEmpty())) {
+            blockedByMessageFilter = isTextBlockedByFilter(filterText, pattern, keywords);
+        }
+
+        if (blockedByMessageFilter) {
+            FileLog.d("wd 消息过滤器拦截: messageId=" + message.id);
+            return true;
+        }
+
+        MessageAiAdFilter aiFilter = MessageAiAdFilter.getInstance();
+        if (aiFilter != null && aiFilter.isEnabled()) {
+            MessageObject msgObj = new MessageObject(currentAccount, message, false, false);
+            boolean blockedByAi = aiFilter.shouldFilter(msgObj);
+            if (blockedByAi) {
+                FileLog.d("wd AI过滤器拦截: messageId=" + message.id);
+            }
+            return blockedByAi;
+        }
+
+        return false;
     }
 
     private static String buildFilterText(TLRPC.Message message) {

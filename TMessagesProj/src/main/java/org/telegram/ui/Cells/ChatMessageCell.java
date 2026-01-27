@@ -21889,6 +21889,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public Theme.MessageDrawable getCurrentBackgroundDrawable(boolean update) {
+        if (currentMessageObject == null) {
+            return null;
+        }
         if (update) {
             boolean forceMediaByGroup = currentPosition != null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) == 0 && currentMessagesGroup.isDocuments && !drawPinnedBottom;
             if (currentMessageObject.isOutOwner()) {
