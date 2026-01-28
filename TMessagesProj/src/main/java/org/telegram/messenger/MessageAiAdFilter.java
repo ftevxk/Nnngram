@@ -51,9 +51,8 @@ public class MessageAiAdFilter {
     // 配置参数
     private float threshold = 0.75f;
     private boolean strictMode = false;
-    private boolean topicAnalysisEnabled = true;
-    private float topicWeight = 0.7f;
-    private float adModelWeight = 0.3f;
+    // 主题分析始终启用，作为AI广告过滤的必要步骤
+    private static final boolean TOPIC_ANALYSIS_ENABLED = true;
 
     private static final String CACHE_KEY_SEPARATOR = "_";
 
@@ -87,9 +86,7 @@ public class MessageAiAdFilter {
         threshold = ConfigManager.getFloatOrDefault(Defines.aiAdFilterThreshold, 0.75f);
         threshold = Math.max(0f, Math.min(1f, threshold));
         strictMode = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterStrictMode, false);
-        topicAnalysisEnabled = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterTopicAnalysisEnabled, true);
-        topicWeight = ConfigManager.getFloatOrDefault(Defines.aiAdFilterTopicWeight, 0.7f);
-        adModelWeight = ConfigManager.getFloatOrDefault(Defines.aiAdFilterModelWeight, 0.3f);
+        // 主题分析始终启用，不需要从配置读取
         updateMessageFilterCache();
     }
 
@@ -154,14 +151,15 @@ public class MessageAiAdFilter {
         return strictMode;
     }
 
+    //wd 主题分析始终启用，此方法仅用于兼容性
     public void setTopicAnalysisEnabled(boolean enabled) {
-        this.topicAnalysisEnabled = enabled;
-        ConfigManager.putBoolean(Defines.aiAdFilterTopicAnalysisEnabled, enabled);
-        clearCache();
+        //wd 主题分析始终启用，忽略设置
+        FileLog.d("wd 主题分析始终启用，忽略设置");
     }
 
+    //wd 主题分析始终启用
     public boolean isTopicAnalysisEnabled() {
-        return topicAnalysisEnabled;
+        return true;
     }
 
     public boolean isEnabled() {
@@ -202,7 +200,7 @@ public class MessageAiAdFilter {
         String cacheKey = buildCacheKey(dialogId, messageId, text);
         FilterResult cached = getFromCache(cacheKey);
         if (cached != null) {
-            FileLog.d("wd AI ad filter: cache hit for message " + messageId + ", isAd=" + cached.isAd + ", reason=" + cached.reason);
+            // 缓存命中，直接返回结果，不打印日志避免循环
             return cached.isAd;
         }
 
@@ -217,12 +215,6 @@ public class MessageAiAdFilter {
         try {
             FilterResult result = performTwoStageFiltering(text, messageId);
             putToCache(cacheKey, result);
-
-            if (result.isAd) {
-                FileLog.d("wd AI ad filter: FILTERED message " + messageId + " with confidence " +
-                    String.format("%.4f", result.confidence) + ", reason=" + result.reason);
-            }
-
             return result.isAd;
         } catch (Exception e) {
             FileLog.e("wd MessageAiAdFilter filtering error", e);
@@ -234,58 +226,85 @@ public class MessageAiAdFilter {
         // 使用主题分析器进行两阶段分析
         MessageTopicAnalyzer.TopicAnalysis analysis = topicAnalyzer.analyze(text);
         
-        float finalScore = 0f;
+        float finalScore = analysis.adProbability;
         StringBuilder reasonBuilder = new StringBuilder();
 
-        FileLog.d("wd AI ad filter: two-stage analysis for message " + messageId +
-            " - topic=" + analysis.topicType +
-            ", intent=" + analysis.intentType +
-            ", adProb=" + String.format("%.4f", analysis.adProbability) +
-            ", fromTopicModel=" + analysis.isFromTopicModel +
-            ", fromAdModel=" + analysis.isFromAdModel);
+        // 只在详细日志模式下输出分析结果
+        if (BuildConfig.DEBUG) {
+            FileLog.d("wd AI ad filter: analysis for message " + messageId +
+                " - topic=" + analysis.topicType +
+                ", intent=" + analysis.intentType +
+                ", adProb=" + String.format("%.4f", analysis.adProbability));
+        }
 
-        // 根据主题类型快速判断
+        // 1. 首先检查主题类型 - 闲聊和咨询类消息通常不是广告
         if (analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT ||
             analysis.topicType == MessageTopicAnalyzer.TopicType.CONSULTATION) {
-            // 闲聊或咨询类消息，大幅降低广告概率
-            if (analysis.adProbability < 0.3f) {
-                return new FilterResult(false, analysis.adProbability, "topic_chat_or_consultation");
+            // 对于闲聊/咨询类，需要更高的广告概率阈值
+            if (analysis.adProbability < 0.6f) {
+                return new FilterResult(false, analysis.adProbability, "normal_topic");
+            }
+            // 即使是闲聊，如果广告概率很高，仍然可能是广告
+            finalScore = analysis.adProbability * 0.9f;
+        }
+        
+        // 2. 推广、交易、招聘类主题更可能是广告
+        else if (analysis.topicType == MessageTopicAnalyzer.TopicType.PROMOTION ||
+                 analysis.topicType == MessageTopicAnalyzer.TopicType.TRANSACTION ||
+                 analysis.topicType == MessageTopicAnalyzer.TopicType.RECRUITMENT) {
+            // 这些主题类型，稍微降低阈值
+            if (analysis.adProbability > 0.4f) {
+                finalScore = Math.min(1.0f, analysis.adProbability * 1.1f);
+                reasonBuilder.append("suspicious_topic;");
             }
         }
 
-        // 计算最终分数
-        if (topicAnalysisEnabled) {
-            // 主题分析为主
-            finalScore = analysis.adProbability;
-            
-            // 如果主题模型和广告模型都认为是广告，增加置信度
-            if (analysis.isFromTopicModel && analysis.isFromAdModel && analysis.adProbability > 0.5f) {
-                finalScore = Math.min(1.0f, finalScore + 0.1f);
-                reasonBuilder.append("dual_model_agreement;");
+        // 3. 检查意图类型
+        if (analysis.intentType == MessageTopicAnalyzer.IntentType.OFFER ||
+            analysis.intentType == MessageTopicAnalyzer.IntentType.URGE) {
+            // 提供/催促意图增加广告可能性
+            if (analysis.adProbability > 0.3f) {
+                finalScore = Math.min(1.0f, finalScore * 1.05f);
             }
-
-            // 如果主题分析强烈认为是正常内容，降低分数
-            if (analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT ||
-                analysis.topicType == MessageTopicAnalyzer.TopicType.CONSULTATION) {
-                if (analysis.adProbability < 0.2f) {
-                    finalScore = finalScore * 0.5f;
-                    reasonBuilder.append("topic_normal_override;");
-                }
-            }
-        } else {
-            // 禁用主题分析，只用广告模型结果
-            finalScore = analysis.adProbability;
         }
 
-        // 严格模式调整
+        // 4. 模型置信度检查
+        if (analysis.isFromTopicModel && analysis.isFromAdModel) {
+            // 两个模型都有输出，增加可信度
+            if (analysis.adProbability > 0.7f) {
+                reasonBuilder.append("dual_model_high_confidence;");
+            }
+        } else if (!analysis.isFromAdModel) {
+            // 广告模型没有输出，依赖主题分析结果，提高阈值
+            finalScore = finalScore * 0.8f;
+            reasonBuilder.append("fallback_to_topic;");
+        }
+
+        // 5. 计算最终判断
         boolean isAd = finalScore >= threshold;
-        if (strictMode && finalScore >= threshold * 0.75f) {
+        
+        // 严格模式：降低阈值，但不过分敏感
+        if (strictMode && !isAd && finalScore >= threshold * 0.85f) {
             isAd = true;
             reasonBuilder.append("strict_mode;");
         }
 
+        // 6. 防止过度过滤 - 对于明显正常的消息，即使分数略高也不过滤
+        if (isAd && analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT && 
+            analysis.adProbability < 0.5f) {
+            isAd = false;
+            reasonBuilder.append("chat_safety_override;");
+        }
+
         if (reasonBuilder.length() == 0) {
-            reasonBuilder.append("normal_threshold");
+            reasonBuilder.append(isAd ? "ad_detected" : "normal");
+        }
+
+        // 只在真正拦截时输出日志，避免循环打印
+        if (isAd) {
+            FileLog.d("wd AI ad filter: BLOCKED message " + messageId + 
+                " score=" + String.format("%.4f", finalScore) + 
+                " reason=" + reasonBuilder.toString());
         }
 
         return new FilterResult(isAd, finalScore, reasonBuilder.toString());

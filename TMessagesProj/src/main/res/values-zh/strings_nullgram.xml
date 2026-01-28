@@ -447,6 +447,4 @@
     <string name="removeBlockKeyword">移除</string>
     <string name="removeBlockKeywordConfirm">从屏蔽列表中移除该关键词？</string>
     <string name="Second">秒</string>
-    <string name="AiAdFilterTopicAnalysis">主题分析</string>
-    <string name="AiAdFilterTopicAnalysisDesc">启用主题感知过滤，先分析消息主题再判断是否为广告，可显著降低误杀率</string>
 </resources>

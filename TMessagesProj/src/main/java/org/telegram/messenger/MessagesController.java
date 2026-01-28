@@ -20423,11 +20423,7 @@ public class MessagesController extends BaseController implements NotificationCe
         MessageAiAdFilter aiFilter = MessageAiAdFilter.getInstance();
         if (aiFilter != null && aiFilter.isEnabled()) {
             MessageObject msgObj = new MessageObject(currentAccount, message, false, false);
-            boolean blockedByAi = aiFilter.shouldFilter(msgObj);
-            if (blockedByAi) {
-                FileLog.d("wd AI过滤器拦截: messageId=" + message.id);
-            }
-            return blockedByAi;
+            return aiFilter.shouldFilter(msgObj);
         }
 
         return false;

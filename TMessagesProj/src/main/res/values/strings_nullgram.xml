@@ -477,6 +477,4 @@ Usage Notes:
     <string name="removeBlockKeyword">Remove</string>
     <string name="removeBlockKeywordConfirm">Remove this keyword from block list?</string>
     <string name="Second">second</string>
-    <string name="AiAdFilterTopicAnalysis">Topic Analysis</string>
-    <string name="AiAdFilterTopicAnalysisDesc">Enable topic-aware filtering: analyze message topic first, then determine if it\'s an ad. Significantly reduces false positives.</string>
 </resources>

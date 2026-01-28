@@ -135,7 +135,6 @@ public class ChatSettingActivity extends BaseActivity {
     private int messageFiltersRow;
     private int aiAdFilterRow;
     private int aiAdFilterThresholdRow;
-    private int aiAdFilterTopicAnalysisRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
@@ -436,16 +435,6 @@ public class ChatSettingActivity extends BaseActivity {
             }
         } else if (position == aiAdFilterThresholdRow) {
             showAiAdFilterThresholdDialog();
-        } else if (position == aiAdFilterTopicAnalysisRow) {
-            boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.aiAdFilterTopicAnalysisEnabled, true);
-            ConfigManager.putBoolean(Defines.aiAdFilterTopicAnalysisEnabled, newValue);
-            MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-            if (filter != null) {
-                filter.setTopicAnalysisEnabled(newValue);
-            }
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(newValue);
-            }
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
             if (view instanceof TextCheckCell) {
@@ -603,7 +592,6 @@ public class ChatSettingActivity extends BaseActivity {
         messageFiltersRow = addRow("messageFilters");
         aiAdFilterRow = addRow("aiAdFilter");
         aiAdFilterThresholdRow = addRow("aiAdFilterThreshold");
-        aiAdFilterTopicAnalysisRow = addRow("aiAdFilterTopicAnalysis");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
@@ -824,10 +812,6 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.hideSavedAndArchivedMessagesInList), Config.hideSavedAndArchivedMessagesInList, true);
                     } else if (position == aiAdFilterRow) {
                         textCell.setTextAndCheck(LocaleController.getString("AiAdFilter", R.string.AiAdFilter), ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false), true);
-                    } else if (position == aiAdFilterTopicAnalysisRow) {
-                        textCell.setTextAndValueAndCheck(LocaleController.getString("AiAdFilterTopicAnalysis", R.string.AiAdFilterTopicAnalysis),
-                            LocaleController.getString("AiAdFilterTopicAnalysisDesc", R.string.AiAdFilterTopicAnalysisDesc),
-                            ConfigManager.getBooleanOrDefault(Defines.aiAdFilterTopicAnalysisEnabled, true), true, true);
                     }
                     break;
                 }
