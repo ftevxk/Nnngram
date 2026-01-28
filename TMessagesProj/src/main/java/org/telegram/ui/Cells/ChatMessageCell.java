@@ -10109,9 +10109,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                     File localFile = FileLoader.getInstance(currentAccount).getPathToAttach(uri.document, null, false, true);
                                     if (localFile != null && localFile.exists()) {
                                         localVideoExists = true;
-                                        if (BuildVars.LOGS_ENABLED) {
-                                            FileLog.d("wd 自动预览-检测到本地视频(qualities) docId=" + uri.document.id + " dc=" + uri.document.dc_id + " path=" + localFile.getAbsolutePath());
-                                        }
                                         break;
                                     }
                                 }
@@ -10180,14 +10177,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 }
                             }
                             if (localQualityDocument != null) {
-                                if (BuildVars.LOGS_ENABLED) {
-                                    FileLog.d("wd 自动预览-命中本地清晰度 docId=" + localQualityDocument.id + " dc=" + localQualityDocument.dc_id);
-                                }
                                 document = localQualityDocument;
                             } else {
-                                if (BuildVars.LOGS_ENABLED) {
-                                    FileLog.d("wd 自动预览-未命中本地清晰度 使用thumbQuality docId=" + messageObject.thumbQuality.document.id + " dc=" + messageObject.thumbQuality.document.dc_id);
-                                }
                                 document = messageObject.thumbQuality.document;
                             }
                         }

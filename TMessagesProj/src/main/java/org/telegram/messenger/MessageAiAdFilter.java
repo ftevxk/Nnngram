@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2024 Nnngram
- * AI 广告消息过滤器
- * 使用 TensorFlow Lite Interpreter 进行文本分类
+ * AI 广告消息过滤器 - 两阶段模型架构
+ * 阶段1: 主题分析模型 - 理解消息主题和意图
+ * 阶段2: 广告分类模型 - 判断是否为广告
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,47 +25,36 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.tensorflow.lite.Interpreter;
-import xyz.nextalone.nnngram.config.ConfigManager;
-import xyz.nextalone.nnngram.utils.Defines;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines;
+
 public class MessageAiAdFilter {
     private static volatile MessageAiAdFilter instance;
     private final Context context;
-    private Interpreter interpreter;
-    private MappedByteBuffer modelBuffer;
     private SimpleAdDetector simpleDetector;
+    private MessageTopicAnalyzer topicAnalyzer;
     private AtomicBoolean useSimpleDetector = new AtomicBoolean(false);
-    private List<String> labels;
-    private final Object interpreterLock = new Object();
     private final Map<String, FilterResult> cache = new HashMap<>();
     private final Object cacheLock = new Object();
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
-    private final AtomicBoolean isInitializing = new AtomicBoolean(false);
-    private final AtomicBoolean useBertClassifier = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private float threshold = 0.85f;
-    private boolean strictMode = false;
 
-    private static final String MODEL_PATH = "ai_ad_filter/model.tflite";
-    private static final String LABELS_PATH = "ai_ad_filter/labels.txt";
+    // 配置参数
+    private float threshold = 0.75f;
+    private boolean strictMode = false;
+    private boolean topicAnalysisEnabled = true;
+    private float topicWeight = 0.7f;
+    private float adModelWeight = 0.3f;
+
     private static final String CACHE_KEY_SEPARATOR = "_";
 
     private String messageFilterTextCached;
@@ -75,11 +65,13 @@ public class MessageAiAdFilter {
     private static class FilterResult {
         final boolean isAd;
         final float confidence;
+        final String reason;
         final long timestamp;
 
-        FilterResult(boolean isAd, float confidence) {
+        FilterResult(boolean isAd, float confidence, String reason) {
             this.isAd = isAd;
             this.confidence = confidence;
+            this.reason = reason;
             this.timestamp = System.currentTimeMillis();
         }
     }
@@ -87,12 +79,17 @@ public class MessageAiAdFilter {
     private MessageAiAdFilter(Context context) {
         this.context = context.getApplicationContext();
         loadConfig();
+        this.topicAnalyzer = MessageTopicAnalyzer.getInstance();
+        this.topicAnalyzer.init(context);
     }
 
     private void loadConfig() {
-        threshold = ConfigManager.getFloatOrDefault(Defines.aiAdFilterThreshold, 0.85f);
+        threshold = ConfigManager.getFloatOrDefault(Defines.aiAdFilterThreshold, 0.75f);
         threshold = Math.max(0f, Math.min(1f, threshold));
         strictMode = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterStrictMode, false);
+        topicAnalysisEnabled = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterTopicAnalysisEnabled, true);
+        topicWeight = ConfigManager.getFloatOrDefault(Defines.aiAdFilterTopicWeight, 0.7f);
+        adModelWeight = ConfigManager.getFloatOrDefault(Defines.aiAdFilterModelWeight, 0.3f);
         updateMessageFilterCache();
     }
 
@@ -108,85 +105,33 @@ public class MessageAiAdFilter {
     }
 
     public static MessageAiAdFilter getInstance() {
-        if (instance == null) {
-            return null;
-        }
         return instance;
     }
 
+    /**
+     * 初始化 AI 广告过滤器，加载模型
+     */
     public void initialize() {
-        if (isInitialized.get() || isInitializing.getAndSet(true)) {
+        if (isInitialized.get()) {
+            FileLog.d("wd MessageAiAdFilter already initialized");
             return;
         }
+        
         executor.execute(() -> {
             try {
-                loadModel();
-            } finally {
-                isInitializing.set(false);
+                FileLog.d("wd MessageAiAdFilter: starting initialization");
+                
+                // 初始化主题分析器（加载模型）
+                if (topicAnalyzer != null) {
+                    topicAnalyzer.init(context);
+                }
+                
+                isInitialized.set(true);
+                FileLog.d("wd MessageAiAdFilter: initialization completed");
+            } catch (Exception e) {
+                FileLog.e("wd MessageAiAdFilter initialization error", e);
             }
         });
-    }
-
-    private MappedByteBuffer loadModelFile() throws IOException {
-        try (android.content.res.AssetFileDescriptor afd = context.getAssets().openFd(MODEL_PATH);
-             java.io.FileInputStream inputStream = afd.createInputStream();
-             java.nio.channels.FileChannel channel = inputStream.getChannel()) {
-            return channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, afd.getStartOffset(), afd.getLength());
-        } catch (java.io.FileNotFoundException e) {
-            FileLog.d("wd MessageAiAdFilter: model file not found in assets: " + MODEL_PATH);
-            return null;
-        }
-    }
-
-    private void loadModel() {
-        synchronized (interpreterLock) {
-            try {
-                FileLog.d("wd MessageAiAdFilter: loading model from " + MODEL_PATH);
-                modelBuffer = loadModelFile();
-                if (modelBuffer == null) {
-                    FileLog.e("wd MessageAiAdFilter: model file not found");
-                    return;
-                }
-                labels = loadLabels();
-                if (labels == null || labels.isEmpty()) {
-                    FileLog.e("wd MessageAiAdFilter: failed to load labels");
-                    return;
-                }
-                FileLog.d("wd MessageAiAdFilter: loaded " + labels.size() + " labels: " + labels);
-
-                Interpreter.Options options = new Interpreter.Options();
-                options.setNumThreads(4);
-                interpreter = new Interpreter(modelBuffer, options);
-
-                isInitialized.set(true);
-                FileLog.d("wd MessageAiAdFilter: initialized successfully with TFLite Interpreter, model loaded!");
-            } catch (IOException e) {
-                FileLog.e("wd MessageAiAdFilter: failed to load model", e);
-            } catch (Exception e) {
-                FileLog.e("wd MessageAiAdFilter: initialization error", e);
-            }
-        }
-    }
-
-    private List<String> loadLabels() {
-        List<String> labelList = new ArrayList<>();
-        try {
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(context.getAssets().open(LABELS_PATH))
-            );
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    labelList.add(line);
-                }
-            }
-            reader.close();
-        } catch (IOException e) {
-            FileLog.e("wd MessageAiAdFilter: failed to load labels", e);
-            return null;
-        }
-        return labelList;
     }
 
     public void setThreshold(float threshold) {
@@ -207,6 +152,16 @@ public class MessageAiAdFilter {
 
     public boolean isStrictMode() {
         return strictMode;
+    }
+
+    public void setTopicAnalysisEnabled(boolean enabled) {
+        this.topicAnalysisEnabled = enabled;
+        ConfigManager.putBoolean(Defines.aiAdFilterTopicAnalysisEnabled, enabled);
+        clearCache();
+    }
+
+    public boolean isTopicAnalysisEnabled() {
+        return topicAnalysisEnabled;
     }
 
     public boolean isEnabled() {
@@ -247,42 +202,93 @@ public class MessageAiAdFilter {
         String cacheKey = buildCacheKey(dialogId, messageId, text);
         FilterResult cached = getFromCache(cacheKey);
         if (cached != null) {
-            FileLog.d("wd AI ad filter: cache hit for message " + messageId + ", isAd=" + cached.isAd);
+            FileLog.d("wd AI ad filter: cache hit for message " + messageId + ", isAd=" + cached.isAd + ", reason=" + cached.reason);
             return cached.isAd;
         }
 
-        if (!isInitialized.get()) {
-            FileLog.d("wd AI ad filter: not initialized, initializing now, message " + messageId);
-            initialize();
-            return false;
-        }
-
+        // 阶段0: 用户自定义过滤器（最高优先级）
         if (isMessageFilterBlocked(text)) {
             FileLog.d("wd AI ad filter: FILTERED message " + messageId + " by message filter (regex/keywords)");
-            putToCache(cacheKey, new FilterResult(true, 1.0f));
+            putToCache(cacheKey, new FilterResult(true, 1.0f, "user_filter"));
             return true;
         }
 
+        // 阶段1 & 2: 两阶段模型过滤
         try {
-            float adScore = classifyText(text);
-            FileLog.d("wd AI ad filter: message " + messageId + ", score=" + String.format("%.4f", adScore) + 
-                ", threshold=" + String.format("%.4f", threshold) + ", strictMode=" + strictMode);
-            boolean isAd = adScore >= threshold;
+            FilterResult result = performTwoStageFiltering(text, messageId);
+            putToCache(cacheKey, result);
 
-            if (strictMode && adScore >= threshold * 0.7f) {
-                isAd = true;
+            if (result.isAd) {
+                FileLog.d("wd AI ad filter: FILTERED message " + messageId + " with confidence " +
+                    String.format("%.4f", result.confidence) + ", reason=" + result.reason);
             }
 
-            if (isAd) {
-                putToCache(cacheKey, new FilterResult(isAd, adScore));
-                FileLog.d("wd AI ad filter: FILTERED message " + messageId + " with confidence " + String.format("%.4f", adScore));
-            }
-
-            return isAd;
+            return result.isAd;
         } catch (Exception e) {
-            FileLog.e("wd MessageAiAdFilter inference error", e);
+            FileLog.e("wd MessageAiAdFilter filtering error", e);
             return false;
         }
+    }
+
+    private FilterResult performTwoStageFiltering(String text, long messageId) {
+        // 使用主题分析器进行两阶段分析
+        MessageTopicAnalyzer.TopicAnalysis analysis = topicAnalyzer.analyze(text);
+        
+        float finalScore = 0f;
+        StringBuilder reasonBuilder = new StringBuilder();
+
+        FileLog.d("wd AI ad filter: two-stage analysis for message " + messageId +
+            " - topic=" + analysis.topicType +
+            ", intent=" + analysis.intentType +
+            ", adProb=" + String.format("%.4f", analysis.adProbability) +
+            ", fromTopicModel=" + analysis.isFromTopicModel +
+            ", fromAdModel=" + analysis.isFromAdModel);
+
+        // 根据主题类型快速判断
+        if (analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT ||
+            analysis.topicType == MessageTopicAnalyzer.TopicType.CONSULTATION) {
+            // 闲聊或咨询类消息，大幅降低广告概率
+            if (analysis.adProbability < 0.3f) {
+                return new FilterResult(false, analysis.adProbability, "topic_chat_or_consultation");
+            }
+        }
+
+        // 计算最终分数
+        if (topicAnalysisEnabled) {
+            // 主题分析为主
+            finalScore = analysis.adProbability;
+            
+            // 如果主题模型和广告模型都认为是广告，增加置信度
+            if (analysis.isFromTopicModel && analysis.isFromAdModel && analysis.adProbability > 0.5f) {
+                finalScore = Math.min(1.0f, finalScore + 0.1f);
+                reasonBuilder.append("dual_model_agreement;");
+            }
+
+            // 如果主题分析强烈认为是正常内容，降低分数
+            if (analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT ||
+                analysis.topicType == MessageTopicAnalyzer.TopicType.CONSULTATION) {
+                if (analysis.adProbability < 0.2f) {
+                    finalScore = finalScore * 0.5f;
+                    reasonBuilder.append("topic_normal_override;");
+                }
+            }
+        } else {
+            // 禁用主题分析，只用广告模型结果
+            finalScore = analysis.adProbability;
+        }
+
+        // 严格模式调整
+        boolean isAd = finalScore >= threshold;
+        if (strictMode && finalScore >= threshold * 0.75f) {
+            isAd = true;
+            reasonBuilder.append("strict_mode;");
+        }
+
+        if (reasonBuilder.length() == 0) {
+            reasonBuilder.append("normal_threshold");
+        }
+
+        return new FilterResult(isAd, finalScore, reasonBuilder.toString());
     }
 
     private void updateMessageFilterCache() {
@@ -401,122 +407,6 @@ public class MessageAiAdFilter {
         }
     }
 
-    private float classifyText(String text) {
-        Interpreter classifier;
-        synchronized (interpreterLock) {
-            classifier = this.interpreter;
-        }
-
-        if (classifier == null) {
-            return useSimpleDetectorFallback(text);
-        }
-
-        try {
-            return classifyWithInterpreter(text, classifier);
-        } catch (Exception e) {
-            FileLog.e("wd MessageAiAdFilter classification error, falling back to simple detector", e);
-            return useSimpleDetectorFallback(text);
-        }
-    }
-
-    private float useSimpleDetectorFallback(String text) {
-        if (simpleDetector == null) {
-            simpleDetector = SimpleAdDetector.getInstance();
-        }
-        float score = simpleDetector.getAdScore(text);
-        if (score > 0) {
-            useSimpleDetector.set(true);
-            FileLog.d("wd MessageAiAdFilter: using simple detector, score=" + score);
-        }
-        return score;
-    }
-
-    private float classifyWithInterpreter(String text, Interpreter classifier) {
-        try {
-            int[] inputShape = classifier.getInputTensor(0).shape();
-            int[] outputShape = classifier.getOutputTensor(0).shape();
-            FileLog.d("wd MessageAiAdFilter: model input shape=" + java.util.Arrays.toString(inputShape) + 
-                ", output shape=" + java.util.Arrays.toString(outputShape));
-            
-            int numLabels = labels.size();
-            
-            float[][] input = textToFloats(text);
-            int inputLength = input.length;
-            
-            // 根据模型输入形状准备数据
-            Object inputBuffer;
-            if (inputShape.length == 2) {
-                // 模型期望 [batch, features]
-                // 确保批次维度正确
-                if (inputShape[0] <= 0) {
-                    inputShape[0] = 1;
-                }
-                if (inputShape[1] <= 0) {
-                    inputShape[1] = inputLength;
-                }
-                float[][] shapedInput = new float[inputShape[0]][inputShape[1]];
-                for (int i = 0; i < Math.min(inputLength, inputShape[1]); i++) {
-                    shapedInput[0][i] = input[i][0];
-                }
-                inputBuffer = shapedInput;
-            } else if (inputShape.length == 3) {
-                // 模型期望 [batch, seq_len, features]
-                if (inputShape[0] <= 0) inputShape[0] = 1;
-                if (inputShape[1] <= 0) inputShape[1] = inputLength;
-                if (inputShape[2] <= 0) inputShape[2] = 1;
-                float[][][] input3d = new float[inputShape[0]][inputShape[1]][inputShape[2]];
-                for (int i = 0; i < Math.min(inputLength, inputShape[1]); i++) {
-                    input3d[0][i][0] = input[i][0];
-                }
-                inputBuffer = input3d;
-            } else {
-                FileLog.e("wd MessageAiAdFilter: unsupported input shape length: " + inputShape.length);
-                return 0f;
-            }
-            
-            // 根据模型输出形状分配内存
-            Object outputBuffer;
-            if (outputShape.length == 2) {
-                if (outputShape[0] <= 0) outputShape[0] = 1;
-                if (outputShape[1] <= 0) outputShape[1] = numLabels;
-                outputBuffer = new float[outputShape[0]][outputShape[1]];
-            } else {
-                outputBuffer = new float[1][numLabels];
-            }
-            
-            classifier.run(inputBuffer, outputBuffer);
-            
-            // 提取结果
-            float adScore = 0f;
-            if (outputBuffer instanceof float[][]) {
-                float[][] output = (float[][]) outputBuffer;
-                for (int i = 0; i < Math.min(numLabels, output[0].length); i++) {
-                    String label = labels.get(i).toLowerCase();
-                    if ("ad".equals(label) || "spam".equals(label)) {
-                        adScore = Math.max(adScore, output[0][i]);
-                    }
-                    if ("normal".equals(label) || "ham".equals(label)) {
-                        adScore = Math.max(adScore, 1.0f - output[0][i]);
-                    }
-                }
-            }
-            
-            return adScore;
-        } catch (Exception e) {
-            FileLog.e("wd MessageAiAdFilter: interpreter.run failed", e);
-            return 0f;
-        }
-    }
-
-    private float[][] textToFloats(String text) {
-        int maxLen = Math.min(text.length(), 128);
-        float[][] result = new float[maxLen][1];
-        for (int i = 0; i < maxLen; i++) {
-            result[i][0] = text.charAt(i) / 128.0f;
-        }
-        return result;
-    }
-
     private String buildCacheKey(long dialogId, long messageId, String text) {
         int hash = text.hashCode();
         return dialogId + CACHE_KEY_SEPARATOR + messageId + CACHE_KEY_SEPARATOR + hash;
@@ -550,18 +440,28 @@ public class MessageAiAdFilter {
 
     public void release() {
         executor.shutdownNow();
-        synchronized (interpreterLock) {
-            if (interpreter != null) {
-                interpreter.close();
-                interpreter = null;
-            }
-            modelBuffer = null;
+        if (topicAnalyzer != null) {
+            topicAnalyzer.release();
         }
-        isInitialized.set(false);
         clearCache();
     }
 
-    public boolean isModelLoaded() {
-        return isInitialized.get() && interpreter != null;
+    /**
+     * 获取最后一次主题分析的详细信息（用于调试）
+     */
+    public MessageTopicAnalyzer.TopicAnalysis getLastTopicAnalysis(String text) {
+        if (topicAnalyzer != null) {
+            return topicAnalyzer.analyze(text);
+        }
+        return null;
+    }
+
+    /**
+     * 检查模型是否已加载
+     */
+    public boolean isModelsLoaded() {
+        return topicAnalyzer != null && 
+               topicAnalyzer.isTopicModelLoaded() && 
+               topicAnalyzer.isAdModelLoaded();
     }
 }

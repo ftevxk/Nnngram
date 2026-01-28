@@ -3121,34 +3121,13 @@ public class ImageLoader {
                             } else if (MessageObject.isVideoDocument(document)) {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_VIDEO), url);
                                 File realFile = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, false, true);
-                                if (BuildVars.LOGS_ENABLED) {
-                                    File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
-                                    boolean videoExists = cacheFile != null && cacheFile.exists();
-                                    boolean realExists = realFile != null && realFile.exists();
-                                    String cacheFilePath = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
-                                    String realFilePath = realFile != null ? realFile.getAbsolutePath() : "null";
-                                    String cacheDirPath = cacheDir != null ? cacheDir.getAbsolutePath() : "null";
-                                    FileLog.d("wd 自动预览-视频选文件 dc=" + document.dc_id + " id=" + document.id + " url=" + url + " filter=" + filter + " videoPath=" + cacheFilePath + " videoExists=" + videoExists + " realPath=" + realFilePath + " realExists=" + realExists + " cacheDir=" + cacheDirPath);
-                                }
                                 if (realFile != null && realFile.exists()) {
-                                    if (BuildVars.LOGS_ENABLED) {
-                                        FileLog.d("wd 自动预览-优先使用真实文件 dc=" + document.dc_id + " id=" + document.id + " realPath=" + realFile.getAbsolutePath());
-                                    }
                                     cacheFile = realFile;
-                                } else if (cacheFile == null || !cacheFile.exists()) {
-                                    if (BuildVars.LOGS_ENABLED) {
-                                        String path = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
-                                        FileLog.d("wd 自动预览-真实文件不存在，改用cache dc=" + document.dc_id + " id=" + document.id + " cachePath=" + path);
-                                    }
                                 }
                             } else {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_DOCUMENT), url);
                             }
                             if ((isAnimatedAvatar(filter) || AUTOPLAY_FILTER.equals(filter)) && !cacheFile.exists()) {
-                                if (BuildVars.LOGS_ENABLED) {
-                                    String curPath = cacheFile != null ? cacheFile.getAbsolutePath() : "null";
-                                        FileLog.d("wd 自动预览-改用temp dc=" + document.dc_id + " id=" + document.id + " 原文件不存在 path=" + curPath + " url=" + url);
-                                }
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), document.dc_id + "_" + document.id + ".temp");
                             }
                             if (document instanceof DocumentObject.ThemeDocument) {

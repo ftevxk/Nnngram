@@ -304,6 +304,9 @@ object Defines {
     @BooleanConfig const val aiAdFilterEnabled = "aiAdFilterEnabled"
     const val aiAdFilterThreshold = "aiAdFilterThreshold"
     @BooleanConfig const val aiAdFilterStrictMode = "aiAdFilterStrictMode"
+    @BooleanConfig(true) const val aiAdFilterTopicAnalysisEnabled = "aiAdFilterTopicAnalysisEnabled"
+    const val aiAdFilterTopicWeight = "aiAdFilterTopicWeight"
+    const val aiAdFilterModelWeight = "aiAdFilterModelWeight"
 
     /**
      * 数组中元素未找到的下标，值为-1
