@@ -1546,30 +1546,13 @@ public class FileLoader extends BaseController {
         if (dir == null) {
             return new File("");
         }
-        if (documentId != 0) {
+        //wd 对于视频文件，优先从Nnngram Video目录查找，再查数据库，最后查cache
+        if (documentId != 0 && type != MEDIA_DIR_VIDEO) {
             String path = getInstance(UserConfig.selectedAccount).getFileDatabase().getPath(documentId, dcId, type, useFileDatabaseQueue);
             if (path != null) {
                 File file = new File(path);
                 if (file.exists()) {
-                    if (type == MEDIA_DIR_VIDEO) {
-                        File cacheDir = getDirectory(MEDIA_DIR_CACHE);
-                        if (cacheDir != null) {
-                            String cachePath = cacheDir.getAbsolutePath();
-                            String filePath = file.getAbsolutePath();
-                            if (!TextUtils.isEmpty(cachePath) && !TextUtils.isEmpty(filePath) && filePath.startsWith(cachePath)) {
-                                existingLocalFile = file;
-                                if (BuildVars.LOGS_ENABLED) {
-                                    FileLog.d("wd 预览查找-忽略db缓存路径 dc=" + dcId + " id=" + documentId + " path=" + filePath);
-                                }
-                            } else {
-                                return file;
-                            }
-                        } else {
-                            return file;
-                        }
-                    } else {
                     return file;
-                    }
                 }
             }
         }
@@ -1837,6 +1820,19 @@ public class FileLoader extends BaseController {
 
         if (!attachFile.exists() && !dir.equals(getDirectory(MEDIA_DIR_CACHE))) {
             attachFile = new File(getDirectory(MEDIA_DIR_CACHE), attachFileName);
+        }
+        //wd 对于视频文件，如果Nnngram Video目录找不到，尝试从数据库查找
+        if (!attachFile.exists() && type == MEDIA_DIR_VIDEO && documentId != 0) {
+            String path = getInstance(UserConfig.selectedAccount).getFileDatabase().getPath(documentId, dcId, type, useFileDatabaseQueue);
+            if (path != null) {
+                File file = new File(path);
+                if (file.exists()) {
+                    if (BuildVars.LOGS_ENABLED) {
+                        FileLog.d("wd 预览查找-视频文件从数据库找到 " + file.getAbsolutePath());
+                    }
+                    return file;
+                }
+            }
         }
         if (!attachFile.exists() && existingLocalFile != null && existingLocalFile.exists()) {
             if (BuildVars.LOGS_ENABLED) {
