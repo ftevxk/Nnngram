@@ -396,6 +396,11 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name="xyz.nextalone.nnngram.activity.AiAdKeywordsEditorActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+            android:hardwareAccelerated="@bool/useHardwareAcceleration"
+            android:windowSoftInputMode="adjustPan" />
 <!--        <activity-->
 <!--            android:name="org.telegram.ui.FeedWidgetConfigActivity"-->
 <!--            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"-->

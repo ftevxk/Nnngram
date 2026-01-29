@@ -67,6 +67,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LanguageDetector;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessageTopicAnalyzer;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
@@ -80,9 +81,18 @@ import org.telegram.ui.Components.CornerPath;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
@@ -1546,18 +1556,13 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                     if (keyword.isEmpty()) {
                         return true;
                     }
-                    
-                    // 使用ConfigManager保存关键词到广告屏蔽列表
-                    String currentFilteredMessages = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
-                    if (!currentFilteredMessages.isEmpty() && !currentFilteredMessages.endsWith("|")) {
-                        currentFilteredMessages += "|";
-                    }
-                    currentFilteredMessages += keyword;
-                    ConfigManager.putString(Defines.messageFilter, currentFilteredMessages);
-                    
+
+                    //wd 将关键词添加到AI广告关键词文件
+                    addKeywordToAiAdFilter(keyword);
+
                     // 显示提示
                     Toast.makeText(textSelectionOverlay.getContext(), LocaleController.getString(R.string.blockKeywordAdded), Toast.LENGTH_SHORT).show();
-                    
+
                     hideActions();
                     clear(true);
                     return true;
@@ -3455,5 +3460,87 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
 
     protected boolean canCopy() {
         return true;
+    }
+
+    //wd 将关键词添加到AI广告关键词文件
+    private void addKeywordToAiAdFilter(String keyword) {
+        try {
+            //wd 获取关键词文件路径
+            File externalDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+            File nnngramFilesDir = new File(externalDir, "Nnngram Files");
+            File aiFilterDir = new File(nnngramFilesDir, "ai_ad_filter");
+            if (!aiFilterDir.exists()) {
+                aiFilterDir.mkdirs();
+            }
+            File keywordsFile = new File(aiFilterDir, "ad_keywords.txt");
+
+            //wd 如果文件不存在，从assets复制
+            if (!keywordsFile.exists()) {
+                copyKeywordsFromAssets(keywordsFile);
+            }
+
+            //wd 读取现有内容，避免重复
+            Set<String> existingKeywords = loadExistingKeywords(keywordsFile);
+            if (existingKeywords.contains(keyword)) {
+                return; //wd 关键词已存在，不重复添加
+            }
+
+            //wd 追加关键词到文件，权重1.0（最高），分类为ad（广告）
+            FileWriter writer = new FileWriter(keywordsFile, true);
+            writer.write("\n" + keyword + ",1.0,ad\n");
+            writer.close();
+            FileLog.d("wd 手动添加关键词: " + keyword + " 权重=1.0 分类=ad");
+
+            //wd 重新加载关键词到分析器
+            MessageTopicAnalyzer analyzer = MessageTopicAnalyzer.getInstance();
+            if (analyzer != null) {
+                analyzer.reloadKeywords();
+            }
+
+            FileLog.d("wd 已添加用户选择的关键词: " + keyword);
+        } catch (IOException e) {
+            FileLog.e("wd 添加关键词失败", e);
+        }
+    }
+
+    //wd 从assets复制默认关键词文件
+    private void copyKeywordsFromAssets(File destFile) {
+        try {
+            InputStream is = ApplicationLoader.applicationContext.getAssets().open("ai_ad_filter/ad_keywords.txt");
+            FileOutputStream fos = new FileOutputStream(destFile);
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                fos.write(buffer, 0, read);
+            }
+            is.close();
+            fos.close();
+            FileLog.d("wd 已复制默认关键词文件");
+        } catch (IOException e) {
+            FileLog.e("wd 复制关键词文件失败", e);
+        }
+    }
+
+    //wd 加载已存在的关键词
+    private Set<String> loadExistingKeywords(File file) throws IOException {
+        Set<String> keywords = new HashSet<>();
+        if (!file.exists()) {
+            return keywords;
+        }
+
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            line = line.trim();
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            String[] parts = line.split(",");
+            if (parts.length > 0) {
+                keywords.add(parts[0].trim());
+            }
+        }
+        reader.close();
+        return keywords;
     }
 }

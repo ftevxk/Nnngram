@@ -378,7 +378,7 @@ public class ApplicationLoader extends Application {
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();
 
-        FileLog.d("wd ApplicationLoader: initializing MessageAiAdFilter");
+        FileLog.d("wd ApplicationLoader: 初始化 MessageAiAdFilter");
         MessageAiAdFilter.getInstance(ApplicationLoader.applicationContext).initialize();
     }
 

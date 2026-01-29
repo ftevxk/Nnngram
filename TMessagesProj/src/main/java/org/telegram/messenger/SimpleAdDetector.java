@@ -383,7 +383,7 @@ public class SimpleAdDetector {
             try {
                 adPatterns.add(Pattern.compile(pattern, Pattern.CASE_INSENSITIVE));
             } catch (Exception e) {
-                FileLog.e("wd SimpleAdDetector: invalid pattern: " + pattern, e);
+                FileLog.e("wd SimpleAdDetector: 无效的正则模式: " + pattern, e);
             }
         }
     }

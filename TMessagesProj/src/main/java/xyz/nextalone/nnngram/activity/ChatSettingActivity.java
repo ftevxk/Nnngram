@@ -423,7 +423,8 @@ public class ChatSettingActivity extends BaseActivity {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
         } else if (position == messageFiltersRow) {
-            createMessageFilterSetter(this, getContext(), resourcesProvider);
+            //wd 跳转到AI广告关键词编辑器
+            presentFragment(new AiAdKeywordsEditorActivity());
         } else if (position == aiAdFilterRow) {
             boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false);
             ConfigManager.putBoolean(Defines.aiAdFilterEnabled, newValue);
@@ -703,11 +704,11 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndValue(LocaleController.getString("MarkdownParser", R.string.MarkdownParser), Config.newMarkdownParser ? "Nnngram" : "Telegram", payload,
                             position + 1 != markdown2Row);
                     } else if (position == messageFiltersRow) {
-                        textCell.setText(LocaleController.getString("MessageFilter", R.string.MessageFilter), payload);
+                        textCell.setText(LocaleController.getString("AiAdKeywords", R.string.AiAdKeywords), payload);
                     } else if (position == aiAdFilterThresholdRow) {
                         MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-                        float threshold = filter != null ? filter.getThreshold() : 0.85f;
-                        textCell.setTextAndValue(LocaleController.getString("AiAdFilterThreshold", R.string.AiAdFilterThreshold), 
+                        float threshold = filter != null ? filter.getCoverageThreshold() : 0.5f;
+                        textCell.setTextAndValue(LocaleController.getString("AiAdFeatureCoverage", R.string.AiAdFeatureCoverage),
                             String.valueOf((int) (threshold * 100)) + "%", payload, true);
                     }
                     break;
@@ -1408,21 +1409,21 @@ public class ChatSettingActivity extends BaseActivity {
 
     private void showAiAdFilterThresholdDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle(LocaleController.getString("AiAdFilterThreshold", R.string.AiAdFilterThreshold));
+        builder.setTitle(LocaleController.getString("AiAdFeatureCoverage", R.string.AiAdFeatureCoverage));
 
         LinearLayout contentLayout = new LinearLayout(getContext());
         contentLayout.setOrientation(LinearLayout.VERTICAL);
         contentLayout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), 0);
 
         TextView descView = new TextView(getContext());
-        descView.setText(LocaleController.getString("AiAdFilterThresholdDesc", R.string.AiAdFilterThresholdDesc));
+        descView.setText(LocaleController.getString("AiAdFeatureCoverageDesc", R.string.AiAdFeatureCoverageDesc));
         descView.setTextColor(Theme.getColor(Theme.key_dialogTextGray));
         descView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
         contentLayout.addView(descView);
 
         EditTextBoldCursor editText = new EditTextBoldCursor(getContext());
         MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-        float currentThreshold = filter != null ? filter.getThreshold() : 0.85f;
+        float currentThreshold = filter != null ? filter.getCoverageThreshold() : 0.5f;
         editText.setText(String.valueOf((int) (currentThreshold * 100)));
         editText.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         editText.setHint("0-100");
@@ -1433,31 +1434,16 @@ public class ChatSettingActivity extends BaseActivity {
         editParams.topMargin = AndroidUtilities.dp(12);
         contentLayout.addView(editText, editParams);
 
-        CheckBox checkBox = new CheckBox(getContext());
-        boolean currentStrictMode = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterStrictMode, false);
-        checkBox.setChecked(currentStrictMode);
-        checkBox.setText(LocaleController.getString("AiAdFilterStrictMode", R.string.AiAdFilterStrictMode));
-        checkBox.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-        LinearLayout.LayoutParams checkParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        checkParams.topMargin = AndroidUtilities.dp(16);
-        contentLayout.addView(checkBox, checkParams);
-
         builder.setView(contentLayout);
         builder.setPositiveButton(LocaleController.getString("Save", R.string.Save), (dialog, which) -> {
             try {
                 int value = Integer.parseInt(editText.getText().toString());
                 float threshold = Math.max(0, Math.min(100, value)) / 100f;
-                boolean strictMode = checkBox.isChecked();
                 MessageAiAdFilter filter4 = MessageAiAdFilter.getInstance();
                 if (filter4 != null) {
-                    filter4.setThreshold(threshold);
-                    filter4.setStrictMode(strictMode);
+                    filter4.setCoverageThreshold(threshold);
                 }
-                ConfigManager.putFloat(Defines.aiAdFilterThreshold, threshold);
-                ConfigManager.putBoolean(Defines.aiAdFilterStrictMode, strictMode);
+                ConfigManager.putFloat(Defines.aiAdFeatureCoverageThreshold, threshold);
             } catch (NumberFormatException e) {
                 AlertUtil.showToast("Invalid value");
             }

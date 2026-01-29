@@ -17038,7 +17038,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     getMessagesStorage().setLastPtsValue(updates.pts);
                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                     MessageObject obj = new MessageObject(currentAccount, message, isDialogCreated, isDialogCreated);
-                    FileLog.d("wd AI ad filter: processing message " + obj.getId());
+                    FileLog.d("wd AI广告过滤器: 处理消息 " + obj.getId());
                     ArrayList<MessageObject> objArr = new ArrayList<>();
                     objArr.add(obj);
                     ArrayList<TLRPC.Message> arr = new ArrayList<>();
@@ -17699,9 +17699,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
                     MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-                    FileLog.d("wd debug: filter=" + (filter != null) + ", enabled=" + (filter != null ? filter.isEnabled() : "N/A"));
+                    FileLog.d("wd 调试: 过滤器=" + (filter != null) + ", 启用=" + (filter != null ? filter.isEnabled() : "N/A"));
                     if (filter != null && filter.shouldFilter(obj)) {
-                        FileLog.d("wd debug: filtered message " + obj.getId());
+                        FileLog.d("wd 调试: 已过滤消息 " + obj.getId());
                         continue;
                     }
                     if (obj.type == MessageObject.TYPE_ACTION_PHOTO) {
@@ -21756,10 +21756,10 @@ public class MessagesController extends BaseController implements NotificationCe
             //wd 检查是否需要直接打开媒体页面
             String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
             boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
-            FileLog.d("wd MessagesController.openChatOrProfileWith: openMediaConfig=" + openMediaConfig + ", dialogId=" + dialogId + ", isEnabled=" + isEnabled + ", type=" + type);
+            FileLog.d("wd MessagesController.openChatOrProfileWith: 打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialogId + ", 启用=" + isEnabled + ", 类型=" + type);
             if (isEnabled && type != 0) {
                 //wd 直接打开媒体页面
-                FileLog.d("wd MessagesController.openChatOrProfileWith: 直接打开媒体页面，dialogId=" + dialogId);
+                FileLog.d("wd MessagesController.openChatOrProfileWith: 直接打开媒体页面，对话ID=" + dialogId);
                 Bundle mediaArgs = new Bundle();
                 mediaArgs.putInt("type", MediaActivity.TYPE_MEDIA);
                 mediaArgs.putLong("dialog_id", dialogId);

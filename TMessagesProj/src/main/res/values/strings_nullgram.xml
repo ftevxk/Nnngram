@@ -344,32 +344,6 @@
     <string name="DownloadingStickerSet">Downloading sticker set…</string>
     <string name="IncompleteDownload">Download timed out, please check your network</string>
     <string name="StickerPackNotFound">Sticker pack not found.</string>
-    <string name="MessageFilter">Message Filter</string>
-    <string name="Pattern">Pattern</string>
-    <string name="MessageFilterDesc">Use regular expressions to match messages, and the matched messages will be hidden.
-Leave it blank to disable it
-
-Regex Rules Examples:
-1. Multiple keywords separated by | (e.g.: ad|promotion|marketing)
-2. Case insensitive (default)
-3. Support .* for wildcard matching (e.g.: https?://.*\.com)
-4. Support ^ for start matching (e.g.: ^pinned)
-5. Support $ for end matching (e.g.: thanks$)
-6. Support \d+ for digit matching (e.g.: price\d+yuan)
-7. Support \w+ for word matching (e.g.: user\w+)
-
-Usage Notes:
-- Use | between keywords for OR logic
-- . matches any single character
-- * matches 0 or more of the preceding character
-- + matches 1 or more of the preceding character
-- ? matches 0 or 1 of the preceding character</string>
-    <string name="AiAdFilter">AI Ad Filter</string>
-    <string name="AiAdFilterDesc">Use AI model to automatically filter gambling/promotion ads. Messages detected as ads will be hidden.</string>
-    <string name="AiAdFilterThreshold">AI Ad Filter Detection Sensitivity</string>
-    <string name="AiAdFilterThresholdDesc">Higher sensitivity may cause more false positives. Recommended: 0.85</string>
-    <string name="AiAdFilterStrictMode">Strict Mode</string>
-    <string name="AiAdFilterStrictModeDesc">More aggressive filtering, may block more legitimate messages.</string>
     <string name="SaveToDownloadCount_zero">Saving %1$d files to Download</string>
     <string name="SaveToDownloadCount_one">Saving %1$d file to Download</string>
     <string name="SaveToDownloadCount_two">Saving %1$d files to Download</string>
@@ -379,7 +353,7 @@ Usage Notes:
     <string name="InvalidPattern">Invalid Pattern</string>
     <string name="sendLargePhoto">Send large photo</string>
     <string name="Details">Details</string>
-  <string name="DontAskAgain">Don\'t ask again</string>
+    <string name="DontAskAgain">Don\'t ask again</string>
     <string name="NoFilesFound">No files found</string>
     <string name="NoFilesInfo">No file\'s info</string>
     <string name="SearchRecentFiles">Search recent files</string>
@@ -477,4 +451,37 @@ Usage Notes:
     <string name="removeBlockKeyword">Remove</string>
     <string name="removeBlockKeywordConfirm">Remove this keyword from block list?</string>
     <string name="Second">second</string>
+
+    <string name="MessageFilter">Message Filter</string>
+    <string name="Pattern">Pattern</string>
+    <string name="MessageFilterDesc">Use regular expressions to match messages, and the matched messages will be hidden.
+Leave it blank to disable it
+
+Regex Rules Examples:
+1. Multiple keywords separated by | (e.g.: ad|promotion|marketing)
+2. Case insensitive (default)
+3. Support .* for wildcard matching (e.g.: https?://.*\.com)
+4. Support ^ for start matching (e.g.: ^pinned)
+5. Support $ for end matching (e.g.: thanks$)
+6. Support \d+ for digit matching (e.g.: price\d+yuan)
+7. Support \w+ for word matching (e.g.: user\w+)
+
+Usage Notes:
+- Use | between keywords for OR logic
+- . matches any single character
+- * matches 0 or more of the preceding character
+- + matches 1 or more of the preceding character
+- ? matches 0 or 1 of the preceding character</string>
+    <string name="AiAdKeywords">AI Ad Keywords</string>
+    <string name="AiAdKeywordsDesc">Manage AI ad filter keywords. Each line one keyword.</string>
+    <string name="RestoreDefault">Restore Default</string>
+    <string name="RestoreDefaultConfirm">Are you sure you want to restore default keywords? This will overwrite your custom keywords.</string>
+    <string name="AiAdFilter">AI Ad Filter</string>
+    <string name="AiAdFilterDesc">Use AI model to automatically filter gambling/promotion ads. Messages detected as ads will be hidden.</string>
+    <string name="AiAdFeatureCoverage">AI Ad Feature Coverage</string>
+    <string name="AiAdFeatureCoverageDesc">Higher coverage threshold means stricter filtering. Recommended: 50%</string>
+    <string name="AiAdFilterThreshold">AI Ad Filter Detection Sensitivity</string>
+    <string name="AiAdFilterThresholdDesc">Higher sensitivity may cause more false positives. Recommended: 0.85</string>
+    <string name="AiAdFilterStrictMode">Strict Mode</string>
+    <string name="AiAdFilterStrictModeDesc">More aggressive filtering, may block more legitimate messages.</string>
 </resources>

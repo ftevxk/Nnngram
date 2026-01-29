@@ -2246,15 +2246,15 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 //wd 检查当前对话是否已设置直接打开媒体对话
                 String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
                 boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
-                FileLog.d("wd SharedMediaLayout: 初始化openMediaDirectlyItem，openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
+                FileLog.d("wd SharedMediaLayout: 初始化直接打开媒体项，打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialog_id + ", 启用=" + isEnabled);
                 openMediaDirectlyItem.setChecked(isEnabled);
                 openMediaDirectlyItem.setOnClickListener(v -> {
                     //wd 切换直接打开媒体对话设置
                     String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                    FileLog.d("wd SharedMediaLayout: 点击openMediaDirectlyItem，currentConfig=" + currentConfig + ", dialog_id=" + dialog_id);
+                    FileLog.d("wd SharedMediaLayout: 点击直接打开媒体项，当前配置=" + currentConfig + ", 对话ID=" + dialog_id);
                     StringBuilder newConfig = new StringBuilder();
                     boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialog_id + ",");
-                    FileLog.d("wd SharedMediaLayout: wasEnabled=" + wasEnabled);
+                    FileLog.d("wd SharedMediaLayout: 之前启用=" + wasEnabled);
                     
                     if (wasEnabled) {
                         //wd 移除当前对话ID
@@ -2283,7 +2283,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     
                     //wd 保存更新后的配置
                     String finalConfig = newConfig.toString();
-                    FileLog.d("wd SharedMediaLayout: 保存配置，finalConfig=" + finalConfig);
+                    FileLog.d("wd SharedMediaLayout: 保存配置，最终配置=" + finalConfig);
                     ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
                     //wd 更新菜单项状态
                     openMediaDirectlyItem.setChecked(!wasEnabled);

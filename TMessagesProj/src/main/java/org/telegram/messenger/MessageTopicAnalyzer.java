@@ -26,7 +26,11 @@ import androidx.annotation.NonNull;
 import org.tensorflow.lite.Interpreter;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -53,11 +57,55 @@ public class MessageTopicAnalyzer {
     private List<String> topicLabels;
     private final AtomicBoolean topicModelLoaded = new AtomicBoolean(false);
     
-    // 广告分类模型
-    private Interpreter adInterpreter;
-    private MappedByteBuffer adModelBuffer;
-    private List<String> adLabels;
-    private final AtomicBoolean adModelLoaded = new AtomicBoolean(false);
+    //wd 特征覆盖率回归模型
+    private Interpreter coverageInterpreter;
+    private MappedByteBuffer coverageModelBuffer;
+    private final AtomicBoolean coverageModelLoaded = new AtomicBoolean(false);
+
+    //wd 关键词配置文件路径（在Nnngram Files目录下，方便用户自定义）
+    private static final String KEYWORDS_ASSETS_PATH = "ai_ad_filter/ad_keywords.txt";
+    private List<KeywordEntry> adKeywords;        //wd 广告关键词
+    private List<KeywordEntry> consultKeywords;   //wd 咨询关键词
+    private List<KeywordEntry> chatKeywords;      //wd 闲聊关键词
+    private List<KeywordEntry> greetingKeywords;  //wd 问候关键词
+    private final AtomicBoolean keywordsLoaded = new AtomicBoolean(false);
+
+    //wd 获取外部存储的关键词文件路径
+    private File getKeywordsFile() {
+        File externalDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+        File nnngramFilesDir = new File(externalDir, "Nnngram Files");
+        File aiFilterDir = new File(nnngramFilesDir, "ai_ad_filter");
+        if (!aiFilterDir.exists()) {
+            aiFilterDir.mkdirs();
+        }
+        return new File(aiFilterDir, "ad_keywords.txt");
+    }
+
+    //wd 确保关键词文件存在，不存在则从assets复制
+    private void ensureKeywordsFile() {
+        File keywordsFile = getKeywordsFile();
+        if (!keywordsFile.exists()) {
+            copyKeywordsFromAssets(keywordsFile);
+        }
+    }
+
+    //wd 从assets复制关键词文件到外部存储
+    private void copyKeywordsFromAssets(File destFile) {
+        try {
+            InputStream is = context.getAssets().open(KEYWORDS_ASSETS_PATH);
+            FileOutputStream fos = new FileOutputStream(destFile);
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                fos.write(buffer, 0, read);
+            }
+            is.close();
+            fos.close();
+            FileLog.d("wd 关键词文件已复制到: " + destFile.getAbsolutePath());
+        } catch (IOException e) {
+            FileLog.e("wd 复制关键词文件失败", e);
+        }
+    }
     
     private final AtomicBoolean isInitializing = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -83,6 +131,16 @@ public class MessageTopicAnalyzer {
         OFFER,          // 提供
         INVITE,         // 邀请
         URGE            // 催促/诱导
+    }
+
+    //wd 关键词条目
+    private static class KeywordEntry {
+        final String word;
+        final float weight;
+        KeywordEntry(String word, float weight) {
+            this.word = word;
+            this.weight = weight;
+        }
     }
 
     // 分析结果
@@ -119,19 +177,18 @@ public class MessageTopicAnalyzer {
         }
     }
 
-    // 模型路径
+    //wd 模型路径
     private static final String TOPIC_MODEL_PATH = "ai_ad_filter/topic_model.tflite";
     private static final String TOPIC_LABELS_PATH = "ai_ad_filter/topic_labels.txt";
     private static final String TOPIC_VOCAB_PATH = "ai_ad_filter/topic_vocabulary.txt";
     private static final String TOPIC_IDF_PATH = "ai_ad_filter/topic_idf.txt";
-    private static final String AD_MODEL_PATH = "ai_ad_filter/model.tflite";
-    private static final String AD_LABELS_PATH = "ai_ad_filter/labels.txt";
-    private static final String AD_VOCAB_PATH = "ai_ad_filter/ad_vocabulary.txt";
-    private static final String AD_IDF_PATH = "ai_ad_filter/ad_idf.txt";
-    
-    // TF-IDF 向量化器
+    private static final String COVERAGE_MODEL_PATH = "ai_ad_filter/coverage_model.tflite";
+    private static final String COVERAGE_VOCAB_PATH = "ai_ad_filter/coverage_vocabulary.txt";
+    private static final String COVERAGE_IDF_PATH = "ai_ad_filter/coverage_idf.txt";
+
+    //wd TF-IDF 向量化器
     private TfidfVectorizer topicVectorizer;
-    private TfidfVectorizer adVectorizer;
+    private TfidfVectorizer coverageVectorizer;
 
     private MessageTopicAnalyzer() {
     }
@@ -155,36 +212,38 @@ public class MessageTopicAnalyzer {
     }
 
     private void loadModels() {
-        // 加载主题分析模型
+        //wd 加载主题分析模型
         loadTopicModel();
-        // 加载广告分类模型
-        loadAdModel();
+        //wd 加载特征覆盖率模型
+        loadCoverageModel();
+        //wd 加载关键词配置文件
+        loadKeywords();
         isInitializing.set(false);
     }
 
     private void loadTopicModel() {
         synchronized (modelLock) {
             try {
-                FileLog.d("wd MessageTopicAnalyzer: loading topic model from " + TOPIC_MODEL_PATH);
+                FileLog.d("wd MessageTopicAnalyzer: 加载主题模型从 " + TOPIC_MODEL_PATH);
                 topicModelBuffer = loadModelFile(TOPIC_MODEL_PATH);
                 if (topicModelBuffer == null) {
-                    FileLog.e("wd MessageTopicAnalyzer: topic model file not found");
+                    FileLog.e("wd MessageTopicAnalyzer: 主题模型文件未找到");
                     return;
                 }
 
                 topicLabels = loadLabels(TOPIC_LABELS_PATH);
                 if (topicLabels == null || topicLabels.isEmpty()) {
-                    FileLog.e("wd MessageTopicAnalyzer: failed to load topic labels");
+                    FileLog.e("wd MessageTopicAnalyzer: 加载主题标签失败");
                     return;
                 }
-                FileLog.d("wd MessageTopicAnalyzer: loaded " + topicLabels.size() + " topic labels: " + topicLabels);
+                FileLog.d("wd MessageTopicAnalyzer: 已加载 " + topicLabels.size() + " 个主题标签: " + topicLabels);
 
                 // 加载 TF-IDF 向量化器
                 try {
                     topicVectorizer = new TfidfVectorizer(context, TOPIC_VOCAB_PATH, TOPIC_IDF_PATH);
-                    FileLog.d("wd MessageTopicAnalyzer: topic vectorizer loaded, feature size=" + topicVectorizer.getFeatureSize());
+                    FileLog.d("wd MessageTopicAnalyzer: 主题向量化器已加载, 特征大小=" + topicVectorizer.getFeatureSize());
                 } catch (IOException e) {
-                    FileLog.e("wd MessageTopicAnalyzer: failed to load topic vectorizer", e);
+                    FileLog.e("wd MessageTopicAnalyzer: 加载主题向量化器失败", e);
                     return;
                 }
 
@@ -193,48 +252,126 @@ public class MessageTopicAnalyzer {
                 topicInterpreter = new Interpreter(topicModelBuffer, options);
 
                 topicModelLoaded.set(true);
-                FileLog.d("wd MessageTopicAnalyzer: topic model loaded successfully");
+                FileLog.d("wd MessageTopicAnalyzer: 主题模型加载成功");
             } catch (Exception e) {
-                FileLog.e("wd MessageTopicAnalyzer: topic model initialization error", e);
+                FileLog.e("wd MessageTopicAnalyzer: 主题模型初始化错误", e);
             }
         }
     }
 
-    private void loadAdModel() {
+    //wd 加载特征覆盖率回归模型
+    private void loadCoverageModel() {
         synchronized (modelLock) {
             try {
-                FileLog.d("wd MessageTopicAnalyzer: loading ad model from " + AD_MODEL_PATH);
-                adModelBuffer = loadModelFile(AD_MODEL_PATH);
-                if (adModelBuffer == null) {
-                    FileLog.e("wd MessageTopicAnalyzer: ad model file not found");
+                FileLog.d("wd MessageTopicAnalyzer: 加载覆盖率模型从 " + COVERAGE_MODEL_PATH);
+                coverageModelBuffer = loadModelFile(COVERAGE_MODEL_PATH);
+                if (coverageModelBuffer == null) {
+                    FileLog.e("wd MessageTopicAnalyzer: 覆盖率模型文件未找到");
                     return;
                 }
 
-                adLabels = loadLabels(AD_LABELS_PATH);
-                if (adLabels == null || adLabels.isEmpty()) {
-                    FileLog.e("wd MessageTopicAnalyzer: failed to load ad labels");
-                    return;
-                }
-                FileLog.d("wd MessageTopicAnalyzer: loaded " + adLabels.size() + " ad labels: " + adLabels);
-
-                // 加载 TF-IDF 向量化器
+                //wd 加载 TF-IDF 向量化器
                 try {
-                    adVectorizer = new TfidfVectorizer(context, AD_VOCAB_PATH, AD_IDF_PATH);
-                    FileLog.d("wd MessageTopicAnalyzer: ad vectorizer loaded, feature size=" + adVectorizer.getFeatureSize());
+                    coverageVectorizer = new TfidfVectorizer(context, COVERAGE_VOCAB_PATH, COVERAGE_IDF_PATH);
+                    FileLog.d("wd MessageTopicAnalyzer: 覆盖率向量化器已加载, 特征大小=" + coverageVectorizer.getFeatureSize());
                 } catch (IOException e) {
-                    FileLog.e("wd MessageTopicAnalyzer: failed to load ad vectorizer", e);
+                    FileLog.e("wd MessageTopicAnalyzer: 加载覆盖率向量化器失败", e);
                     return;
                 }
 
                 Interpreter.Options options = new Interpreter.Options();
                 options.setNumThreads(2);
-                adInterpreter = new Interpreter(adModelBuffer, options);
+                coverageInterpreter = new Interpreter(coverageModelBuffer, options);
 
-                adModelLoaded.set(true);
-                FileLog.d("wd MessageTopicAnalyzer: ad model loaded successfully");
+                coverageModelLoaded.set(true);
+                FileLog.d("wd MessageTopicAnalyzer: 覆盖率模型加载成功");
             } catch (Exception e) {
-                FileLog.e("wd MessageTopicAnalyzer: ad model initialization error", e);
+                FileLog.e("wd MessageTopicAnalyzer: 覆盖率模型初始化错误", e);
             }
+        }
+    }
+
+    //wd 加载关键词配置文件
+    private void loadKeywords() {
+        synchronized (modelLock) {
+            if (keywordsLoaded.get()) {
+                return;
+            }
+
+            try {
+                //wd 确保关键词文件存在
+                ensureKeywordsFile();
+
+                File keywordsFile = getKeywordsFile();
+                FileLog.d("wd MessageTopicAnalyzer: 加载关键词文件 " + keywordsFile.getAbsolutePath());
+
+                BufferedReader reader = new BufferedReader(new FileReader(keywordsFile));
+
+                adKeywords = new ArrayList<>();
+                consultKeywords = new ArrayList<>();
+                chatKeywords = new ArrayList<>();
+                greetingKeywords = new ArrayList<>();
+
+                String line;
+                int lineNum = 0;
+                while ((line = reader.readLine()) != null) {
+                    lineNum++;
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) {
+                        continue;
+                    }
+
+                    String[] parts = line.split(",");
+                    if (parts.length < 3) {
+                        continue;
+                    }
+
+                    String word = parts[0].trim();
+                    float weight;
+                    try {
+                        weight = Float.parseFloat(parts[1].trim());
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                    String category = parts[2].trim().toLowerCase();
+
+                    KeywordEntry entry = new KeywordEntry(word, weight);
+
+                    switch (category) {
+                        case "ad":
+                            adKeywords.add(entry);
+                            break;
+                        case "consult":
+                            consultKeywords.add(entry);
+                            break;
+                        case "chat":
+                            chatKeywords.add(entry);
+                            break;
+                        case "greeting":
+                            greetingKeywords.add(entry);
+                            break;
+                    }
+                }
+
+                reader.close();
+
+                FileLog.d("wd MessageTopicAnalyzer: 关键词加载完成 - 广告词:" + adKeywords.size() +
+                    ", 咨询词:" + consultKeywords.size() +
+                    ", 闲聊词:" + chatKeywords.size() +
+                    ", 问候词:" + greetingKeywords.size());
+
+                keywordsLoaded.set(true);
+            } catch (IOException e) {
+                FileLog.e("wd MessageTopicAnalyzer: 加载关键词文件失败", e);
+            }
+        }
+    }
+
+    //wd 重新加载关键词（用于同步后刷新）
+    public void reloadKeywords() {
+        synchronized (modelLock) {
+            keywordsLoaded.set(false);
+            loadKeywords();
         }
     }
 
@@ -263,7 +400,7 @@ public class MessageTopicAnalyzer {
             }
             reader.close();
         } catch (IOException e) {
-            FileLog.e("wd MessageTopicAnalyzer: failed to load labels from " + path, e);
+            FileLog.e("wd MessageTopicAnalyzer: 从 " + path + " 加载标签失败", e);
             return null;
         }
         return labelList;
@@ -285,52 +422,67 @@ public class MessageTopicAnalyzer {
             try {
                 topicType = classifyTopic(normalizedText);
                 fromTopicModel = true;
-                FileLog.d("wd MessageTopicAnalyzer: topic classified by model: " + topicType);
+                FileLog.d("wd MessageTopicAnalyzer: 主题模型分类结果: " + topicType);
             } catch (Exception e) {
-                FileLog.e("wd MessageTopicAnalyzer: topic model classification failed", e);
+                FileLog.e("wd MessageTopicAnalyzer: 主题模型分类失败", e);
             }
         }
         
-        // 如果主题模型失败，使用规则引擎
+        //wd 如果主题模型失败，使用规则引擎
         if (topicType == TopicType.UNKNOWN) {
             topicType = analyzeTopicTypeRuleBased(normalizedText.toLowerCase(), extractEntities(normalizedText));
         }
-        
-        // 阶段2: 广告分类
-        float adProbability = 0f;
-        boolean fromAdModel = false;
-        
-        if (adModelLoaded.get() && adInterpreter != null) {
+
+        //wd 阶段2: 生成主题总结
+        String topicSummary = generateTopicSummary(normalizedText, topicType);
+        FileLog.d("wd MessageTopicAnalyzer: 主题摘要: " + topicSummary);
+
+        //wd 阶段3: 计算特征覆盖率（AI模型 + 规则引擎辅助）
+        float aiCoverage = 0f;
+        float ruleCoverage = 0f;
+        boolean fromCoverageModel = false;
+
+        //wd 使用AI模型计算覆盖率
+        if (coverageModelLoaded.get() && coverageInterpreter != null) {
             try {
-                adProbability = classifyAd(normalizedText);
-                fromAdModel = true;
-                FileLog.d("wd MessageTopicAnalyzer: ad probability from model: " + adProbability);
+                aiCoverage = calculateCoverage(normalizedText);
+                fromCoverageModel = true;
+                FileLog.d("wd MessageTopicAnalyzer: AI覆盖率 = " + aiCoverage);
             } catch (Exception e) {
-                FileLog.e("wd MessageTopicAnalyzer: ad model classification failed", e);
+                FileLog.e("wd MessageTopicAnalyzer: 覆盖率计算失败", e);
             }
         }
+
+        //wd 规则引擎辅助计算
+        ruleCoverage = calculateRuleBasedCoverage(normalizedText, topicType);
+        FileLog.d("wd MessageTopicAnalyzer: 规则覆盖率 = " + ruleCoverage);
+
+        //wd 根据主题类型调整AI覆盖率
+        //wd 白名单主题（闲聊、咨询、问候）降低AI覆盖率
+        float adjustedAiCoverage = adjustCoverageByTopicType(aiCoverage, topicType);
+        FileLog.d("wd MessageTopicAnalyzer: 调整后AI覆盖率 = " + adjustedAiCoverage);
+
+        //wd 综合得分 = 调整后AI覆盖率 * 0.7 + 规则引擎得分 * 0.3
+        //wd 增加规则引擎权重，降低AI模型权重
+        float finalCoverage = adjustedAiCoverage * 0.7f + ruleCoverage * 0.3f;
+        FileLog.d("wd MessageTopicAnalyzer: 最终覆盖率 = " + finalCoverage);
         
-        // 如果广告模型失败，使用规则引擎
-        if (!fromAdModel) {
-            adProbability = calculateAdProbabilityRuleBased(topicType, normalizedText.toLowerCase());
-        }
-        
-        // 提取实体和特征
+        //wd 提取实体和特征
         Set<String> entities = extractEntities(normalizedText);
         Map<String, Float> features = extractFeatures(normalizedText, entities);
-        
-        // 计算推广分数
+
+        //wd 计算推广分数
         float promotionScore = calculatePromotionScore(normalizedText.toLowerCase(), entities);
-        
-        // 分析意图
+
+        //wd 分析意图
         IntentType intentType = analyzeIntentTypeRuleBased(normalizedText.toLowerCase());
-        
-        // 生成摘要
-        String summary = generateSummary(normalizedText, topicType, entities);
+
+        //wd 生成摘要（包含主题总结）
+        String summary = generateSummary(normalizedText, topicType, entities, topicSummary);
 
         return new TopicAnalysis(
-            topicType, intentType, promotionScore, adProbability,
-            entities, features, summary, fromTopicModel, fromAdModel);
+            topicType, intentType, promotionScore, finalCoverage,
+            entities, features, summary, fromTopicModel, fromCoverageModel);
     }
 
     private TopicType classifyTopic(String text) {
@@ -346,7 +498,7 @@ public class MessageTopicAnalyzer {
                 
                 // 验证输入形状
                 if (input == null || input.length == 0 || input[0].length == 0) {
-                    FileLog.e("wd MessageTopicAnalyzer: invalid input shape from vectorizer");
+                    FileLog.e("wd MessageTopicAnalyzer: 向量化器输入形状无效");
                     return TopicType.UNKNOWN;
                 }
                 
@@ -358,7 +510,7 @@ public class MessageTopicAnalyzer {
                 
                 // 验证输出
                 if (output == null || output.length == 0 || output[0].length == 0) {
-                    FileLog.e("wd MessageTopicAnalyzer: model returned empty output");
+                    FileLog.e("wd MessageTopicAnalyzer: 模型返回空输出");
                     return TopicType.UNKNOWN;
                 }
                 
@@ -372,8 +524,8 @@ public class MessageTopicAnalyzer {
                     }
                 }
                 
-                FileLog.d("wd MessageTopicAnalyzer: topic classification result - index=" + maxIndex + 
-                    ", prob=" + maxProb + ", label=" + (maxIndex < topicLabels.size() ? topicLabels.get(maxIndex) : "unknown"));
+                FileLog.d("wd MessageTopicAnalyzer: 主题分类结果 - 索引=" + maxIndex +
+                    ", 概率=" + maxProb + ", 标签=" + (maxIndex < topicLabels.size() ? topicLabels.get(maxIndex) : "未知"));
                 
                 // 转换为TopicType
                 if (maxIndex < topicLabels.size()) {
@@ -381,55 +533,283 @@ public class MessageTopicAnalyzer {
                 }
                 return TopicType.UNKNOWN;
             } catch (Exception e) {
-                FileLog.e("wd MessageTopicAnalyzer: topic classification failed", e);
+                FileLog.e("wd MessageTopicAnalyzer: 主题分类失败", e);
                 return TopicType.UNKNOWN;
             }
         }
     }
 
-    private float classifyAd(String text) {
+    //wd 特征覆盖率核心方法 - 使用回归模型计算
+    //wd 输入：原始消息文本
+    //wd 输出：覆盖率分数（0.0 - 1.0）
+    private float calculateCoverage(String text) {
         synchronized (modelLock) {
-            if (adInterpreter == null || adLabels == null || adVectorizer == null) {
-                FileLog.w("wd MessageTopicAnalyzer: ad model not ready");
+            if (coverageInterpreter == null || coverageVectorizer == null) {
+                FileLog.w("wd MessageTopicAnalyzer: coverage model not ready");
                 return 0f;
             }
 
             try {
-                // 使用 TF-IDF 向量化器编码文本
-                float[][] input = adVectorizer.transform(text);
-                
-                // 验证输入形状
+                //wd 使用 TF-IDF 向量化器编码文本
+                float[][] input = coverageVectorizer.transform(text);
+
+                //wd 验证输入
                 if (input == null || input.length == 0 || input[0].length == 0) {
-                    FileLog.e("wd MessageTopicAnalyzer: invalid input shape from ad vectorizer");
+                    FileLog.w("wd MessageTopicAnalyzer: invalid input for coverage model");
                     return 0f;
                 }
-                
-                // 准备输出缓冲区
-                float[][] output = new float[1][adLabels.size()];
-                
-                // 运行模型
-                adInterpreter.run(input, output);
-                
-                // 验证输出
-                if (output == null || output.length == 0 || output[0].length == 0) {
-                    FileLog.e("wd MessageTopicAnalyzer: ad model returned empty output");
-                    return 0f;
-                }
-                
-                // 找到ad类别的概率
-                for (int i = 0; i < adLabels.size(); i++) {
-                    if ("ad".equalsIgnoreCase(adLabels.get(i))) {
-                        float adProb = output[0][i];
-                        FileLog.d("wd MessageTopicAnalyzer: ad classification result - prob=" + adProb);
-                        return adProb;
-                    }
-                }
-                return 0f;
+
+                //wd 准备输出缓冲区（回归模型输出单个值）
+                float[][] output = new float[1][1];
+
+                //wd 运行模型
+                coverageInterpreter.run(input, output);
+
+                //wd 获取覆盖率分数（0-1之间）
+                float coverage = output[0][0];
+
+                FileLog.d("wd MessageTopicAnalyzer: AI覆盖率计算结果 = " + coverage);
+                return coverage;
             } catch (Exception e) {
-                FileLog.e("wd MessageTopicAnalyzer: ad classification failed", e);
+                FileLog.e("wd MessageTopicAnalyzer: coverage calculation failed", e);
                 return 0f;
             }
         }
+    }
+
+    //wd 根据主题类型调整AI覆盖率
+    //wd 白名单主题降低覆盖率，避免误判正常消息
+    private float adjustCoverageByTopicType(float aiCoverage, TopicType topicType) {
+        switch (topicType) {
+            case CHAT:      //wd 闲聊
+            case GREETING:  //wd 问候
+                //wd 大幅降低覆盖率，这些主题几乎不可能是广告
+                return aiCoverage * 0.3f;
+            case CONSULTATION: //wd 咨询
+                //wd 适度降低覆盖率
+                return aiCoverage * 0.5f;
+            case NOTIFICATION: //wd 通知
+                //wd 轻微降低
+                return aiCoverage * 0.7f;
+            case PROMOTION:    //wd 推广
+            case TRANSACTION:  //wd 交易
+            case RECRUITMENT:  //wd 招聘
+                //wd 这些主题可能是广告，保持原值
+                return aiCoverage;
+            default:
+                return aiCoverage;
+        }
+    }
+
+    //wd 规则引擎辅助计算特征覆盖率
+    //wd 基于关键词文件动态计算得分，支持多词叠加，带组合判断和安全机制
+    //wd 修复：同一关键词多次出现会累加得分
+    private float calculateRuleBasedCoverage(String text, TopicType topicType) {
+        String lowerText = text.toLowerCase();
+        float rawScore = 0f;
+        int highWeightCount = 0;    //wd 高权重词计数 (>=0.8)
+        int mediumWeightCount = 0;  //wd 中权重词计数 (0.5-0.8)
+        int lowWeightCount = 0;     //wd 低权重词计数 (<0.5)
+        int normalWordCount = 0;    //wd 正常词计数
+
+        //wd 如果关键词文件已加载，使用动态关键词
+        if (keywordsLoaded.get() && adKeywords != null) {
+            //wd 广告关键词 - 动态叠加得分并分类计数（支持同一关键词多次出现累加）
+            for (KeywordEntry entry : adKeywords) {
+                //wd 统计关键词出现次数
+                int count = countKeywordOccurrences(lowerText, entry.word);
+                if (count > 0) {
+                    //wd 每次出现都累加得分
+                    rawScore += entry.weight * count;
+                    //wd 按权重分类计数（按出现次数计数）
+                    if (entry.weight >= 0.8) {
+                        highWeightCount += count;
+                    } else if (entry.weight >= 0.5) {
+                        mediumWeightCount += count;
+                    } else {
+                        lowWeightCount += count;
+                    }
+                    FileLog.d("wd 关键词命中: " + entry.word + " 次数=" + count + " 权重=" + entry.weight + " 累加得分=" + (entry.weight * count));
+                }
+            }
+
+            //wd 咨询关键词 - 针对consultation主题减分
+            if (topicType == TopicType.CONSULTATION && consultKeywords != null) {
+                for (KeywordEntry entry : consultKeywords) {
+                    if (lowerText.contains(entry.word)) {
+                        rawScore -= entry.weight;
+                        normalWordCount++;
+                    }
+                }
+            }
+
+            //wd 闲聊关键词 - 针对chat主题减分
+            if (topicType == TopicType.CHAT && chatKeywords != null) {
+                for (KeywordEntry entry : chatKeywords) {
+                    if (lowerText.contains(entry.word)) {
+                        rawScore -= entry.weight;
+                        normalWordCount++;
+                    }
+                }
+            }
+
+            //wd 问候关键词 - 针对greeting主题减分
+            if (topicType == TopicType.GREETING && greetingKeywords != null) {
+                for (KeywordEntry entry : greetingKeywords) {
+                    if (lowerText.contains(entry.word)) {
+                        rawScore -= entry.weight;
+                        normalWordCount++;
+                    }
+                }
+            }
+        } else {
+            //wd 回退到硬编码关键词（兼容旧版本）
+            //wd 强广告关键词（高权重）
+            String[] strongAdWords = {"博彩", "菠菜", "赌博", "赌球", "casino", "bet365", "百家乐", "老虎机",
+                "跑分", "上分", "下分", "usdt", "虚拟货币", "合约带单", "币圈", "空投", "刷单", "返利", "充值"};
+            for (String word : strongAdWords) {
+                if (lowerText.contains(word)) {
+                    rawScore += 0.4f;
+                    highWeightCount++;
+                }
+            }
+
+            //wd 跑分/收款码相关关键词（高权重）
+            String[] paymentAdWords = {"收款码", "代收", "代付", "码商", "码子", "收款", "支付", "转账",
+                "支付宝", "微信", "qq", "都能做", "一单一结", "几分钟", "结账", "零风险", "0风险"};
+            for (String word : paymentAdWords) {
+                if (lowerText.contains(word)) {
+                    rawScore += 0.35f;
+                    mediumWeightCount++;
+                }
+            }
+
+            //wd 中等广告关键词（中权重）
+            String[] mediumAdWords = {"首充", "代理招募", "月入过万", "稳赚不赔", "高额返佣",
+                "日赚", "秒到账", "信誉担保", "内部消息", "限时优惠", "机不可失", "利润", "福利红包", "做单"};
+            for (String word : mediumAdWords) {
+                if (lowerText.contains(word)) {
+                    rawScore += 0.25f;
+                    mediumWeightCount++;
+                }
+            }
+
+            //wd 轻微广告关键词（低权重）
+            String[] lightAdWords = {"联系", "加好友", "私聊"};
+            for (String word : lightAdWords) {
+                if (lowerText.contains(word)) {
+                    rawScore += 0.1f;
+                    lowWeightCount++;
+                }
+            }
+
+            //wd 咨询类关键词（减分）
+            if (topicType == TopicType.CONSULTATION) {
+                String[] consultWords = {"请问", "问一下", "咨询", "了解", "怎么", "如何", "多少", "什么",
+                    "哪里", "吗？", "？", "能否", "可以吗", "行吗", "建议", "推荐"};
+                for (String word : consultWords) {
+                    if (lowerText.contains(word)) {
+                        rawScore -= 0.3f;
+                        normalWordCount++;
+                    }
+                }
+            }
+
+            //wd 闲聊类关键词（减分）
+            if (topicType == TopicType.CHAT) {
+                String[] chatWords = {"你好", "在吗", "最近怎么样", "天气", "周末", "谢谢", "感谢",
+                    "哈哈", "呵呵", "好的", "ok", "嗯嗯", "是的", "没错", "对的"};
+                for (String word : chatWords) {
+                    if (lowerText.contains(word)) {
+                        rawScore -= 0.25f;
+                        normalWordCount++;
+                    }
+                }
+            }
+
+            //wd 问候类关键词（减分）
+            if (topicType == TopicType.GREETING) {
+                String[] greetingWords = {"早安", "晚安", "早上好", "晚上好", "你好", "您好", "大家好",
+                    "节日快乐", "生日快乐", "周末愉快", "新年快乐"};
+                for (String word : greetingWords) {
+                    if (lowerText.contains(word)) {
+                        rawScore -= 0.25f;
+                        normalWordCount++;
+                    }
+                }
+            }
+        }
+
+        //wd 组合判断逻辑 - 避免仅凭低权重词判定
+        float adjustedScore;
+        if (highWeightCount >= 1) {
+            //wd 有高权重词，使用原始得分（强广告特征）
+            adjustedScore = rawScore;
+        } else if (mediumWeightCount >= 2) {
+            //wd 2个以上中权重词
+            adjustedScore = rawScore * 0.8f;
+        } else if (mediumWeightCount >= 1 && lowWeightCount >= 2) {
+            //wd 1个中权重词 + 2个以上低权重词
+            adjustedScore = rawScore * 0.6f;
+        } else if (lowWeightCount >= 3) {
+            //wd 只有3个以上低权重词，大幅降低
+            adjustedScore = rawScore * 0.3f;
+        } else {
+            //wd 不满足条件，视为正常
+            adjustedScore = rawScore * 0.1f;
+        }
+
+        //wd 安全机制：如果正常词多于广告词，强制降低
+        int adWordCount = highWeightCount + mediumWeightCount + lowWeightCount;
+        if (normalWordCount > adWordCount) {
+            adjustedScore = adjustedScore * 0.2f;
+        }
+
+        //wd 根据主题类型额外调整
+        float finalScore;
+        switch (topicType) {
+            case CHAT:
+            case GREETING:
+                //wd 闲聊和问候主题，大幅降低得分
+                finalScore = adjustedScore * 0.3f;
+                break;
+            case CONSULTATION:
+                //wd 咨询主题，降低得分
+                finalScore = adjustedScore * 0.5f;
+                break;
+            case NOTIFICATION:
+                //wd 通知主题，轻微降低
+                finalScore = adjustedScore * 0.7f;
+                break;
+            default:
+                finalScore = adjustedScore;
+                break;
+        }
+
+        FileLog.d("wd MessageTopicAnalyzer: 规则引擎得分 - raw=" + String.format("%.2f", rawScore) +
+            " high=" + highWeightCount + " medium=" + mediumWeightCount + " low=" + lowWeightCount +
+            " normal=" + normalWordCount + " final=" + String.format("%.2f", finalScore));
+
+        //wd 确保分数在0-1范围内
+        return Math.max(0f, Math.min(1f, finalScore));
+    }
+
+    //wd 生成主题总结
+    //wd 基于主题类型和关键词提取核心内容
+    private String generateTopicSummary(String text, TopicType topicType) {
+        StringBuilder summary = new StringBuilder();
+        summary.append(topicType.toString().toLowerCase());
+
+        //wd 提取关键词
+        String lowerText = text.toLowerCase();
+        String[] keywords = {"博彩", "跑分", "上分", "充值", "返利", "微信", "qq", "优惠", "兼职", "赚钱"};
+        for (String keyword : keywords) {
+            if (lowerText.contains(keyword)) {
+                summary.append(", ").append(keyword);
+            }
+        }
+
+        return summary.toString();
     }
 
     // ========== 规则引擎方法（作为降级方案）==========
@@ -530,27 +910,79 @@ public class MessageTopicAnalyzer {
     private float calculateAdProbabilityRuleBased(TopicType topicType, String lowerText) {
         float probability = 0f;
 
+        // 根据主题类型设置基础概率
         switch (topicType) {
-            case PROMOTION: probability += 0.4f; break;
-            case TRANSACTION: probability += 0.35f; break;
-            case CONSULTATION: probability -= 0.2f; break;
-            case CHAT: probability -= 0.3f; break;
+            case PROMOTION: probability += 0.35f; break;
+            case TRANSACTION: probability += 0.30f; break;
+            case CONSULTATION: probability -= 0.25f; break;
+            case CHAT: probability -= 0.35f; break;
+            case GREETING: probability -= 0.30f; break;
+            case NOTIFICATION: probability -= 0.20f; break;
         }
 
-        String[] normalWords = {"我在", "我是", "我们", "讨论", "请问", "求助"};
+        // 强广告关键词（大幅加分）
+        String[] strongAdWords = {"博彩", "菠菜", "赌博", "赌球", " casino", "bet365", "百家乐", "老虎机",
+            "跑分", "上分", "下分", "USDT", "虚拟货币", "合约带单", "币圈", "空投"};
+        for (String word : strongAdWords) {
+            if (lowerText.contains(word)) {
+                probability += 0.25f;
+                break;
+            }
+        }
+
+        // 中等广告关键词（适度加分）
+        String[] mediumAdWords = {"充值返利", "首充", "代理招募", "月入过万", "稳赚不赔", "高额返佣",
+            "兼职刷单", "日赚", "秒到账", "信誉担保", "内部消息", "限时优惠", "机不可失"};
+        for (String word : mediumAdWords) {
+            if (lowerText.contains(word)) {
+                probability += 0.15f;
+                break;
+            }
+        }
+
+        // 正常聊天词汇（大幅减分）
+        String[] normalWords = {"我在", "我是", "我们", "讨论", "请问", "求助", "谢谢", "你好",
+            "最近怎么样", "天气", "周末", "计划", "项目", "进度", "会议", "报告",
+            "文件", "邮件", "收到", "知道了", "辛苦了", "晚安", "早安", "生日快乐"};
         for (String word : normalWords) {
+            if (lowerText.contains(word)) {
+                probability -= 0.20f;
+                break;
+            }
+        }
+
+        // 个人生活词汇（减分）
+        String[] personalWords = {"搬家", "婚礼", "感冒", "生病", "孩子", "宠物", "猫咪", "狗狗",
+            "医院", "医生", "牙医", "看病", "吃药", "减肥", "健身", "电影", "演唱会",
+            "高铁", "机票", "酒店", "旅游", "爬山", "烘焙", "做饭", "买菜"};
+        for (String word : personalWords) {
             if (lowerText.contains(word)) {
                 probability -= 0.15f;
                 break;
             }
         }
 
+        // 疑问词（咨询类特征，减分）
+        String[] questionWords = {"吗？", "？", "多少", "几点", "哪里", "怎么", "如何", "什么",
+            "为什么", "能否", "可以", "行吗"};
+        int questionCount = 0;
+        for (String word : questionWords) {
+            if (lowerText.contains(word)) {
+                questionCount++;
+            }
+        }
+        if (questionCount >= 1) {
+            probability -= 0.10f;
+        }
+
         return Math.max(0f, Math.min(1f, probability));
     }
 
-    private String generateSummary(String text, TopicType topicType, Set<String> entities) {
-        return String.format("主题:%s, 实体数:%d, 预览:%s",
-            topicType, entities.size(),
+    //wd 生成消息摘要
+    //wd 包含主题类型、实体数量和内容预览
+    private String generateSummary(String text, TopicType topicType, Set<String> entities, String topicSummary) {
+        return String.format("主题:%s, 总结:%s, 实体数:%d, 预览:%s",
+            topicType, topicSummary, entities.size(),
             text.length() > 30 ? text.substring(0, 30) + "..." : text);
     }
 
@@ -558,6 +990,18 @@ public class MessageTopicAnalyzer {
         int count = 0;
         for (String keyword : keywords) {
             if (text.contains(keyword)) count++;
+        }
+        return count;
+    }
+
+    //wd 统计单个关键词在文本中出现次数
+    //wd 用于支持同一关键词多次出现的累加得分机制
+    private int countKeywordOccurrences(String text, String keyword) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(keyword, index)) != -1) {
+            count++;
+            index += keyword.length();
         }
         return count;
     }
@@ -587,10 +1031,12 @@ public class MessageTopicAnalyzer {
         return topicModelLoaded.get() && topicInterpreter != null;
     }
 
-    public boolean isAdModelLoaded() {
-        return adModelLoaded.get() && adInterpreter != null;
+    //wd 检查覆盖率模型是否已加载
+    public boolean isCoverageModelLoaded() {
+        return coverageModelLoaded.get() && coverageInterpreter != null;
     }
 
+    //wd 释放模型资源
     public void release() {
         executor.shutdownNow();
         synchronized (modelLock) {
@@ -598,14 +1044,14 @@ public class MessageTopicAnalyzer {
                 topicInterpreter.close();
                 topicInterpreter = null;
             }
-            if (adInterpreter != null) {
-                adInterpreter.close();
-                adInterpreter = null;
+            if (coverageInterpreter != null) {
+                coverageInterpreter.close();
+                coverageInterpreter = null;
             }
             topicModelBuffer = null;
-            adModelBuffer = null;
+            coverageModelBuffer = null;
         }
         topicModelLoaded.set(false);
-        adModelLoaded.set(false);
+        coverageModelLoaded.set(false);
     }
 }

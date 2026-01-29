@@ -340,6 +340,7 @@ import me.vkryl.core.reference.ReferenceList;
 
 import kotlin.Unit;
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.activity.AiAdKeywordsEditorActivity;
 import xyz.nextalone.nnngram.activity.MessageDetailActivity;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.config.DialogConfig;
@@ -1695,77 +1696,6 @@ public class ChatActivity extends BaseFragment implements
 
     public RecyclerListView getChatListView() {
         return chatListView;
-    }
-
-    private void openMessageFilterDialog() {
-        Context context = getContext();
-        if (context == null) {
-            return;
-        }
-
-        Theme.ResourcesProvider resourcesProvider = getResourceProvider();
-        AlertDialog.Builder builder = new AlertDialog.Builder(context, resourcesProvider);
-        builder.setTitle(LocaleController.getString("MessageFilter", R.string.MessageFilter));
-        builder.setCancelable(true);
-
-        EditTextBoldCursor editText = new EditTextBoldCursor(context);
-        LinearLayout.LayoutParams editTextParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
-        editTextParams.rightMargin = AndroidUtilities.dp(24f);
-        editTextParams.leftMargin = AndroidUtilities.dp(24f);
-        editTextParams.height = AndroidUtilities.dp(48f);
-        editText.setLayoutParams(editTextParams);
-        editText.setBackground(null);
-
-        editText.setHintText(LocaleController.getString("Pattern", R.string.Pattern), true);
-        editText.setHintColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider));
-        editText.setHeaderHintColor(Theme.getColor(Theme.key_dialogTextBlue));
-        editText.setTransformHintToHeader(true);
-
-        editText.setText(ConfigManager.getStringOrDefault(Defines.messageFilter, ""));
-        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16f);
-        editText.setTextColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider));
-
-        editText.setCursorColor(Theme.getColor(Theme.key_dialogTextGray));
-        editText.setCursorSize(AndroidUtilities.dp(20f));
-        editText.setCursorWidth(1.5f);
-
-        editText.setLineColors(
-                Theme.getColor(Theme.key_windowBackgroundWhiteInputField),
-                Theme.getColor(Theme.key_windowBackgroundWhiteInputFieldActivated),
-                Theme.getColor(Theme.key_text_RedRegular)
-        );
-
-        TextView descView = new TextView(context);
-        LinearLayout.LayoutParams descParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
-        descParams.rightMargin = AndroidUtilities.dp(24f);
-        descParams.leftMargin = AndroidUtilities.dp(24f);
-        descParams.topMargin = AndroidUtilities.dp(8f);
-        descView.setLayoutParams(descParams);
-        descView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10f);
-        descView.setTextColor(Theme.getColor(Theme.key_dialogTextGray, resourcesProvider));
-        descView.setText(LocaleController.getString("MessageFilterDesc", R.string.MessageFilterDesc));
-
-        LinearLayout layout = new LinearLayout(context);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.addView(descView);
-        layout.addView(new ShadowSectionCell(context));
-        layout.addView(editText);
-        builder.setView(layout);
-
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        builder.setPositiveButton(LocaleController.getString("Save", R.string.Save), (di, w) -> {
-            String value = editText.getText() != null ? editText.getText().toString() : "";
-            value = trimPipes(value);
-            try {
-                if (!TextUtils.isEmpty(value)) {
-                    Pattern.compile(value);
-                }
-                ConfigManager.putString(Defines.messageFilter, value);
-            } catch (Exception e) {
-                Toast.makeText(context, LocaleController.getString("InvalidPattern", R.string.InvalidPattern), Toast.LENGTH_SHORT).show();
-            }
-        });
-        builder.show();
     }
 
     private static String trimPipes(String value) {
@@ -3186,9 +3116,9 @@ public class ChatActivity extends BaseFragment implements
         //wd 直接打开媒体对话，检查配置并设置标志位
         String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
         boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
-        FileLog.d("wd ChatActivity: openMediaConfig=" + openMediaConfig + ", dialog_id=" + dialog_id + ", isEnabled=" + isEnabled);
+        FileLog.d("wd ChatActivity: 打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialog_id + ", 启用=" + isEnabled);
         if (isEnabled && dialog_id != 0) {
-            FileLog.d("wd ChatActivity: 标记需要直接打开媒体对话，dialog_id=" + dialog_id);
+            FileLog.d("wd ChatActivity: 标记需要直接打开媒体对话，对话ID=" + dialog_id);
             needOpenMediaDirectly = true;
         }
 
@@ -4344,9 +4274,9 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                 }
-                //wd 更多菜单增加消息过滤器入口
+                //wd 更多菜单增加AI广告关键词编辑器入口
                 else if (id == message_filter) {
-                    openMessageFilterDialog();
+                    presentFragment(new AiAdKeywordsEditorActivity());
                 }
                 else if (id == proxy) {
                     presentFragment(new ProxyListActivity());
@@ -4635,9 +4565,9 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
 
-            //wd 更多菜单增加代理设置页面跳转与消息过滤
+            //wd 更多菜单增加代理设置页面跳转与AI广告关键词
             headerItem.lazilyAddSubItem(proxy, R.drawable.msg2_proxy_off, LocaleController.getString(R.string.ProxySettings));
-            headerItem.lazilyAddSubItem(message_filter, R.drawable.msg2_block2, LocaleController.getString(R.string.MessageFilter));
+            headerItem.lazilyAddSubItem(message_filter, R.drawable.msg2_block2, LocaleController.getString(R.string.AiAdKeywords));
 
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
@@ -20366,7 +20296,7 @@ public class ChatActivity extends BaseFragment implements
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.mediaCountsDidLoad) {
             //wd 媒体数据加载完成，标记需要直接打开媒体页面（在onTransitionAnimationStart中处理）
-            FileLog.d("wd ChatActivity.didReceivedNotification: 收到mediaCountsDidLoad通知，needOpenMediaDirectly=" + needOpenMediaDirectly);
+            FileLog.d("wd ChatActivity.didReceivedNotification: 收到媒体计数加载通知，需要直接打开媒体=" + needOpenMediaDirectly);
         } else if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid != classGuid) {
@@ -26772,7 +26702,7 @@ public class ChatActivity extends BaseFragment implements
                 updateMessagesVisiblePart(false);
                 //wd 检查是否需要直接打开媒体页（使用延迟执行避免阻塞 UI）
                 if (needOpenMediaDirectly && dialog_id != 0) {
-                    FileLog.d("wd ChatActivity: 在fragmentOpened后打开媒体页，dialog_id=" + dialog_id);
+                    FileLog.d("wd ChatActivity: 在fragmentOpened后打开媒体页，对话ID=" + dialog_id);
                     needOpenMediaDirectly = false;
                     AndroidUtilities.runOnUIThread(() -> {
                         if (getParentActivity() == null || getParentLayout() == null) {

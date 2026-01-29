@@ -370,15 +370,15 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 //wd 检查当前对话是否已设置直接打开媒体对话
                 String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
                 boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
-                FileLog.d("wd MediaActivity: 初始化openMediaDirectlyItem，openMediaConfig=" + openMediaConfig + ", dialogId=" + dialogId + ", isEnabled=" + isEnabled);
+                FileLog.d("wd MediaActivity: 初始化直接打开媒体项，打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialogId + ", 启用=" + isEnabled);
                 openMediaDirectlyItem.setChecked(isEnabled);
                 openMediaDirectlyItem.setOnClickListener(e -> {
                     //wd 切换直接打开媒体对话设置
                     String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                    FileLog.d("wd MediaActivity: 点击openMediaDirectlyItem，currentConfig=" + currentConfig + ", dialogId=" + dialogId);
+                    FileLog.d("wd MediaActivity: 点击直接打开媒体项，当前配置=" + currentConfig + ", 对话ID=" + dialogId);
                     StringBuilder newConfig = new StringBuilder();
                     boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialogId + ",");
-                    FileLog.d("wd MediaActivity: wasEnabled=" + wasEnabled);
+                    FileLog.d("wd MediaActivity: 之前启用=" + wasEnabled);
 
                     if (wasEnabled) {
                         //wd 移除当前对话ID
@@ -407,7 +407,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
                     //wd 保存更新后的配置
                     String finalConfig = newConfig.toString();
-                    FileLog.d("wd MediaActivity: 保存配置，finalConfig=" + finalConfig);
+                    FileLog.d("wd MediaActivity: 保存配置，最终配置=" + finalConfig);
                     ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
                     //wd 更新菜单项状态
                     openMediaDirectlyItem.setChecked(!wasEnabled);

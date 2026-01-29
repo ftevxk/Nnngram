@@ -368,7 +368,7 @@ public class HashtagSearchController {
 
     //wd 本地搜索后备：当网络搜索因Premium限制失败时使用本地数据库搜索
     private void loadLocalHashtagSearch(String query, int guid, int searchType, SearchResult search) {
-        FileLog.d("wd HashtagSearchController.loadLocalHashtagSearch: 开始本地搜索, query=" + query + ", searchType=" + searchType);
+        FileLog.d("wd HashtagSearchController.loadLocalHashtagSearch: 开始本地搜索, 查询=" + query + ", 搜索类型=" + searchType);
         
         MessagesStorage.getInstance(currentAccount).searchMessagesByText(0, query, 100, 0, (localMessages, localUsers, localChats, localDocs) -> {
             if (!TextUtils.equals(search.lastHashtag, query)) {

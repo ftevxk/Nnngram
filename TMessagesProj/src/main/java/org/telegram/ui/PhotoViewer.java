@@ -10276,7 +10276,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         if (sourceFile.exists()) {
             Uri resolved = getAccessibleUri(sourceFile);
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI修正-file存在 name=" + sourceFile.getName() + " size=" + sourceFile.length()
+                FileLog.d("wd 视频URI修正-文件存在 名称=" + sourceFile.getName() + " 大小=" + sourceFile.length()
                                 + " -> " + getSafeUriInfo(resolved));
             }
             return resolved;
@@ -10285,7 +10285,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         Uri fallbackUri = resolveLocalVideoUriFromMessage(uri);
         if (fallbackUri != null) {
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI修正-file不存在 FileLoader回退成功 原=" + getSafeUriInfo(uri)
+                FileLog.d("wd 视频URI修正-文件不存在 FileLoader回退成功 原=" + getSafeUriInfo(uri)
                                 + " -> " + getSafeUriInfo(fallbackUri));
             }
             return fallbackUri;
@@ -10303,7 +10303,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         File resolvedFile = findLocalVideoFileByCandidates(sourceFile, candidates, expectedSize);
         if (resolvedFile == null) {
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI修正-回退失败 name=" + sourceFile.getName() + " pathHash="
+                FileLog.d("wd 视频URI修正-回退失败 名称=" + sourceFile.getName() + " 路径哈希="
                                 + Integer.toHexString(path.hashCode()));
             }
             return uri;
@@ -10311,7 +10311,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         updateCurrentVideoDataSource(resolvedFile);
         Uri resolved = getAccessibleUri(resolvedFile);
         if (BuildVars.LOGS_ENABLED) {
-            FileLog.d("wd 视频URI修正-回退成功 name=" + resolvedFile.getName() + " size=" + resolvedFile.length()
+            FileLog.d("wd 视频URI修正-回退成功 名称=" + resolvedFile.getName() + " 大小=" + resolvedFile.length()
                             + " -> " + getSafeUriInfo(resolved));
         }
         return resolved;
@@ -10328,20 +10328,20 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         TLRPC.Document document = currentMessageObject.getDocument();
         if (document == null) {
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI修正-消息回退失败 document为空");
+                FileLog.d("wd 视频URI修正-消息回退失败 文档为空");
             }
             return null;
         }
         File file = FileLoader.getInstance(currentAccount).getPathToAttach(document, null, null, false, true);
         if (file == null || !file.exists()) {
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI修正-消息回退未命中 name=" + FileLoader.getAttachFileName(document));
+                FileLog.d("wd 视频URI修正-消息回退未命中 名称=" + FileLoader.getAttachFileName(document));
             }
             return null;
         }
         updateCurrentVideoDataSource(file);
         if (BuildVars.LOGS_ENABLED) {
-            FileLog.d("wd 视频URI修正-消息回退命中 name=" + file.getName() + " size=" + file.length());
+            FileLog.d("wd 视频URI修正-消息回退命中 名称=" + file.getName() + " 大小=" + file.length());
         }
         return getAccessibleUri(file);
     }
@@ -10383,13 +10383,13 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                     ApplicationLoader.getApplicationId() + ".provider",
                     file);
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI可访问-FileProvider成功 name=" + file.getName() + " -> " + getSafeUriInfo(uri));
+                FileLog.d("wd 视频URI可访问-FileProvider成功 名称=" + file.getName() + " -> " + getSafeUriInfo(uri));
             }
             return uri;
         } catch (Exception e) {
             //wd FileProvider 失败不阻断播放链路，继续降级尝试其他可访问的 Uri
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI可访问-FileProvider失败 name=" + file.getName() + " err="
+                FileLog.d("wd 视频URI可访问-FileProvider失败 名称=" + file.getName() + " 错误="
                                 + e.getClass().getSimpleName());
             }
         }
@@ -10398,7 +10398,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         Uri mediaUri = getContentUriFromFile(file);
         if (mediaUri != null) {
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("wd 视频URI可访问-MediaStore成功 name=" + file.getName() + " -> " + getSafeUriInfo(mediaUri));
+                FileLog.d("wd 视频URI可访问-MediaStore成功 名称=" + file.getName() + " -> " + getSafeUriInfo(mediaUri));
             }
             return mediaUri;
         }
@@ -10406,7 +10406,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         //wd 降级回退到 file:// 协议
         Uri uri = Uri.fromFile(file);
         if (BuildVars.LOGS_ENABLED) {
-            FileLog.d("wd 视频URI可访问-回退file协议 name=" + file.getName() + " -> " + getSafeUriInfo(uri));
+            FileLog.d("wd 视频URI可访问-回退file协议 名称=" + file.getName() + " -> " + getSafeUriInfo(uri));
         }
         return uri;
     }
@@ -10473,7 +10473,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
 
         if (BuildVars.LOGS_ENABLED) {
             String name = sourceFile != null ? sourceFile.getName() : "null";
-            FileLog.d("wd 视频文件查找-开始 name=" + name + " 候选名数=" + candidates.size() + " 期望size=" + expectedSize);
+            FileLog.d("wd 视频文件查找-开始 名称=" + name + " 候选名数=" + candidates.size() + " 期望大小=" + expectedSize);
         }
 
         ArrayList<File> dirs = new ArrayList<>(10);
@@ -10542,7 +10542,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                 File f = new File(dir, fileName);
                 if (f.exists()) {
                     if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d("wd 视频文件查找-按名直查命中 root=" + dir.getName() + " name=" + f.getName());
+                        FileLog.d("wd 视频文件查找-按名直查命中 根目录=" + dir.getName() + " 名称=" + f.getName());
                     }
                     return f;
                 }
@@ -10567,7 +10567,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
             File f = findFileByNameRecursive(dir, nameSet, isImportantDir ? 25000 : maxCheckedNames);
             if (f != null) {
                 if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("wd 视频文件查找-按名递归命中 root=" + dir.getName() + " name=" + f.getName());
+                    FileLog.d("wd 视频文件查找-按名递归命中 根目录=" + dir.getName() + " 名称=" + f.getName());
                 }
                 return f;
             }
@@ -10606,7 +10606,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                     isImportantDir ? 10000 : maxChecked);
             if (f != null) {
                 if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("wd 视频文件查找-按size递归命中 root=" + dir.getName() + " name=" + f.getName());
+                    FileLog.d("wd 视频文件查找-按大小递归命中 根目录=" + dir.getName() + " 名称=" + f.getName());
                 }
                 return f;
             }
@@ -10614,7 +10614,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
 
         if (BuildVars.LOGS_ENABLED) {
             String name = sourceFile != null ? sourceFile.getName() : "null";
-            FileLog.d("wd 视频文件查找-结束未命中 name=" + name);
+            FileLog.d("wd 视频文件查找-结束未命中 名称=" + name);
         }
         return null;
     }

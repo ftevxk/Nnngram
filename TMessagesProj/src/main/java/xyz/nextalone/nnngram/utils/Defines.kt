@@ -302,7 +302,10 @@ object Defines {
 
     // AI Ad Filter
     @BooleanConfig const val aiAdFilterEnabled = "aiAdFilterEnabled"
+    const val aiAdFeatureCoverageThreshold = "aiAdFeatureCoverageThreshold"  //wd AI广告特征覆盖率阈值
+    @Deprecated("Use aiAdFeatureCoverageThreshold instead")
     const val aiAdFilterThreshold = "aiAdFilterThreshold"
+    @Deprecated("No longer used")
     @BooleanConfig const val aiAdFilterStrictMode = "aiAdFilterStrictMode"
 
     /**

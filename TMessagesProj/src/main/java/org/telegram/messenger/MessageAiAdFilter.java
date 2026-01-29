@@ -1,8 +1,9 @@
 /*
  * Copyright (C) 2024 Nnngram
- * AI 广告消息过滤器 - 两阶段模型架构
- * 阶段1: 主题分析模型 - 理解消息主题和意图
- * 阶段2: 广告分类模型 - 判断是否为广告
+ * AI 广告消息过滤器 - 特征覆盖率架构
+ * 阶段1: 主题分析模型 - 总结消息主题内容
+ * 阶段2: 特征覆盖率模型 - 计算覆盖率分数
+ * 超过阈值即判定为广告
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +26,17 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,10 +56,9 @@ public class MessageAiAdFilter {
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    // 配置参数
-    private float threshold = 0.75f;
-    private boolean strictMode = false;
-    // 主题分析始终启用，作为AI广告过滤的必要步骤
+    //wd 配置参数
+    private float coverageThreshold = 0.5f;  //wd AI广告特征覆盖率阈值
+    //wd 主题分析始终启用，作为AI广告过滤的必要步骤
     private static final boolean TOPIC_ANALYSIS_ENABLED = true;
 
     private static final String CACHE_KEY_SEPARATOR = "_";
@@ -82,11 +89,12 @@ public class MessageAiAdFilter {
         this.topicAnalyzer.init(context);
     }
 
+    //wd 加载配置
     private void loadConfig() {
-        threshold = ConfigManager.getFloatOrDefault(Defines.aiAdFilterThreshold, 0.75f);
-        threshold = Math.max(0f, Math.min(1f, threshold));
-        strictMode = ConfigManager.getBooleanOrDefault(Defines.aiAdFilterStrictMode, false);
-        // 主题分析始终启用，不需要从配置读取
+        //wd 使用AI广告特征覆盖率配置
+        coverageThreshold = ConfigManager.getFloatOrDefault(Defines.aiAdFeatureCoverageThreshold, 0.5f);
+        coverageThreshold = Math.max(0f, Math.min(1f, coverageThreshold));
+        //wd 主题分析始终启用，不需要从配置读取
         updateMessageFilterCache();
     }
 
@@ -110,56 +118,123 @@ public class MessageAiAdFilter {
      */
     public void initialize() {
         if (isInitialized.get()) {
-            FileLog.d("wd MessageAiAdFilter already initialized");
+            FileLog.d("wd MessageAiAdFilter 已初始化");
             return;
         }
-        
+
         executor.execute(() -> {
             try {
-                FileLog.d("wd MessageAiAdFilter: starting initialization");
-                
+                FileLog.d("wd MessageAiAdFilter: 开始初始化");
+
                 // 初始化主题分析器（加载模型）
                 if (topicAnalyzer != null) {
                     topicAnalyzer.init(context);
                 }
-                
+
+                //wd 同步消息过滤器关键词到ad_keywords.txt
+                syncMessageFilterToKeywords();
+
                 isInitialized.set(true);
-                FileLog.d("wd MessageAiAdFilter: initialization completed");
+                FileLog.d("wd MessageAiAdFilter: 初始化完成");
             } catch (Exception e) {
-                FileLog.e("wd MessageAiAdFilter initialization error", e);
+                FileLog.e("wd MessageAiAdFilter 初始化错误", e);
             }
         });
     }
 
-    public void setThreshold(float threshold) {
-        this.threshold = Math.max(0f, Math.min(1f, threshold));
-        ConfigManager.putFloat(Defines.aiAdFilterThreshold, this.threshold);
+    //wd 获取关键词文件路径
+    private File getKeywordsFile() {
+        File externalDir = context.getExternalFilesDir(null);
+        File nnngramFilesDir = new File(externalDir, "Nnngram Files");
+        File aiFilterDir = new File(nnngramFilesDir, "ai_ad_filter");
+        if (!aiFilterDir.exists()) {
+            aiFilterDir.mkdirs();
+        }
+        return new File(aiFilterDir, "ad_keywords.txt");
+    }
+
+    //wd 同步消息过滤器设置的关键词到ad_keywords.txt
+    private void syncMessageFilterToKeywords() {
+        String filterText = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
+        if (TextUtils.isEmpty(filterText)) {
+            return;
+        }
+
+        //wd 解析关键词（按 | 分割）
+        String[] keywords = filterText.split("\\|");
+
+        File keywordsFile = getKeywordsFile();
+        try {
+            //wd 读取现有内容，避免重复
+            Set<String> existingKeywords = loadExistingKeywords(keywordsFile);
+
+            FileWriter writer = new FileWriter(keywordsFile, true); //wd 追加模式
+            writer.write("\n# ============================================\n");
+            writer.write("# 用户自定义关键词 (来自消息过滤器设置)\n");
+            writer.write("# ============================================\n");
+
+            int addedCount = 0;
+            for (String keyword : keywords) {
+                keyword = keyword.trim();
+                //wd 过滤正则表达式，只保留纯文本
+                if (!TextUtils.isEmpty(keyword) && !containsRegexMeta(keyword) && !existingKeywords.contains(keyword)) {
+                    writer.write(keyword + ",0.9,user_defined\n");
+                    existingKeywords.add(keyword);
+                    addedCount++;
+                }
+            }
+            writer.close();
+
+            if (addedCount > 0) {
+                FileLog.d("wd 已同步 " + addedCount + " 个关键词到 ad_keywords.txt");
+                //wd 重新加载关键词
+                if (topicAnalyzer != null) {
+                    topicAnalyzer.reloadKeywords();
+                }
+            }
+        } catch (IOException e) {
+            FileLog.e("wd 同步关键词失败", e);
+        }
+    }
+
+    //wd 检查文本是否包含正则表达式元字符
+    private boolean containsRegexMeta(String text) {
+        return text.matches(".*[\\\\.\\*\\+\\?\\^\\$\\[\\]\\(\\)\\{\\}].*");
+    }
+
+    //wd 加载已存在的关键词
+    private Set<String> loadExistingKeywords(File file) throws IOException {
+        Set<String> keywords = new HashSet<>();
+        if (!file.exists()) {
+            return keywords;
+        }
+
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            line = line.trim();
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            String[] parts = line.split(",");
+            if (parts.length > 0) {
+                keywords.add(parts[0].trim());
+            }
+        }
+        reader.close();
+        return keywords;
+    }
+
+    //wd 设置AI广告特征覆盖率阈值
+    public void setCoverageThreshold(float threshold) {
+        this.coverageThreshold = Math.max(0f, Math.min(1f, threshold));
+        ConfigManager.putFloat(Defines.aiAdFeatureCoverageThreshold, this.coverageThreshold);
         clearCache();
     }
 
-    public float getThreshold() {
-        return threshold;
-    }
-
-    public void setStrictMode(boolean strictMode) {
-        this.strictMode = strictMode;
-        ConfigManager.putBoolean(Defines.aiAdFilterStrictMode, strictMode);
-        clearCache();
-    }
-
-    public boolean isStrictMode() {
-        return strictMode;
-    }
-
-    //wd 主题分析始终启用，此方法仅用于兼容性
-    public void setTopicAnalysisEnabled(boolean enabled) {
-        //wd 主题分析始终启用，忽略设置
-        FileLog.d("wd 主题分析始终启用，忽略设置");
-    }
-
-    //wd 主题分析始终启用
-    public boolean isTopicAnalysisEnabled() {
-        return true;
+    //wd 获取AI广告特征覆盖率阈值
+    public float getCoverageThreshold() {
+        return coverageThreshold;
     }
 
     public boolean isEnabled() {
@@ -189,11 +264,11 @@ public class MessageAiAdFilter {
 
     public boolean shouldFilter(@NonNull String text, long dialogId, long messageId) {
         if (!isEnabled()) {
-            FileLog.d("wd AI ad filter: disabled, skipping message " + messageId);
+            FileLog.d("wd AI广告过滤器: 已禁用，跳过消息 " + messageId);
             return false;
         }
         if (TextUtils.isEmpty(text)) {
-            FileLog.d("wd AI ad filter: empty text, skipping message " + messageId);
+            FileLog.d("wd AI广告过滤器: 空文本，跳过消息 " + messageId);
             return false;
         }
 
@@ -206,108 +281,101 @@ public class MessageAiAdFilter {
 
         // 阶段0: 用户自定义过滤器（最高优先级）
         if (isMessageFilterBlocked(text)) {
-            FileLog.d("wd AI ad filter: FILTERED message " + messageId + " by message filter (regex/keywords)");
+            FileLog.d("wd AI广告过滤器: 过滤消息 " + messageId + " 通过消息过滤器(正则/关键词)");
             putToCache(cacheKey, new FilterResult(true, 1.0f, "user_filter"));
             return true;
         }
 
-        // 阶段1 & 2: 两阶段模型过滤
+        //wd 阶段1 & 2: 主题分析 + 特征覆盖率计算
         try {
-            FilterResult result = performTwoStageFiltering(text, messageId);
+            FilterResult result = performFiltering(text, messageId);
             putToCache(cacheKey, result);
             return result.isAd;
         } catch (Exception e) {
-            FileLog.e("wd MessageAiAdFilter filtering error", e);
+            FileLog.e("wd MessageAiAdFilter 过滤错误", e);
             return false;
         }
     }
 
-    private FilterResult performTwoStageFiltering(String text, long messageId) {
-        // 使用主题分析器进行两阶段分析
+    //wd 执行过滤判断
+    //wd 1. 主题分析模型总结主题
+    //wd 2. 特征覆盖率模型计算覆盖率
+    //wd 3. 规则引擎辅助计算
+    //wd 4. 根据主题类型调整阈值
+    //wd 5. 综合得分超过阈值即判定为广告
+    private FilterResult performFiltering(String text, long messageId) {
+        //wd 使用主题分析器进行分析
         MessageTopicAnalyzer.TopicAnalysis analysis = topicAnalyzer.analyze(text);
-        
-        float finalScore = analysis.adProbability;
+
+        float finalCoverage = analysis.adProbability;  //wd 这里存储的是覆盖率分数
+        MessageTopicAnalyzer.TopicType topicType = analysis.topicType;
         StringBuilder reasonBuilder = new StringBuilder();
 
-        // 只在详细日志模式下输出分析结果
+        //wd 根据主题类型动态调整阈值
+        float adjustedThreshold = adjustThresholdByTopicType(coverageThreshold, topicType);
+
+        //wd 判断：覆盖率超过调整后的阈值即判定为广告
+        boolean isAd = finalCoverage >= adjustedThreshold;
+
         if (BuildConfig.DEBUG) {
-            FileLog.d("wd AI ad filter: analysis for message " + messageId +
-                " - topic=" + analysis.topicType +
-                ", intent=" + analysis.intentType +
-                ", adProb=" + String.format("%.4f", analysis.adProbability));
+            FileLog.d("wd AI广告过滤器: 消息 " + messageId +
+                " 主题=" + topicType +
+                " 覆盖率=" + String.format("%.4f", finalCoverage) +
+                " 阈值=" + String.format("%.4f", adjustedThreshold) +
+                " 是广告=" + isAd);
         }
 
-        // 1. 首先检查主题类型 - 闲聊和咨询类消息通常不是广告
-        if (analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT ||
-            analysis.topicType == MessageTopicAnalyzer.TopicType.CONSULTATION) {
-            // 对于闲聊/咨询类，需要更高的广告概率阈值
-            if (analysis.adProbability < 0.6f) {
-                return new FilterResult(false, analysis.adProbability, "normal_topic");
-            }
-            // 即使是闲聊，如果广告概率很高，仍然可能是广告
-            finalScore = analysis.adProbability * 0.9f;
-        }
-        
-        // 2. 推广、交易、招聘类主题更可能是广告
-        else if (analysis.topicType == MessageTopicAnalyzer.TopicType.PROMOTION ||
-                 analysis.topicType == MessageTopicAnalyzer.TopicType.TRANSACTION ||
-                 analysis.topicType == MessageTopicAnalyzer.TopicType.RECRUITMENT) {
-            // 这些主题类型，稍微降低阈值
-            if (analysis.adProbability > 0.4f) {
-                finalScore = Math.min(1.0f, analysis.adProbability * 1.1f);
-                reasonBuilder.append("suspicious_topic;");
-            }
-        }
-
-        // 3. 检查意图类型
-        if (analysis.intentType == MessageTopicAnalyzer.IntentType.OFFER ||
-            analysis.intentType == MessageTopicAnalyzer.IntentType.URGE) {
-            // 提供/催促意图增加广告可能性
-            if (analysis.adProbability > 0.3f) {
-                finalScore = Math.min(1.0f, finalScore * 1.05f);
-            }
-        }
-
-        // 4. 模型置信度检查
-        if (analysis.isFromTopicModel && analysis.isFromAdModel) {
-            // 两个模型都有输出，增加可信度
-            if (analysis.adProbability > 0.7f) {
-                reasonBuilder.append("dual_model_high_confidence;");
-            }
-        } else if (!analysis.isFromAdModel) {
-            // 广告模型没有输出，依赖主题分析结果，提高阈值
-            finalScore = finalScore * 0.8f;
-            reasonBuilder.append("fallback_to_topic;");
-        }
-
-        // 5. 计算最终判断
-        boolean isAd = finalScore >= threshold;
-        
-        // 严格模式：降低阈值，但不过分敏感
-        if (strictMode && !isAd && finalScore >= threshold * 0.85f) {
-            isAd = true;
-            reasonBuilder.append("strict_mode;");
-        }
-
-        // 6. 防止过度过滤 - 对于明显正常的消息，即使分数略高也不过滤
-        if (isAd && analysis.topicType == MessageTopicAnalyzer.TopicType.CHAT && 
-            analysis.adProbability < 0.5f) {
-            isAd = false;
-            reasonBuilder.append("chat_safety_override;");
-        }
-
-        if (reasonBuilder.length() == 0) {
-            reasonBuilder.append(isAd ? "ad_detected" : "normal");
-        }
-
-        // 只在真正拦截时输出日志，避免循环打印
         if (isAd) {
-            FileLog.d("wd AI ad filter: BLOCKED message " + messageId + 
-                " score=" + String.format("%.4f", finalScore) + 
-                " reason=" + reasonBuilder.toString());
+            reasonBuilder.append("ad_detected");
+            //wd 如果主题类型是白名单但被判定为广告，添加标记
+            if (isWhitelistTopic(topicType)) {
+                reasonBuilder.append("(whitelist_topic)");
+            }
+        } else {
+            reasonBuilder.append("normal");
         }
 
-        return new FilterResult(isAd, finalScore, reasonBuilder.toString());
+        //wd 只在真正拦截时输出日志
+        if (isAd) {
+            FileLog.d("wd AI广告过滤器: 拦截消息 " + messageId +
+                " 主题=" + topicType +
+                " 覆盖率=" + String.format("%.4f", finalCoverage) +
+                " 阈值=" + String.format("%.4f", adjustedThreshold) +
+                " 原因=" + reasonBuilder.toString());
+        }
+
+        return new FilterResult(isAd, finalCoverage, reasonBuilder.toString());
+    }
+
+    //wd 根据主题类型调整阈值
+    //wd 白名单主题提高阈值，避免误判
+    private float adjustThresholdByTopicType(float baseThreshold, MessageTopicAnalyzer.TopicType topicType) {
+        switch (topicType) {
+            case CHAT:      //wd 闲聊
+            case GREETING:  //wd 问候
+                //wd 大幅提高阈值，这些主题几乎不可能是广告
+                return Math.min(1.0f, baseThreshold * 1.5f);
+            case CONSULTATION: //wd 咨询
+                //wd 适度提高阈值
+                return Math.min(1.0f, baseThreshold * 1.3f);
+            case NOTIFICATION: //wd 通知
+                //wd 轻微提高阈值
+                return Math.min(1.0f, baseThreshold * 1.1f);
+            case PROMOTION:    //wd 推广
+            case TRANSACTION:  //wd 交易
+            case RECRUITMENT:  //wd 招聘
+                //wd 这些主题可能是广告，保持原阈值
+                return baseThreshold;
+            default:
+                return baseThreshold;
+        }
+    }
+
+    //wd 判断是否为白名单主题
+    private boolean isWhitelistTopic(MessageTopicAnalyzer.TopicType topicType) {
+        return topicType == MessageTopicAnalyzer.TopicType.CHAT ||
+               topicType == MessageTopicAnalyzer.TopicType.GREETING ||
+               topicType == MessageTopicAnalyzer.TopicType.CONSULTATION;
     }
 
     private void updateMessageFilterCache() {
@@ -417,7 +485,7 @@ public class MessageAiAdFilter {
 
                 boolean isMostlyAd = matchRatio >= 0.5f || lengthRatio >= 0.3f;
                 if (isMostlyAd) {
-                    FileLog.d("wd MessageAiAdFilter: ad content ratio=" + lengthRatio + ", keyword ratio=" + matchRatio);
+                    FileLog.d("wd MessageAiAdFilter: 广告内容比例=" + lengthRatio + ", 关键词比例=" + matchRatio);
                 }
                 return isMostlyAd;
             }
@@ -479,8 +547,8 @@ public class MessageAiAdFilter {
      * 检查模型是否已加载
      */
     public boolean isModelsLoaded() {
-        return topicAnalyzer != null && 
-               topicAnalyzer.isTopicModelLoaded() && 
-               topicAnalyzer.isAdModelLoaded();
+        return topicAnalyzer != null &&
+               topicAnalyzer.isTopicModelLoaded() &&
+               topicAnalyzer.isCoverageModelLoaded();
     }
 }

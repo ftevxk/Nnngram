@@ -57,7 +57,7 @@ public class TfidfVectorizer {
         this.minNgram = 1;
         this.maxNgram = 3;
         
-        FileLog.d("wd TfidfVectorizer: loaded vocabulary size=" + maxFeatures);
+        FileLog.d("wd TfidfVectorizer: 已加载词汇表大小=" + maxFeatures);
     }
     
     /**
@@ -103,7 +103,7 @@ public class TfidfVectorizer {
                     try {
                         idfList.add(Float.parseFloat(line));
                     } catch (NumberFormatException e) {
-                        FileLog.e("wd TfidfVectorizer: failed to parse IDF value: " + line);
+                        FileLog.e("wd TfidfVectorizer: 解析IDF值失败: " + line);
                     }
                 }
             }
@@ -129,21 +129,21 @@ public class TfidfVectorizer {
         if (TextUtils.isEmpty(text)) {
             return new float[1][maxFeatures];
         }
-        
+
         // 分词并提取 n-gram
         List<String> tokens = tokenize(text);
         List<String> ngrams = extractNgrams(tokens, minNgram, maxNgram);
-        
+
         // 计算词频 (TF)
         Map<String, Integer> termFreq = new HashMap<>();
         for (String ngram : ngrams) {
             termFreq.put(ngram, termFreq.getOrDefault(ngram, 0) + 1);
         }
-        
+
         // 计算 TF-IDF
         float[][] result = new float[1][maxFeatures];
         float norm = 0;
-        
+
         for (Map.Entry<String, Integer> entry : termFreq.entrySet()) {
             String term = entry.getKey();
             Integer idx = vocabulary.get(term);
@@ -158,7 +158,7 @@ public class TfidfVectorizer {
                 norm += tfidf * tfidf;
             }
         }
-        
+
         // L2 归一化
         if (norm > 0) {
             norm = (float) Math.sqrt(norm);
@@ -166,8 +166,66 @@ public class TfidfVectorizer {
                 result[0][i] /= norm;
             }
         }
-        
+
         return result;
+    }
+
+    //wd 计算文本的特征覆盖率 - 用于白名单机制判断
+    //wd 返回文本中有多少比例的 n-gram 在广告词汇表中
+    //wd 覆盖率低于阈值时直接判定为正常消息
+    /**
+     * 计算文本的特征覆盖率
+     * @param text 输入文本
+     * @return 覆盖率 (0.0 - 1.0)，表示文本中有多少比例的 n-gram 在词汇表中
+     */
+    public float getFeatureCoverage(@NonNull String text) {
+        if (TextUtils.isEmpty(text)) {
+            return 0f;
+        }
+
+        // 分词并提取 n-gram
+        List<String> tokens = tokenize(text);
+        List<String> ngrams = extractNgrams(tokens, minNgram, maxNgram);
+
+        if (ngrams.isEmpty()) {
+            return 0f;
+        }
+
+        // 统计在词汇表中的 n-gram 数量
+        int matchedCount = 0;
+        for (String ngram : ngrams) {
+            if (vocabulary.containsKey(ngram)) {
+                matchedCount++;
+            }
+        }
+
+        return (float) matchedCount / ngrams.size();
+    }
+
+    //wd 获取文本中匹配的特征数量 - 辅助判断是否为广告内容
+    /**
+     * 获取文本中匹配的特征数量
+     * @param text 输入文本
+     * @return 匹配的特征数量
+     */
+    public int getMatchedFeatureCount(@NonNull String text) {
+        if (TextUtils.isEmpty(text)) {
+            return 0;
+        }
+
+        // 分词并提取 n-gram
+        List<String> tokens = tokenize(text);
+        List<String> ngrams = extractNgrams(tokens, minNgram, maxNgram);
+
+        // 统计在词汇表中的 n-gram 数量
+        int matchedCount = 0;
+        for (String ngram : ngrams) {
+            if (vocabulary.containsKey(ngram)) {
+                matchedCount++;
+            }
+        }
+
+        return matchedCount;
     }
     
     /**

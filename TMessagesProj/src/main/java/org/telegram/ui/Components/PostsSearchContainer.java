@@ -225,7 +225,7 @@ public class PostsSearchContainer extends FrameLayout {
         }
         
         if (!news && flood == null) {
-            FileLog.d("wd PostsSearchContainer.load: flood为null，需要先获取flood");
+            FileLog.d("wd PostsSearchContainer.load: flood为空，需要先获取flood");
             return;
         }
 

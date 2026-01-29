@@ -3666,9 +3666,9 @@ public class MediaDataController extends BaseController {
         
         //wd 获取当前已加载显示的消息列表作为补充数据源
         ArrayList<MessageObject> loadedMessages = getMessagesController().dialogMessage.get(lastDialogId);
-        FileLog.d("wd loadedMessages size: " + (loadedMessages != null ? loadedMessages.size() : 0));
-        FileLog.d("wd lastDialogId: " + lastDialogId);
-        FileLog.d("wd lastSearchQuery: " + lastSearchQuery);
+        FileLog.d("wd 已加载消息数量: " + (loadedMessages != null ? loadedMessages.size() : 0));
+        FileLog.d("wd 最后对话ID: " + lastDialogId);
+        FileLog.d("wd 最后搜索查询: " + lastSearchQuery);
         
         //wd 如果本地数据库和已加载消息都没有找到结果，尝试加载更多历史消息
         //wd 注意：数据库搜索是异步的，不要在这里立即判断，需要等待数据库回调完成
@@ -3680,7 +3680,7 @@ public class MediaDataController extends BaseController {
             FileLog.d("wd 本地数据库搜索进行中，等待搜索结果...");
             return;
         }
-        FileLog.d("wd searchLocalResultMessages size: " + searchLocalResultMessages.size());
+        FileLog.d("wd 本地搜索结果消息数量: " + searchLocalResultMessages.size());
         int localAddedCount = 0;
         for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
             MessageObject m = searchLocalResultMessages.get(i);
@@ -3760,7 +3760,7 @@ public class MediaDataController extends BaseController {
         FileLog.d("wd 已加载消息列表添加数量: " + loadedAddedCount);
         
         //wd 再添加服务器搜索结果，避免重复
-        FileLog.d("wd searchServerResultMessages size: " + searchServerResultMessages.size());
+        FileLog.d("wd 服务器搜索结果消息数量: " + searchServerResultMessages.size());
         int serverAddedCount = 0;
         for (int i = 0; i < searchServerResultMessages.size(); ++i) {
             MessageObject m = searchServerResultMessages.get(i);
@@ -3810,7 +3810,7 @@ public class MediaDataController extends BaseController {
         //wd 发送通知更新UI
         if (!searchResultMessages.isEmpty()) {
             messagesSearchEndReached[0] = true;
-            FileLog.d("wd updateSearchResults: 发送UI通知, guid=" + lastGuid + ", dialogId=" + lastDialogId + ", count=" + getSearchCount());
+            FileLog.d("wd updateSearchResults: 发送UI通知, 指南ID=" + lastGuid + ", 对话ID=" + lastDialogId + ", 数量=" + getSearchCount());
             getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, lastGuid, 0, getMask(), lastDialogId, lastReturnedNum, getSearchCount(), true);
         }
     }
@@ -3924,7 +3924,7 @@ public class MediaDataController extends BaseController {
             max_id = lastMessage.getId();
         }
         
-        FileLog.d("wd loadMoreHistoryForSearch: dialogId=" + lastDialogId + ", max_id=" + max_id + ", query=" + lastSearchQuery);
+        FileLog.d("wd loadMoreHistoryForSearch: 对话ID=" + lastDialogId + ", 最大ID=" + max_id + ", 查询=" + lastSearchQuery);
         
         // 创建搜索请求
         TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
@@ -3989,7 +3989,7 @@ public class MediaDataController extends BaseController {
                             // 检查是否已存在于新消息列表中
                             for (MessageObject existing : newMessages) {
                                 if (existing.equals(messageObject)) {
-                                    FileLog.d("wd loadMoreHistoryForSearch: 新消息列表中已存在相同内容 id=" + messageObject.getId() + " existingId=" + existing.getId());
+                                    FileLog.d("wd loadMoreHistoryForSearch: 新消息列表中已存在相同内容 ID=" + messageObject.getId() + " 现有ID=" + existing.getId());
                                     isDuplicate = true;
                                     break;
                                 }
@@ -3999,7 +3999,7 @@ public class MediaDataController extends BaseController {
                             if (!isDuplicate) {
                                 for (MessageObject existing : searchServerResultMessages) {
                                     if (existing.equals(messageObject)) {
-                                        FileLog.d("wd loadMoreHistoryForSearch: 服务器结果中已存在相同内容 id=" + messageObject.getId() + " existingId=" + existing.getId());
+                                        FileLog.d("wd loadMoreHistoryForSearch: 服务器结果中已存在相同内容 ID=" + messageObject.getId() + " 现有ID=" + existing.getId());
                                         isDuplicate = true;
                                         break;
                                     }
@@ -4010,7 +4010,7 @@ public class MediaDataController extends BaseController {
                             if (!isDuplicate) {
                                 for (MessageObject existing : searchLocalResultMessages) {
                                     if (existing.equals(messageObject)) {
-                                        FileLog.d("wd loadMoreHistoryForSearch: 本地结果中已存在相同内容 id=" + messageObject.getId() + " existingId=" + existing.getId());
+                                        FileLog.d("wd loadMoreHistoryForSearch: 本地结果中已存在相同内容 ID=" + messageObject.getId() + " 现有ID=" + existing.getId());
                                         isDuplicate = true;
                                         break;
                                     }
@@ -4056,14 +4056,14 @@ public class MediaDataController extends BaseController {
                             messagesSearchEndReached[0] = true;
                         }
                     } else {
-                        FileLog.d("wd loadMoreHistoryForSearch: 服务器请求失败: " + (error != null ? error.text : "null"));
+                        FileLog.d("wd loadMoreHistoryForSearch: 服务器请求失败: " + (error != null ? error.text : "空"));
                         messagesSearchEndReached[0] = true;
                     }
                 }
             });
         }, ConnectionsManager.RequestFlagFailOnServerErrors);
         
-        FileLog.d("wd loadMoreHistoryForSearch: 服务器请求已发送，reqId=" + reqId);
+        FileLog.d("wd loadMoreHistoryForSearch: 服务器请求已发送，请求ID=" + reqId);
     }
 
     public boolean isSearchLoading() {
@@ -4267,13 +4267,13 @@ public class MediaDataController extends BaseController {
         } else if (!isSaved && firstQuery) {
             //wd 添加普通聊天消息、频道和群组的本地搜索支持
             FileLog.d("wd 触发本地搜索 - 对话类型检查");
-            FileLog.d("wd dialogId: " + dialogId + ", query: " + query + ", filter: " + filter);
+            FileLog.d("wd 对话ID: " + dialogId + ", 查询: " + query + ", 过滤器: " + filter);
             
             //wd 判断对话类型（频道、群组、私聊）
             boolean isChannel = dialogId < 0 && getMessagesController().getChat(-dialogId) != null && getMessagesController().getChat(-dialogId).broadcast;
             boolean isGroup = dialogId < 0 && getMessagesController().getChat(-dialogId) != null && !getMessagesController().getChat(-dialogId).broadcast;
             String dialogType = isChannel ? "频道" : (isGroup ? "群组" : "私聊");
-            FileLog.d("wd 对话类型: " + dialogType + ", dialogId: " + dialogId);
+            FileLog.d("wd 对话类型: " + dialogType + ", 对话ID: " + dialogId);
             
             lastReturnedNum = 0;
             searchServerResultMessages.clear();
@@ -4281,7 +4281,7 @@ public class MediaDataController extends BaseController {
             searchServerResultMessagesMap[1].clear();
             
             loadingSearchLocal = true;
-            FileLog.d("wd ========== 开始" + dialogType + "本地搜索: query=" + query + " ==========");
+            FileLog.d("wd ========== 开始" + dialogType + "本地搜索: 查询=" + query + " ==========");
             getMessagesStorage().searchMessagesByText(dialogId, query, 300, 0, (messages, users, chats, docs) -> {
                 if (currentReqId == lastReqId) {
                     loadingSearchLocal = false;
@@ -4292,19 +4292,19 @@ public class MediaDataController extends BaseController {
                     }
                     int dbCount = (messages != null ? messages.size() : 0);
                     FileLog.d("wd 数据库搜索结果: " + dialogType + "中找到 " + dbCount + " 条匹配消息");
-                    FileLog.d("wd 回调中 messages 对象: " + (messages != null ? "非空" : "空") + ", 大小: " + dbCount);
+                    FileLog.d("wd 回调中消息对象: " + (messages != null ? "非空" : "空") + ", 大小: " + dbCount);
                     
                     //wd 确保正确设置搜索结果
                     if (messages != null && !messages.isEmpty()) {
                         FileLog.d("wd 设置 searchLocalResultMessages: " + messages.size() + " 条消息");
                         searchLocalResultMessages = messages;
                     } else {
-                        FileLog.d("wd 清空 searchLocalResultMessages");
+                        FileLog.d("wd 清空本地搜索结果消息");
                         searchLocalResultMessages.clear();
                     }
                     
                     //wd 立即检查设置结果
-                    FileLog.d("wd 设置后 searchLocalResultMessages size: " + searchLocalResultMessages.size());
+                    FileLog.d("wd 设置后本地搜索结果消息数量: " + searchLocalResultMessages.size());
                     
                     updateSearchResults();
                     int searchCount = getSearchCount();
