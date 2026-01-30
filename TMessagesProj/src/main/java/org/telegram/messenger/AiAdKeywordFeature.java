@@ -21,7 +21,7 @@ package org.telegram.messenger;
 import androidx.annotation.NonNull;
 
 //wd AI广告关键词特征数据类
-//wd 用于存储单个关键词的特征信息，包括权重、频次、分类和来源
+//wd 用于存储单个关键词的特征信息，包括权重、频次和分类
 public class AiAdKeywordFeature {
 
     //wd 关键词文本
@@ -36,20 +36,16 @@ public class AiAdKeywordFeature {
     //wd 分类：ad(广告)或normal(正常)
     public final String category;
 
-    //wd 来源：ai_extracted(AI提取)或manual(手动添加)
-    public final String source;
-
     //wd 构造函数
-    public AiAdKeywordFeature(String keyword, float weight, int frequency, String category, String source) {
+    public AiAdKeywordFeature(String keyword, float weight, int frequency, String category) {
         this.keyword = keyword != null ? keyword.trim() : "";
         this.weight = Math.max(0f, Math.min(1f, weight));
         this.frequency = Math.max(1, frequency);
         this.category = category != null ? category.trim().toLowerCase() : "ad";
-        this.source = source != null ? source.trim().toLowerCase() : "manual";
     }
 
     //wd 从CSV行解析特征
-    //wd 格式：关键词,权重,频次,分类,来源
+    //wd 格式：关键词,权重,频次,分类
     public static AiAdKeywordFeature fromCsvLine(String line) {
         if (line == null || line.trim().isEmpty() || line.startsWith("#")) {
             return null;
@@ -65,9 +61,8 @@ public class AiAdKeywordFeature {
             float weight = Float.parseFloat(parts[1].trim());
             int frequency = parts.length > 2 ? Integer.parseInt(parts[2].trim()) : 1;
             String category = parts.length > 3 ? parts[3].trim() : "ad";
-            String source = parts.length > 4 ? parts[4].trim() : "manual";
 
-            return new AiAdKeywordFeature(keyword, weight, frequency, category, source);
+            return new AiAdKeywordFeature(keyword, weight, frequency, category);
         } catch (NumberFormatException e) {
             FileLog.e("wd AiAdKeywordFeature 解析CSV失败: " + line, e);
             return null;
@@ -75,9 +70,9 @@ public class AiAdKeywordFeature {
     }
 
     //wd 转换为CSV行
-    //wd 格式：关键词,权重,频次,分类,来源
+    //wd 格式：关键词,权重,频次,分类
     public String toCsvLine() {
-        return keyword + "," + weight + "," + frequency + "," + category + "," + source;
+        return keyword + "," + weight + "," + frequency + "," + category;
     }
 
     //wd 获取计算后的有效权重（考虑频次）
@@ -94,16 +89,6 @@ public class AiAdKeywordFeature {
         return "ad".equals(category);
     }
 
-    //wd 判断是否来自AI提取
-    public boolean isFromAi() {
-        return "ai_extracted".equals(source);
-    }
-
-    //wd 判断是否手动添加
-    public boolean isManual() {
-        return "manual".equals(source);
-    }
-
     @NonNull
     @Override
     public String toString() {
@@ -112,7 +97,6 @@ public class AiAdKeywordFeature {
                 ", weight=" + weight +
                 ", frequency=" + frequency +
                 ", category='" + category + '\'' +
-                ", source='" + source + '\'' +
                 ", effectiveWeight=" + getEffectiveWeight() +
                 '}';
     }

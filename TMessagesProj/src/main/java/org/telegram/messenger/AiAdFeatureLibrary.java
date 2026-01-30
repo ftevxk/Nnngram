@@ -200,10 +200,9 @@ public class AiAdFeatureLibrary {
 
                 //wd 写入文件头注释
                 writer.write("# AI广告关键词特征库\n");
-                writer.write("# 格式：关键词,权重,频次,分类,来源\n");
+                writer.write("# 格式：关键词,权重,频次,分类\n");
                 writer.write("# 权重范围：0.0-1.0\n");
                 writer.write("# 分类：ad(广告), normal(正常)\n");
-                writer.write("# 来源：ai_extracted(AI提取), manual(手动添加)\n");
                 writer.write("\n");
 
                 //wd 写入所有特征
@@ -235,7 +234,7 @@ public class AiAdFeatureLibrary {
             int newFrequency = existing.frequency + feature.frequency;
             float newWeight = Math.max(existing.weight, feature.weight);
             AiAdKeywordFeature updated = new AiAdKeywordFeature(
-                    feature.keyword, newWeight, newFrequency, feature.category, feature.source);
+                    feature.keyword, newWeight, newFrequency, feature.category);
             featureMap.put(key, updated);
 
             //wd 更新列表
@@ -313,6 +312,40 @@ public class AiAdFeatureLibrary {
             }
         }
         return adFeatures;
+    }
+
+    //wd 获取所有关键词名称列表
+    @NonNull
+    public List<String> getAllKeywords() {
+        List<String> keywords = new ArrayList<>();
+        for (AiAdKeywordFeature feature : featureList) {
+            keywords.add(feature.keyword);
+        }
+        return keywords;
+    }
+
+    //wd 根据最小权重获取关键词列表
+    @NonNull
+    public List<String> getKeywordsByMinWeight(float minWeight) {
+        List<String> keywords = new ArrayList<>();
+        for (AiAdKeywordFeature feature : featureList) {
+            if (feature.weight >= minWeight) {
+                keywords.add(feature.keyword);
+            }
+        }
+        return keywords;
+    }
+
+    //wd 根据权重范围获取关键词列表
+    @NonNull
+    public List<String> getKeywordsByWeightRange(float minWeight, float maxWeight) {
+        List<String> keywords = new ArrayList<>();
+        for (AiAdKeywordFeature feature : featureList) {
+            if (feature.weight >= minWeight && feature.weight <= maxWeight) {
+                keywords.add(feature.keyword);
+            }
+        }
+        return keywords;
     }
 
     //wd 获取特征数量

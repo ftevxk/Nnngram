@@ -10387,7 +10387,7 @@ public class ChatActivity extends BaseFragment implements
                 }
 
                 //wd 添加到特征库
-                analyzer.addKeywordsToFeatureLibrary(keywordsToAdd, "manual_selected");
+                analyzer.addKeywordsToFeatureLibrary(keywordsToAdd);
 
                 String message = LocaleController.formatString("aiKeywordExtractAdded", R.string.aiKeywordExtractAdded, selectedKeywords.size());
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();

@@ -26,8 +26,10 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 //wd AI广告内容分析器
 //wd 整合关键词提取和特征库比对，提供完整的广告内容分析功能
@@ -44,11 +46,18 @@ public class AiAdContentAnalyzer {
     //wd 上下文
     private Context context;
 
-    //wd 分析阈值（提高到0.8，需要多个高权重词才能触发）
-    private float threshold = 0.8f;
+    //wd 分析阈值（降低到0.65，需要多个高权重词才能触发）
+    private float threshold = 0.65f;
 
-    //wd 最小关键词数要求（至少2个关键词才判定为广告）
-    private static final int MIN_KEYWORD_COUNT = 2;
+    //wd 最小关键词数要求（降低到1个，允许单关键词高权重触发）
+    private static final int MIN_KEYWORD_COUNT = 1;
+
+    //wd 组合加分阈值（当同时出现多个推广词时给予额外加分）
+    private static final float COMBO_BONUS_THRESHOLD = 0.5f;
+
+    //wd 推广类关键词权重范围（用于识别新用户推广类关键词）
+    private static final float PROMOTION_WEIGHT_MIN = 0.60f;
+    private static final float PROMOTION_WEIGHT_MAX = 0.80f;
 
     //wd 私有构造函数
     private AiAdContentAnalyzer() {
@@ -78,6 +87,7 @@ public class AiAdContentAnalyzer {
     //wd 设置判定阈值
     public void setThreshold(float threshold) {
         this.threshold = Math.max(0f, Math.min(1f, threshold));
+        FileLog.d("wd AiAdContentAnalyzer 设置阈值为 " + this.threshold);
     }
 
     //wd 获取当前阈值
@@ -89,13 +99,14 @@ public class AiAdContentAnalyzer {
     //wd 步骤1: 提取关键词及频次
     //wd 步骤2: 与特征库比对打分
     //wd 步骤3: 频次加权计算最终得分
+    //wd 步骤4: 检测组合特征并给予额外加分
     @NonNull
     public AnalysisResult analyze(String text) {
         if (TextUtils.isEmpty(text)) {
             return new AnalysisResult(false, 0f, Collections.emptyList(), "空文本");
         }
 
-        FileLog.d("wd AiAdContentAnalyzer 开始分析消息");
+        FileLog.d("wd AiAdContentAnalyzer 开始分析消息，阈值=" + threshold);
 
         //wd 步骤1: 提取关键词
         List<AiKeywordExtractor.ExtractedKeyword> extractedKeywords = keywordExtractor.extractKeywords(text);
@@ -109,6 +120,13 @@ public class AiAdContentAnalyzer {
         //wd 步骤2 & 3: 计算得分
         float score = calculateScore(extractedKeywords);
 
+        //wd 步骤4: 检测新用户推广组合特征
+        float comboBonus = calculateComboBonus(extractedKeywords);
+        if (comboBonus > 0) {
+            score = Math.min(0.99f, score + comboBonus);
+            FileLog.d("wd AiAdContentAnalyzer 检测到组合特征，加分=" + comboBonus + "，最终得分=" + score);
+        }
+
         //wd 判定是否为广告
         boolean isAd = score >= threshold;
 
@@ -120,7 +138,8 @@ public class AiAdContentAnalyzer {
 
         String reason = isAd ? "广告关键词匹配得分=" + String.format("%.2f", score) : "正常消息";
 
-        FileLog.d("wd AiAdContentAnalyzer 分析完成: 得分=" + score + " 阈值=" + threshold + " 是广告=" + isAd);
+        FileLog.d("wd AiAdContentAnalyzer 分析完成: 得分=" + String.format("%.4f", score) + 
+                " 阈值=" + threshold + " 是广告=" + isAd);
 
         return new AnalysisResult(isAd, score, matchedKeywords, reason);
     }
@@ -175,6 +194,38 @@ public class AiAdContentAnalyzer {
         return finalScore;
     }
 
+    //wd 计算组合特征加分
+    //wd 当检测到多个新用户推广类关键词同时出现时，给予额外加分
+    //wd 推广类关键词通过权重范围识别（0.60-0.80）
+    private float calculateComboBonus(List<AiKeywordExtractor.ExtractedKeyword> extractedKeywords) {
+        int comboCount = 0;
+        float maxWeight = 0f;
+
+        for (AiKeywordExtractor.ExtractedKeyword kw : extractedKeywords) {
+            //wd 根据权重范围判断是否为推广类关键词
+            if (kw.weight >= PROMOTION_WEIGHT_MIN && kw.weight <= PROMOTION_WEIGHT_MAX) {
+                comboCount++;
+                maxWeight = Math.max(maxWeight, kw.weight);
+                FileLog.d("wd AiAdContentAnalyzer 识别到推广词: " + kw.keyword + " 权重=" + kw.weight);
+            }
+        }
+
+        //wd 如果同时出现3个及以上推广词，给予额外加分
+        if (comboCount >= 3) {
+            //wd 基础加分0.15，根据最大权重调整
+            float bonus = 0.15f + (maxWeight * 0.1f);
+            FileLog.d("wd AiAdContentAnalyzer 检测到3个及以上推广词，加分=" + bonus);
+            return bonus;
+        } else if (comboCount >= 2) {
+            //wd 出现2个，给予较小加分
+            float bonus = 0.08f + (maxWeight * 0.05f);
+            FileLog.d("wd AiAdContentAnalyzer 检测到2个推广词，加分=" + bonus);
+            return bonus;
+        }
+
+        return 0f;
+    }
+
     //wd 提取关键词并添加到特征库（用于长按菜单功能）
     //wd 返回提取的关键词列表，供用户选择
     @NonNull
@@ -205,14 +256,14 @@ public class AiAdContentAnalyzer {
     }
 
     //wd 将提取的关键词添加到特征库
-    public boolean addKeywordsToFeatureLibrary(List<AiKeywordExtractor.ExtractedKeyword> keywords, String source) {
+    public boolean addKeywordsToFeatureLibrary(List<AiKeywordExtractor.ExtractedKeyword> keywords) {
         if (keywords == null || keywords.isEmpty()) {
             return false;
         }
 
         List<AiAdKeywordFeature> features = new ArrayList<>();
         for (AiKeywordExtractor.ExtractedKeyword kw : keywords) {
-            features.add(kw.toFeature(source));
+            features.add(kw.toFeature());
         }
 
         featureLibrary.addFeatures(features);

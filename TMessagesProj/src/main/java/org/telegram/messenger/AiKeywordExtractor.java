@@ -66,75 +66,12 @@ public class AiKeywordExtractor {
     private static final String VOCAB_PATH = "ai_ad_filter/keyword_extractor_vocab.txt";
     private static final String IDF_PATH = "ai_ad_filter/keyword_extractor_idf.txt";
 
-    //wd 广告关键词规则库（用于规则引擎模式）
-    private static final String[] AD_KEYWORD_PATTERNS = {
-            "博彩", "菠菜", "赌博", "赌球", "casino", "bet365", "百家乐", "老虎机",
-            "跑分", "上分", "下分", "usdt", "虚拟货币", "合约带单", "币圈", "空投",
-            "刷单", "返利", "充值", "收款码", "代收", "代付", "码商", "码子",
-            "支付宝", "微信", "qq", "一单一结", "结账", "零风险", "0风险",
-            "首充", "代理招募", "月入过万", "稳赚不赔", "高额返佣", "日赚", "秒到账",
-            "信誉担保", "内部消息", "限时优惠", "机不可失", "利润", "福利红包", "做单",
-            "联系", "加好友", "私聊", "盘口", "代理", "加盟", "兼职", "赚钱",
-            "推广", "营销", "广告", "招募", "合作", "诚邀", "诚邀合作",
-            "网赌", "赌局", "下注", "赔率", "返水", "彩金", "存款", "提款",
-            "资金", "账户", "会员", "注册", "登录", "网址", "链接", "点击",
-            "真人", "荷官", "视讯", "直播", "在线", "24小时", "客服",
-            "棋牌", "牛牛", "斗地主", "炸金花", "三公", "牌九", "龙虎斗",
-            "彩票", "时时彩", "pk10", "北京赛车", "高频彩", "体彩", "福彩",
-            "电子游艺", "pt", "mg", "bbin", "ag真人", "ag视讯",
-            "薇信", "v.x", "vx", "丄分", "玳理", "冲值", "菠.菜"
-    };
-
-    //wd 权重映射表
-    private static final Map<String, Float> KEYWORD_WEIGHTS = new ConcurrentHashMap<>();
-
-    static {
-        //wd 高权重关键词（强广告特征）
-        KEYWORD_WEIGHTS.put("博彩", 0.95f);
-        KEYWORD_WEIGHTS.put("菠菜", 0.95f);
-        KEYWORD_WEIGHTS.put("赌博", 0.95f);
-        KEYWORD_WEIGHTS.put("跑分", 0.95f);
-        KEYWORD_WEIGHTS.put("上分", 0.95f);
-        KEYWORD_WEIGHTS.put("下分", 0.95f);
-        KEYWORD_WEIGHTS.put("网赌", 0.95f);
-        KEYWORD_WEIGHTS.put("赌球", 0.95f);
-        KEYWORD_WEIGHTS.put("casino", 0.95f);
-        KEYWORD_WEIGHTS.put("百家乐", 0.95f);
-
-        //wd 中高权重关键词
-        KEYWORD_WEIGHTS.put("刷单", 0.85f);
-        KEYWORD_WEIGHTS.put("返利", 0.85f);
-        KEYWORD_WEIGHTS.put("充值", 0.85f);
-        KEYWORD_WEIGHTS.put("收款码", 0.85f);
-        KEYWORD_WEIGHTS.put("代收", 0.85f);
-        KEYWORD_WEIGHTS.put("代付", 0.85f);
-        KEYWORD_WEIGHTS.put("码商", 0.85f);
-        KEYWORD_WEIGHTS.put("usdt", 0.85f);
-        KEYWORD_WEIGHTS.put("虚拟货币", 0.85f);
-        KEYWORD_WEIGHTS.put("币圈", 0.85f);
-
-        //wd 中等权重关键词（降低以避免误判）
-        KEYWORD_WEIGHTS.put("代理", 0.50f);
-        KEYWORD_WEIGHTS.put("招募", 0.55f);
-        KEYWORD_WEIGHTS.put("加盟", 0.55f);
-        KEYWORD_WEIGHTS.put("兼职", 0.55f);
-        KEYWORD_WEIGHTS.put("月入过万", 0.70f);
-        KEYWORD_WEIGHTS.put("稳赚不赔", 0.70f);
-        KEYWORD_WEIGHTS.put("高额返佣", 0.70f);
-        KEYWORD_WEIGHTS.put("日赚", 0.65f);
-        KEYWORD_WEIGHTS.put("秒到账", 0.60f);
-
-        //wd 低权重关键词（常用词，权重更低）
-        KEYWORD_WEIGHTS.put("联系", 0.30f);
-        KEYWORD_WEIGHTS.put("加好友", 0.30f);
-        KEYWORD_WEIGHTS.put("私聊", 0.30f);
-        KEYWORD_WEIGHTS.put("微信", 0.30f);
-        KEYWORD_WEIGHTS.put("qq", 0.30f);
-        KEYWORD_WEIGHTS.put("点击", 0.35f);
-    }
+    //wd 特征库管理器
+    private AiAdFeatureLibrary featureLibrary;
 
     //wd 私有构造函数
     private AiKeywordExtractor() {
+        featureLibrary = AiAdFeatureLibrary.getInstance();
     }
 
     //wd 获取单例实例
@@ -506,8 +443,15 @@ public class AiKeywordExtractor {
         List<ExtractedKeyword> keywords = new ArrayList<>();
         String lowerText = text.toLowerCase();
 
-        //wd 遍历所有广告关键词模式
-        for (String pattern : AD_KEYWORD_PATTERNS) {
+        //wd 从特征库获取所有关键词
+        List<String> adKeywords = featureLibrary.getAllKeywords();
+        if (adKeywords.isEmpty()) {
+            FileLog.w("wd AiKeywordExtractor 特征库为空，无法使用规则引擎");
+            return keywords;
+        }
+
+        //wd 遍历所有广告关键词
+        for (String pattern : adKeywords) {
             int count = countOccurrences(lowerText, pattern.toLowerCase());
             if (count > 0) {
                 float weight = getKeywordWeight(pattern);
@@ -524,16 +468,17 @@ public class AiKeywordExtractor {
 
     //wd 获取关键词权重
     private float getKeywordWeight(String keyword) {
-        Float weight = KEYWORD_WEIGHTS.get(keyword);
-        if (weight != null) {
-            return weight;
+        //wd 从特征库获取权重
+        AiAdKeywordFeature feature = featureLibrary.getFeature(keyword);
+        if (feature != null) {
+            return feature.weight;
         }
 
         //wd 对于变体词，尝试匹配原始词
         String normalized = normalizeVariant(keyword);
-        weight = KEYWORD_WEIGHTS.get(normalized);
-        if (weight != null) {
-            return weight;
+        feature = featureLibrary.getFeature(normalized);
+        if (feature != null) {
+            return feature.weight;
         }
 
         //wd 默认权重
@@ -617,8 +562,8 @@ public class AiKeywordExtractor {
         }
 
         //wd 转换为特征对象
-        public AiAdKeywordFeature toFeature(String source) {
-            return new AiAdKeywordFeature(keyword, weight, frequency, "ad", source);
+        public AiAdKeywordFeature toFeature() {
+            return new AiAdKeywordFeature(keyword, weight, frequency, "ad");
         }
 
         @NonNull
