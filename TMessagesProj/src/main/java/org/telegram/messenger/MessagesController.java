@@ -20311,59 +20311,11 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private void updateMessageFilterCache() {
-        String filterText = ConfigManager.getStringOrDefault(Defines.messageFilter, "");
-        if (TextUtils.equals(filterText, messageFilterTextCached)) {
-            return;
-        }
-
-        Pattern pattern = null;
-        ArrayList<String> literalKeywords = null;
-
-        if (!TextUtils.isEmpty(filterText)) {
-            try {
-                pattern = Pattern.compile(filterText, Pattern.CASE_INSENSITIVE);
-            } catch (Exception e) {
-                FileLog.e("wd 无效的消息过滤正则表达式: " + filterText, e);
-            }
-
-            String[] filterTokens = filterText.split("\\|");
-            for (int i = 0; i < filterTokens.length; i++) {
-                String token = filterTokens[i];
-                if (token == null) {
-                    continue;
-                }
-                token = token.trim();
-                if (token.isEmpty()) {
-                    continue;
-                }
-
-                boolean hasRegexMeta = false;
-                for (int c = 0; c < token.length(); c++) {
-                    char ch = token.charAt(c);
-                    if (ch == '\\' || ch == '.' || ch == '*' || ch == '+' || ch == '?' || ch == '^' || ch == '$' || ch == '[' || ch == ']' || ch == '(' || ch == ')' || ch == '{' || ch == '}') {
-                        hasRegexMeta = true;
-                        break;
-                    }
-                }
-                if (hasRegexMeta) {
-                    continue;
-                }
-
-                String normalizedToken = Normalizer.normalize(token, Normalizer.Form.NFKC);
-                String cleanToken = normalizedToken.replaceAll("[\\p{P}\\p{S}\\p{Z}\\s\\p{Cf}]+", "");
-                if (cleanToken.isEmpty()) {
-                    continue;
-                }
-                if (literalKeywords == null) {
-                    literalKeywords = new ArrayList<>();
-                }
-                literalKeywords.add(cleanToken);
-            }
-        }
-
-        messageFilterTextCached = filterText;
-        messageFilterPatternCached = pattern;
-        messageFilterKeywordsCached = literalKeywords;
+        //wd 旧的消息过滤器已废弃，不再执行
+        //wd 使用新的AI广告过滤器替代
+        messageFilterTextCached = "";
+        messageFilterPatternCached = null;
+        messageFilterKeywordsCached = null;
     }
 
     private static boolean isTextBlockedByFilter(String text, Pattern pattern, ArrayList<String> keywords) {

@@ -29,11 +29,13 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+import org.telegram.messenger.AiAdFeatureLibrary;
+import org.telegram.messenger.AiAdKeywordFeature;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessageTopicAnalyzer;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -51,13 +53,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashSet;
-import java.util.Set;
 
+//wd AI广告关键词特征库编辑器
+//wd 用于编辑和管理AI广告过滤的关键词特征库
 public class AiAdKeywordsEditorActivity extends BaseFragment {
 
     private EditTextBoldCursor editText;
-    private File keywordsFile;
+    private File featureLibraryFile;
 
     @Override
     public View createView(Context context) {
@@ -71,7 +73,7 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
                     finishFragment();
                 } else if (id == 1) {
                     //wd 保存
-                    saveKeywords();
+                    saveFeatureLibrary();
                 } else if (id == 2) {
                     //wd 恢复默认
                     showRestoreDefaultDialog();
@@ -80,68 +82,72 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         });
 
         //wd 添加保存按钮
-        actionBar.createMenu().addItem(1, R.drawable.sticker_added, AndroidUtilities.dp(56));
+        actionBar.createMenu().addItem(1, R.drawable.ic_ab_done);
+        actionBar.createMenu().addItem(2, R.drawable.ic_ab_other);
 
-        //wd 添加恢复默认按钮到菜单
-        actionBar.createMenu().addItem(2, LocaleController.getString("RestoreDefault", R.string.RestoreDefault));
+        fragmentView = new ScrollView(context);
+        ScrollView scrollView = (ScrollView) fragmentView;
+        scrollView.setFillViewport(true);
 
-        //wd 初始化关键词文件路径
-        initKeywordsFile();
-
-        //wd 创建主布局
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
+        scrollView.addView(layout);
 
         //wd 添加说明头部
         HeaderCell headerCell = new HeaderCell(context);
         headerCell.setText(LocaleController.getString("AiAdKeywordsDesc", R.string.AiAdKeywordsDesc));
-        layout.addView(headerCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        layout.addView(headerCell);
 
-        //wd 添加隐私说明
-        TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-        infoCell.setText("每行一个关键词，格式：关键词,权重,分类\n分类：ad(广告), consult(咨询), chat(闲聊), greeting(问候)\n权重范围：0.0-1.0");
-        layout.addView(infoCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        //wd 创建ScrollView和EditText
-        ScrollView scrollView = new ScrollView(context);
-        scrollView.setFillViewport(true);
-
-        FrameLayout frameLayout = new FrameLayout(context);
-
+        //wd 创建编辑框
         editText = new EditTextBoldCursor(context);
         editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         editText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         editText.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
-        editText.setBackgroundDrawable(null);
-        editText.setGravity(Gravity.TOP | Gravity.LEFT);
-        editText.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        editText.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        editText.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        editText.setGravity(Gravity.TOP | Gravity.START);
         editText.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16));
-        editText.setHint("输入关键词，每行一个...");
+        editText.setHint("keyword,weight,frequency,category,source\n\n例如:\n博彩,0.95,150,ad,ai_extracted\n跑分,0.92,120,ad,ai_extracted");
+        layout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 0));
 
-        frameLayout.addView(editText, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        scrollView.addView(frameLayout, LayoutHelper.createScroll(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP));
-        layout.addView(scrollView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 1.0f));
+        //wd 添加底部说明
+        TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
+        infoCell.setText("格式说明：\n关键词,权重(0.0-1.0),频次,分类(ad/normal),来源(ai_extracted/manual)");
+        layout.addView(infoCell);
 
-        //wd 加载现有内容
-        loadKeywords();
+        //wd 初始化文件路径
+        initFilePath();
 
-        fragmentView = layout;
-        return layout;
+        //wd 加载特征库
+        loadFeatureLibrary();
+
+        return fragmentView;
     }
 
-    //wd 初始化关键词文件路径
-    private void initKeywordsFile() {
-        File externalDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-        File nnngramFilesDir = new File(externalDir, "Nnngram Files");
+    //wd 初始化特征库文件路径
+    private void initFilePath() {
+        File nnngramFilesDir = null;
+        try {
+            nnngramFilesDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_FILES);
+        } catch (Exception e) {
+            FileLog.e("wd FileLoader.getDirectory() 失败，使用降级路径", e);
+        }
+        if (nnngramFilesDir == null) {
+            File externalDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+            if (externalDir != null) {
+                nnngramFilesDir = new File(new File(externalDir, "Nnngram"), "Nnngram Files");
+            } else {
+                //wd 最终降级：使用应用私有目录
+                nnngramFilesDir = new File(ApplicationLoader.applicationContext.getFilesDir(), "Nnngram Files");
+            }
+        }
         File aiFilterDir = new File(nnngramFilesDir, "ai_ad_filter");
         if (!aiFilterDir.exists()) {
             aiFilterDir.mkdirs();
         }
-        keywordsFile = new File(aiFilterDir, "ad_keywords.txt");
+        featureLibraryFile = new File(aiFilterDir, "ad_feature_library.txt");
 
         //wd 如果文件不存在，从assets复制
-        if (!keywordsFile.exists()) {
+        if (!featureLibraryFile.exists()) {
             copyFromAssets();
         }
     }
@@ -149,8 +155,8 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
     //wd 从assets复制默认文件
     private void copyFromAssets() {
         try {
-            InputStream is = ApplicationLoader.applicationContext.getAssets().open("ai_ad_filter/ad_keywords.txt");
-            FileWriter writer = new FileWriter(keywordsFile);
+            InputStream is = ApplicationLoader.applicationContext.getAssets().open("ai_ad_filter/ad_feature_library.txt");
+            FileWriter writer = new FileWriter(featureLibraryFile);
             BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -158,21 +164,21 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
             }
             reader.close();
             writer.close();
-            FileLog.d("wd 已复制默认关键词文件");
+            FileLog.d("wd 已复制默认特征库文件");
         } catch (IOException e) {
-            FileLog.e("wd 复制关键词文件失败", e);
+            FileLog.e("wd 复制特征库文件失败", e);
         }
     }
 
-    //wd 加载关键词到编辑器
-    private void loadKeywords() {
-        if (!keywordsFile.exists()) {
+    //wd 加载特征库到编辑器
+    private void loadFeatureLibrary() {
+        if (!featureLibraryFile.exists()) {
             return;
         }
 
         try {
             StringBuilder content = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new FileReader(keywordsFile));
+            BufferedReader reader = new BufferedReader(new FileReader(featureLibraryFile));
             String line;
             while ((line = reader.readLine()) != null) {
                 content.append(line).append("\n");
@@ -180,12 +186,12 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
             reader.close();
             editText.setText(content.toString());
         } catch (IOException e) {
-            FileLog.e("wd 读取关键词文件失败", e);
+            FileLog.e("wd 读取特征库文件失败", e);
         }
     }
 
-    //wd 保存关键词
-    private void saveKeywords() {
+    //wd 保存特征库
+    private void saveFeatureLibrary() {
         String content = editText.getText().toString();
         if (TextUtils.isEmpty(content)) {
             finishFragment();
@@ -193,20 +199,21 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         }
 
         try {
-            FileWriter writer = new FileWriter(keywordsFile);
+            FileWriter writer = new FileWriter(featureLibraryFile);
             writer.write(content);
             writer.close();
 
-            //wd 重新加载关键词到分析器
-            MessageTopicAnalyzer analyzer = MessageTopicAnalyzer.getInstance();
-            if (analyzer != null) {
-                analyzer.reloadKeywords();
+            //wd 重新加载特征库到AiAdFeatureLibrary
+            AiAdFeatureLibrary library = AiAdFeatureLibrary.getInstance();
+            if (library != null) {
+                library.reloadFeatures();
+                FileLog.d("wd AI广告特征库已重新加载");
             }
 
-            FileLog.d("wd 关键词已保存");
+            FileLog.d("wd 特征库已保存并刷新缓存");
             finishFragment();
         } catch (IOException e) {
-            FileLog.e("wd 保存关键词失败", e);
+            FileLog.e("wd 保存特征库失败", e);
         }
     }
 
@@ -217,7 +224,7 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         builder.setMessage(LocaleController.getString("RestoreDefaultConfirm", R.string.RestoreDefaultConfirm));
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
             copyFromAssets();
-            loadKeywords();
+            loadFeatureLibrary();
         });
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
         showDialog(builder.create());

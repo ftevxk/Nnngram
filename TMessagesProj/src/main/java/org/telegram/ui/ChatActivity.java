@@ -177,6 +177,9 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.AiAdContentAnalyzer;
+import org.telegram.messenger.AiAdFeatureLibrary;
+import org.telegram.messenger.AiKeywordExtractor;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SendMessagesHelper.SendMessageParams;
@@ -1607,6 +1610,7 @@ public class ChatActivity extends BaseFragment implements
     private final static int change_colors = 27;
     private final static int tag_message = 28;
     private final static int boost_group = 29;
+    private final static int ai_extract = 40; //wd AI关键词提取按钮
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
@@ -4100,6 +4104,24 @@ public class ChatActivity extends BaseFragment implements
                             MessageObject msg = selectedMessagesCanStarIds[a].valueAt(b);
                             getMediaDataController().addRecentSticker(MediaDataController.TYPE_FAVE, msg, msg.getDocument(), (int) (System.currentTimeMillis() / 1000), !hasUnfavedSelected);
                         }
+                    }
+                    clearSelectionMode();
+                } else if (id == ai_extract) {
+                    //wd AI关键词提取功能
+                    StringBuilder selectedText = new StringBuilder();
+                    for (int a = 1; a >= 0; a--) {
+                        for (int b = 0; b < selectedMessagesIds[a].size(); b++) {
+                            MessageObject msg = selectedMessagesIds[a].valueAt(b);
+                            if (msg != null && !TextUtils.isEmpty(msg.messageText)) {
+                                if (selectedText.length() > 0) {
+                                    selectedText.append("\n\n");
+                                }
+                                selectedText.append(msg.messageText);
+                            }
+                        }
+                    }
+                    if (selectedText.length() > 0) {
+                        showAiKeywordExtractDialog(selectedText.toString());
                     }
                     clearSelectionMode();
                 } else if (id == edit) {
@@ -10281,6 +10303,8 @@ public class ChatActivity extends BaseFragment implements
             }
             actionModeViews.add(actionMode.addItemWithWidth(share, R.drawable.msg_shareout, AndroidUtilities.dp(54), LocaleController.getString(R.string.ShareFile)));
             actionModeViews.add(actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString(R.string.Delete)));
+            //wd 添加AI关键词提取按钮
+            actionModeViews.add(actionMode.addItemWithWidth(ai_extract, R.drawable.msg2_block2, AndroidUtilities.dp(54), LocaleController.getString(R.string.aiKeywordFeatureExtract)));
         } else {
             actionModeViews.add(actionMode.addItemWithWidth(edit, R.drawable.msg_edit, AndroidUtilities.dp(54), LocaleController.getString(R.string.Edit)));
             actionModeViews.add(actionMode.addItemWithWidth(star, R.drawable.msg_fave, AndroidUtilities.dp(54), LocaleController.getString(R.string.AddToFavorites)));
@@ -10288,6 +10312,8 @@ public class ChatActivity extends BaseFragment implements
                 actionModeViews.add(actionMode.addItemWithWidth(merge_message, R.drawable.msg_replace, AndroidUtilities.dp(54), LocaleController.getString("MergeMessage", R.string.MergeMessage)));
             actionModeViews.add(actionMode.addItemWithWidth(copy, R.drawable.msg_copy, AndroidUtilities.dp(54), LocaleController.getString(R.string.Copy)));
             actionModeViews.add(actionMode.addItemWithWidth(delete, R.drawable.msg_delete, AndroidUtilities.dp(54), LocaleController.getString(R.string.Delete)));
+            //wd 添加AI关键词提取按钮
+            actionModeViews.add(actionMode.addItemWithWidth(ai_extract, R.drawable.msg2_block2, AndroidUtilities.dp(54), LocaleController.getString(R.string.aiKeywordFeatureExtract)));
         }
         actionMode.setItemVisibility(edit, canEditMessagesCount == 1 && selectedMessagesIds[0].size() + selectedMessagesIds[1].size() == 1 ? View.VISIBLE : View.GONE);
         actionMode.setItemVisibility(copy, selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0 ? View.VISIBLE : View.GONE);
@@ -10313,6 +10339,70 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private ReactionsContainerLayout tagSelector;
+
+    //wd AI关键词特征提取对话框
+    //wd 显示AI提取的关键词列表，供用户选择添加到特征库
+    private void showAiKeywordExtractDialog(String text) {
+        if (TextUtils.isEmpty(text)) {
+            return;
+        }
+
+        //wd 使用AI分析器提取关键词
+        AiAdContentAnalyzer analyzer = AiAdContentAnalyzer.getInstance();
+        java.util.List<AiKeywordExtractor.ExtractedKeyword> keywords = analyzer.extractKeywordsForFeatureLibrary(text);
+
+        if (keywords.isEmpty()) {
+            Toast.makeText(getContext(), LocaleController.getString(R.string.aiKeywordExtractNoResult), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        FileLog.d("wd AI关键词特征提取: 从文本中提取到 " + keywords.size() + " 个关键词");
+
+        //wd 构建关键词项列表
+        java.util.List<KeywordExtractResultDialog.ExtractedKeywordItem> keywordItems = new java.util.ArrayList<>();
+        for (AiKeywordExtractor.ExtractedKeyword kw : keywords) {
+            //wd 检查是否为新关键词（不在特征库中）
+            boolean isNew = !AiAdFeatureLibrary.getInstance().containsFeature(kw.keyword);
+            keywordItems.add(KeywordExtractResultDialog.ExtractedKeywordItem.fromExtractedKeyword(kw, isNew));
+        }
+
+        //wd 按权重排序
+        java.util.Collections.sort(keywordItems, (a, b) -> Float.compare(b.weight, a.weight));
+
+        //wd 显示关键词选择对话框
+        KeywordExtractResultDialog.Builder builder = new KeywordExtractResultDialog.Builder(getContext());
+        builder.addKeywords(keywordItems);
+        builder.setOnKeywordsSelectedListener(new KeywordExtractResultDialog.OnKeywordsSelectedListener() {
+            @Override
+            public void onKeywordsSelected(java.util.List<KeywordExtractResultDialog.ExtractedKeywordItem> selectedKeywords) {
+                if (selectedKeywords.isEmpty()) {
+                    Toast.makeText(getContext(), LocaleController.getString(R.string.aiKeywordExtractNoSelected), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                //wd 将选中的关键词转换为AiKeywordExtractor.ExtractedKeyword
+                java.util.List<AiKeywordExtractor.ExtractedKeyword> keywordsToAdd = new java.util.ArrayList<>();
+                for (KeywordExtractResultDialog.ExtractedKeywordItem item : selectedKeywords) {
+                    keywordsToAdd.add(new AiKeywordExtractor.ExtractedKeyword(item.keyword, item.weight, item.frequency));
+                }
+
+                //wd 添加到特征库
+                analyzer.addKeywordsToFeatureLibrary(keywordsToAdd, "manual_selected");
+
+                String message = LocaleController.formatString("aiKeywordExtractAdded", R.string.aiKeywordExtractAdded, selectedKeywords.size());
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                FileLog.d("wd AI关键词特征提取: 已添加 " + selectedKeywords.size() + " 个关键词到特征库");
+            }
+
+            @Override
+            public void onCancelled() {
+                FileLog.d("wd AI关键词特征提取: 用户取消");
+            }
+        });
+
+        builder.show();
+    }
+
     private void showTagSelector() {
         if (getDialogId() != getUserConfig().getClientUserId() || !getUserConfig().isPremium()) return;
         if (tagSelector != null) return;
@@ -10633,7 +10723,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 filterPopup.show();
             });
-            searchFilterButton.setContentDescription(LocaleController.getString("MessageFilter", R.string.MessageFilter));
+            searchFilterButton.setContentDescription(LocaleController.getString("Search", R.string.Search));
         }
     }
 

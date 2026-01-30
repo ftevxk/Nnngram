@@ -1,9 +1,0 @@
-promotion
-transaction
-recruitment
-notification
-chat
-consultation
-greeting
-crypto
-group

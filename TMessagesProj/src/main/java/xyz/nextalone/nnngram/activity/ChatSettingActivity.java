@@ -19,8 +19,6 @@
 
 package xyz.nextalone.nnngram.activity;
 
-import static xyz.nextalone.nnngram.UIKt.createMessageFilterSetter;
-
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -132,9 +130,9 @@ public class ChatSettingActivity extends BaseActivity {
     private int showTabsOnForwardRow;
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
-    private int messageFiltersRow;
     private int aiAdFilterRow;
     private int aiAdFilterThresholdRow;
+    private int aiAdKeywordsRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
@@ -422,8 +420,8 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
-        } else if (position == messageFiltersRow) {
-            //wd 跳转到AI广告关键词编辑器
+        } else if (position == aiAdKeywordsRow) {
+            //wd 跳转到AI广告关键词特征库编辑器
             presentFragment(new AiAdKeywordsEditorActivity());
         } else if (position == aiAdFilterRow) {
             boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false);
@@ -590,8 +588,8 @@ public class ChatSettingActivity extends BaseActivity {
         showTabsOnForwardRow = addRow("showTabsOnForward");
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
-        messageFiltersRow = addRow("messageFilters");
         aiAdFilterRow = addRow("aiAdFilter");
+        aiAdKeywordsRow = addRow("aiAdKeywords");
         aiAdFilterThresholdRow = addRow("aiAdFilterThreshold");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
@@ -703,11 +701,11 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == markdownParserRow) {
                         textCell.setTextAndValue(LocaleController.getString("MarkdownParser", R.string.MarkdownParser), Config.newMarkdownParser ? "Nnngram" : "Telegram", payload,
                             position + 1 != markdown2Row);
-                    } else if (position == messageFiltersRow) {
+                    } else if (position == aiAdKeywordsRow) {
                         textCell.setText(LocaleController.getString("AiAdKeywords", R.string.AiAdKeywords), payload);
                     } else if (position == aiAdFilterThresholdRow) {
                         MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-                        float threshold = filter != null ? filter.getCoverageThreshold() : 0.5f;
+                        float threshold = filter != null ? filter.getThreshold() : 0.5f;
                         textCell.setTextAndValue(LocaleController.getString("AiAdFeatureCoverage", R.string.AiAdFeatureCoverage),
                             String.valueOf((int) (threshold * 100)) + "%", payload, true);
                     }
@@ -903,7 +901,7 @@ public class ChatSettingActivity extends BaseActivity {
             if (position == chat2Row || position == stickerSize2Row) {
                 return TYPE_SHADOW;
             } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow
-                || position == messageFiltersRow || position == textStyleSettingsRow || position == aiAdFilterThresholdRow) {
+                || position == aiAdKeywordsRow || position == textStyleSettingsRow || position == aiAdFilterThresholdRow) {
                 return TYPE_SETTINGS;
             } else if (position == chatRow || position == stickerSizeHeaderRow || position == markdownRow || position == gifSizeHeaderRow) {
                 return TYPE_HEADER;
@@ -1423,7 +1421,7 @@ public class ChatSettingActivity extends BaseActivity {
 
         EditTextBoldCursor editText = new EditTextBoldCursor(getContext());
         MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-        float currentThreshold = filter != null ? filter.getCoverageThreshold() : 0.5f;
+        float currentThreshold = filter != null ? filter.getThreshold() : 0.5f;
         editText.setText(String.valueOf((int) (currentThreshold * 100)));
         editText.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         editText.setHint("0-100");
@@ -1441,7 +1439,7 @@ public class ChatSettingActivity extends BaseActivity {
                 float threshold = Math.max(0, Math.min(100, value)) / 100f;
                 MessageAiAdFilter filter4 = MessageAiAdFilter.getInstance();
                 if (filter4 != null) {
-                    filter4.setCoverageThreshold(threshold);
+                    filter4.setThreshold(threshold);
                 }
                 ConfigManager.putFloat(Defines.aiAdFeatureCoverageThreshold, threshold);
             } catch (NumberFormatException e) {

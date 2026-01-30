@@ -11757,20 +11757,8 @@ public class MessageObject {
 //                return true;
 //            }
 //        }
-        //wd 捕获消息过滤正则规则不正确导致的崩溃
-        if (!TextUtils.isEmpty(Config.getMessageFilter())) {
-            try {
-                var pattern = Pattern.compile(Config.getMessageFilter());
-                if (messageText != null && pattern.matcher(messageText).find()) {
-                    return true;
-                } else if (caption != null && pattern.matcher(caption).find()) {
-                    return true;
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-                AlertUtil.showToast(e);
-            }
-        }
+        //wd 旧的消息过滤器已废弃，使用AI广告过滤器替代
+        //wd 如需过滤消息，请使用AI广告过滤功能
         return false;
     }
 

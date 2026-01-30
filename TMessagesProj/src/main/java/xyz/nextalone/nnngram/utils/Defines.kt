@@ -109,7 +109,6 @@ object Defines {
     @BooleanConfig const val ignoreUserSpecifiedReplyColor = "ignoreUserSpecifiedReplyColor"
     @BooleanConfig const val hideTitle = "hideTitle"
     @BooleanConfig const val showHideTitle = "showHideTitle"
-    @StringConfig("") const val messageFilter = "messageFilter1"
     @BooleanConfig const val sendLargePhoto = "sendLargePhoto"
 
     //wd 搜索视频最小时长
