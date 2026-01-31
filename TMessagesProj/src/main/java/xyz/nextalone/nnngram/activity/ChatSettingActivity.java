@@ -131,7 +131,6 @@ public class ChatSettingActivity extends BaseActivity {
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
     private int aiAdFilterRow;
-    private int aiAdFilterThresholdRow;
     private int aiAdKeywordsRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
@@ -432,8 +431,6 @@ public class ChatSettingActivity extends BaseActivity {
             if (newValue) {
                 MessageAiAdFilter.getInstance(getContext()).initialize();
             }
-        } else if (position == aiAdFilterThresholdRow) {
-            showAiAdFilterThresholdDialog();
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
             if (view instanceof TextCheckCell) {
@@ -590,7 +587,6 @@ public class ChatSettingActivity extends BaseActivity {
         hideTitleRow = addRow("showHideTitle");
         aiAdFilterRow = addRow("aiAdFilter");
         aiAdKeywordsRow = addRow("aiAdKeywords");
-        aiAdFilterThresholdRow = addRow("aiAdFilterThreshold");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
@@ -703,11 +699,6 @@ public class ChatSettingActivity extends BaseActivity {
                             position + 1 != markdown2Row);
                     } else if (position == aiAdKeywordsRow) {
                         textCell.setText(LocaleController.getString("AiAdKeywords", R.string.AiAdKeywords), payload);
-                    } else if (position == aiAdFilterThresholdRow) {
-                        MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-                        float threshold = filter != null ? filter.getThreshold() : 0.5f;
-                        textCell.setTextAndValue(LocaleController.getString("AiAdFeatureCoverage", R.string.AiAdFeatureCoverage),
-                            String.valueOf((int) (threshold * 100)) + "%", payload, true);
                     }
                     break;
                 }
@@ -901,7 +892,7 @@ public class ChatSettingActivity extends BaseActivity {
             if (position == chat2Row || position == stickerSize2Row) {
                 return TYPE_SHADOW;
             } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow
-                || position == aiAdKeywordsRow || position == textStyleSettingsRow || position == aiAdFilterThresholdRow) {
+                || position == aiAdKeywordsRow || position == textStyleSettingsRow) {
                 return TYPE_SETTINGS;
             } else if (position == chatRow || position == stickerSizeHeaderRow || position == markdownRow || position == gifSizeHeaderRow) {
                 return TYPE_HEADER;
@@ -1403,50 +1394,5 @@ public class ChatSettingActivity extends BaseActivity {
         public boolean performAccessibilityAction(int action, Bundle arguments) {
             return super.performAccessibilityAction(action, arguments) || sizeBar.getSeekBarAccessibilityDelegate().performAccessibilityActionInternal(this, action, arguments);
         }
-    }
-
-    private void showAiAdFilterThresholdDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle(LocaleController.getString("AiAdFeatureCoverage", R.string.AiAdFeatureCoverage));
-
-        LinearLayout contentLayout = new LinearLayout(getContext());
-        contentLayout.setOrientation(LinearLayout.VERTICAL);
-        contentLayout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), 0);
-
-        TextView descView = new TextView(getContext());
-        descView.setText(LocaleController.getString("AiAdFeatureCoverageDesc", R.string.AiAdFeatureCoverageDesc));
-        descView.setTextColor(Theme.getColor(Theme.key_dialogTextGray));
-        descView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-        contentLayout.addView(descView);
-
-        EditTextBoldCursor editText = new EditTextBoldCursor(getContext());
-        MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-        float currentThreshold = filter != null ? filter.getThreshold() : 0.5f;
-        editText.setText(String.valueOf((int) (currentThreshold * 100)));
-        editText.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        editText.setHint("0-100");
-        LinearLayout.LayoutParams editParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        editParams.topMargin = AndroidUtilities.dp(12);
-        contentLayout.addView(editText, editParams);
-
-        builder.setView(contentLayout);
-        builder.setPositiveButton(LocaleController.getString("Save", R.string.Save), (dialog, which) -> {
-            try {
-                int value = Integer.parseInt(editText.getText().toString());
-                float threshold = Math.max(0, Math.min(100, value)) / 100f;
-                MessageAiAdFilter filter4 = MessageAiAdFilter.getInstance();
-                if (filter4 != null) {
-                    filter4.setThreshold(threshold);
-                }
-                ConfigManager.putFloat(Defines.aiAdFeatureCoverageThreshold, threshold);
-            } catch (NumberFormatException e) {
-                AlertUtil.showToast("Invalid value");
-            }
-        });
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        showDialog(builder.create());
     }
 }

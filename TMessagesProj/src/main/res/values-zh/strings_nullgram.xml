@@ -440,8 +440,6 @@
     <string name="Second">秒</string>
     <string name="AiAdFilter">AI 广告过滤</string>
     <string name="AiAdFilterDesc">使用 AI 模型自动过滤博彩/充值推广广告。被识别为广告的消息将被隐藏。</string>
-    <string name="AiAdFeatureCoverage">AI 广告特征覆盖率</string>
-    <string name="AiAdFeatureCoverageDesc">覆盖率阈值越高过滤越严格。建议值：50%</string>
     <string name="AiAdKeywords">AI 广告关键词特征库</string>
     <string name="AiAdKeywordsDesc">管理 AI 广告过滤关键词特征库。格式：关键词,权重,频次,分类,来源</string>
     <string name="RestoreDefault">恢复默认</string>

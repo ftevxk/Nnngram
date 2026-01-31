@@ -75,10 +75,9 @@ public class MessageAiAdFilter {
         this.contentAnalyzer.init(context);
     }
 
-    //wd 加载配置
+    //wd 加载配置 - 使用固定阈值0.65，移除可配置选项
     private void loadConfig() {
-        threshold = ConfigManager.getFloatOrDefault(Defines.aiAdFeatureCoverageThreshold, 0.5f);
-        threshold = Math.max(0f, Math.min(1f, threshold));
+        threshold = 0.65f;
     }
 
     public static MessageAiAdFilter getInstance(Context context) {
@@ -122,10 +121,9 @@ public class MessageAiAdFilter {
         });
     }
 
-    //wd 设置AI广告判定阈值
+    //wd 设置AI广告判定阈值 - 已移除配置选项，此方法保留但仅更新内存值
     public void setThreshold(float threshold) {
-        this.threshold = Math.max(0f, Math.min(1f, threshold));
-        ConfigManager.putFloat(Defines.aiAdFeatureCoverageThreshold, this.threshold);
+        this.threshold = 0.65f; //wd 固定阈值，忽略传入值
         if (contentAnalyzer != null) {
             contentAnalyzer.setThreshold(this.threshold);
         }

@@ -26,7 +26,7 @@ description: 固化代码改动前的需求澄清、影响评估、方案设计�
   - 相关文件：预计会改的文件清单（可为空，后续补）
 - 测试与构建：当前能跑的构建/测试方式（Gradle 任务、设备/模拟器）
 - wd 规范要点：
-  - 注释：仅代码文件添加中文且 `//wd` 前缀
+  - 注释：仅代码文件关键必要位置添加中文且 `//wd` 前缀
   - 字符串：用户可见字符串禁止硬编码，写入 `strings_nullgram.xml`（中英文）
   - 日志：统一使用 `org.telegram.messenger.FileLog`（`FileLog.d/e`）；日志内容必须以 `"wd "` 开头且中文文案；异常用 `FileLog.e("wd ...", e)` 带堆栈；受 `BuildVars.LOGS_ENABLED` 控制；禁止敏感信息；禁止使用 `android.util.Log` 与 `xyz.nextalone.nnngram.utils.Log`；wd 相关日志会额外写入单独文件 `wd-log-YYYY-MM-DD.txt`
   - 调试打点：凡是“需要调试/需要验证/可能失败”的位置都必须补日志（入口、关键分支、异步回调、异常兜底、耗时点、I/O/网络/数据库读写、状态机迁移），保证仅靠日志即可还原关键路径与分支走向

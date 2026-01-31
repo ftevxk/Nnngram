@@ -457,6 +457,4 @@
     <string name="RestoreDefaultConfirm">Are you sure you want to restore default keywords? This will overwrite your custom keywords.</string>
     <string name="AiAdFilter">AI Ad Filter</string>
     <string name="AiAdFilterDesc">Use AI model to automatically filter gambling/promotion ads. Messages detected as ads will be hidden.</string>
-    <string name="AiAdFeatureCoverage">AI Ad Feature Coverage</string>
-    <string name="AiAdFeatureCoverageDesc">Higher coverage threshold means stricter filtering. Recommended: 50%</string>
 </resources>
