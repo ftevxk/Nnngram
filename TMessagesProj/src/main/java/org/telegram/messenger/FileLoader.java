@@ -290,6 +290,132 @@ public class FileLoader extends BaseController {
         return dir;
     }
 
+    /**
+     * wd 在Nnngram Video目录中查找文件，支持按文件名和文件大小匹配
+     */
+    private File findFileInNnngramVideoDir(TLObject attach, String ext) {
+        if (!(attach instanceof TLRPC.Document)) {
+            return null;
+        }
+        TLRPC.Document document = (TLRPC.Document) attach;
+        String attachFileName = getAttachFileName(attach, ext);
+        String documentFileName = getDocumentFileName(document);
+
+        try {
+            //wd 遍历所有外部存储目录查找Nnngram Video
+            File[] externalFilesDirs = ApplicationLoader.applicationContext.getExternalFilesDirs(null);
+            if (externalFilesDirs != null && externalFilesDirs.length > 0) {
+                for (int i = 0; i < externalFilesDirs.length; i++) {
+                    File dirCandidate = externalFilesDirs[i];
+                    if (dirCandidate == null) {
+                        continue;
+                    }
+                    File telegramPath = new File(dirCandidate, "Nnngram");
+                    File nnngramVideoDir = new File(telegramPath, "Nnngram Video");
+                    if (!nnngramVideoDir.isDirectory()) {
+                        continue;
+                    }
+                    //wd 先按文件名查找
+                    File candidate = new File(nnngramVideoDir, attachFileName);
+                    if (candidate.exists()) {
+                        return candidate;
+                    }
+                    //wd 再按文档原始文件名查找
+                    if (!TextUtils.isEmpty(documentFileName) && !documentFileName.equals(attachFileName)) {
+                        candidate = new File(nnngramVideoDir, documentFileName);
+                        if (candidate.exists()) {
+                            return candidate;
+                        }
+                    }
+                    //wd 最后按文件大小匹配
+                    if (document.size > 0) {
+                        File sizeMatch = findFileBySize(nnngramVideoDir, document.size);
+                        if (sizeMatch != null) {
+                            return sizeMatch;
+                        }
+                    }
+                }
+            }
+            //wd 检查传统存储路径
+            File legacyVideoDir = new File(new File(Environment.getExternalStorageDirectory(), "Nnngram"), "Nnngram Video");
+            if (legacyVideoDir.isDirectory()) {
+                File candidate = new File(legacyVideoDir, attachFileName);
+                if (candidate.exists()) {
+                    return candidate;
+                }
+                if (!TextUtils.isEmpty(documentFileName) && !documentFileName.equals(attachFileName)) {
+                    candidate = new File(legacyVideoDir, documentFileName);
+                    if (candidate.exists()) {
+                        return candidate;
+                    }
+                }
+                if (document.size > 0) {
+                    return findFileBySize(legacyVideoDir, document.size);
+                }
+            }
+        } catch (Exception e) {
+            FileLog.e("wd 查找Nnngram Video目录文件异常", e);
+        }
+        return null;
+    }
+
+    /**
+     * wd 按文件大小在目录中查找匹配的视频文件
+     */
+    private File findFileBySize(File dir, long targetSize) {
+        try {
+            File[] files = dir.listFiles();
+            if (files == null) {
+                return null;
+            }
+            File sizeMatch = null;
+            for (int i = 0; i < files.length; i++) {
+                File f = files[i];
+                if (f == null || !f.isFile()) {
+                    continue;
+                }
+                String name = f.getName();
+                if (TextUtils.isEmpty(name) || name.endsWith(".temp") || name.endsWith(".temp.enc") || name.endsWith(".preload") || name.endsWith(".pt")) {
+                    continue;
+                }
+                String lower = name.toLowerCase();
+                if (!(lower.endsWith(".mp4") || lower.endsWith(".mkv") || lower.endsWith(".webm"))) {
+                    continue;
+                }
+                if (f.length() != targetSize) {
+                    continue;
+                }
+                //wd 如果找到多个相同大小的文件，放弃匹配
+                if (sizeMatch != null) {
+                    return null;
+                }
+                sizeMatch = f;
+            }
+            return sizeMatch;
+        } catch (Exception e) {
+            FileLog.e("wd 按大小查找文件异常", e);
+        }
+        return null;
+    }
+
+    /**
+     * wd 检查文件是否在Nnngram目录下（用于保护Nnngram目录文件不被删除）
+     */
+    public static boolean isInNnngramDirectory(File file) {
+        if (file == null) {
+            return false;
+        }
+        File current = file;
+        while (current != null) {
+            String name = current.getName();
+            if ("Nnngram".equals(name) || name.startsWith("Nnngram ")) {
+                return true;
+            }
+            current = current.getParentFile();
+        }
+        return false;
+    }
+
     public int getFileReference(Object parentObject) {
         int reference = lastReferenceId++;
         parentObjectReferences.put(reference, parentObject);
@@ -1539,6 +1665,16 @@ public class FileLoader extends BaseController {
         if (dir == null) {
             return new File("");
         }
+        //wd 对于视频文件，强制优先从Nnngram Video目录查找
+        if (type == MEDIA_DIR_VIDEO) {
+            File nnngramVideoFile = findFileInNnngramVideoDir(attach, ext);
+            if (nnngramVideoFile != null && nnngramVideoFile.exists()) {
+                if (BuildVars.LOGS_ENABLED) {
+                    FileLog.d("wd 视频预览优先从Nnngram Video目录获取: " + nnngramVideoFile.getAbsolutePath());
+                }
+                return nnngramVideoFile;
+            }
+        }
         //wd 对于视频文件，优先从Nnngram Video目录查找，再查数据库，最后查cache
         if (documentId != 0 && type != MEDIA_DIR_VIDEO) {
             String path = getInstance(UserConfig.selectedAccount).getFileDatabase().getPath(documentId, dcId, type, useFileDatabaseQueue);
@@ -2046,6 +2182,13 @@ public class FileLoader extends BaseController {
         fileLoaderQueue.postRunnable(() -> {
             for (int a = 0; a < files.size(); a++) {
                 File file = files.get(a);
+                //wd 跳过Nnngram目录下的文件，保护用户手动保存的文件不被删除
+                if (isInNnngramDirectory(file)) {
+                    if (BuildVars.LOGS_ENABLED) {
+                        FileLog.d("wd 跳过删除Nnngram目录文件: " + file.getAbsolutePath());
+                    }
+                    continue;
+                }
                 File encrypted = new File(file.getAbsolutePath() + ".enc");
                 if (encrypted.exists()) {
                     try {
