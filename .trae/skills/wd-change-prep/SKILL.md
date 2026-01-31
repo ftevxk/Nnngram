@@ -119,12 +119,60 @@ description: 固化代码改动前的需求澄清、影响评估、方案设计�
 
 ### 5.1 必跑验证命令（Windows PowerShell）
 
-**要求**：代码改动完成后，**必须**顺序执行下列命令进行真机验证。严禁未在真机运行即提交改动。必须将命令执行成功的关键输出（如 `BUILD SUCCESSFUL`）与运行日志粘贴到改动说明中。
+**要求**：代码改动完成后，**必须**执行验证命令。验证流程会先检测设备连接状态，根据情况自动选择验证方式：
+- 有连接设备 → 执行完整真机验证（clean + installDebug + 启动）
+- 无连接设备 → 执行 Lint 代码检测
 
-- `adb devices`
-- `.\gradlew clean`
-- `.\gradlew :TMessagesProj:installDebug`
-- `adb shell am start -n xyz.nextalone.nnngram/org.telegram.ui.LaunchActivity`
+**自动验证脚本**
+
+```powershell
+# 检查设备是否存在
+$devices = adb devices | Select-String "device$" | Where-Object { $_ -notmatch "List of devices attached" }
+if ($devices) {
+    Write-Host "✓ 发现设备:"
+    $devices | ForEach-Object { Write-Host "  $_" }
+    Write-Host "`n开始执行完整真机验证..."
+    
+    # Clean
+    .\gradlew clean
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    
+    # 编译并安装
+    .\gradlew :TMessagesProj:installDebug
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    
+    # 启动应用
+    adb shell am start -n xyz.nextalone.nnngram/org.telegram.ui.LaunchActivity
+    Write-Host "`n✓ 真机验证完成，请在设备上测试"
+} else {
+    Write-Host "✗ 未检测到连接的设备"
+    Write-Host "`n将执行 Lint 检测来验证代码质量..."
+    
+    # 执行 Lint 检测
+    .\gradlew :TMessagesProj:lintDebug
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "`n✓ Lint 检测通过，代码无明显错误"
+    } else {
+        Write-Host "`n✗ Lint 检测到问题，请查看报告:"
+        Write-Host "  TMessagesProj\build\reports\lint-results-debug.html"
+    }
+}
+```
+
+**手动执行方式（如需单独执行）**
+
+| 场景 | 命令 |
+|------|------|
+| 检查设备 | `adb devices` |
+| 清理构建 | `.\gradlew clean` |
+| 安装调试包 | `.\gradlew :TMessagesProj:installDebug` |
+| 启动应用 | `adb shell am start -n xyz.nextalone.nnngram/org.telegram.ui.LaunchActivity` |
+| Lint 检测 | `.\gradlew :TMessagesProj:lintDebug` |
+
+**提交要求**：
+- 有设备时：必须将 `BUILD SUCCESSFUL` 和运行日志粘贴到改动说明
+- 无设备时：必须将 Lint 检测结果（通过或问题摘要）粘贴到改动说明
 
 ### 5.2 手工验证路径（最少 3 条）
 

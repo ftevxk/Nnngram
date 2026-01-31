@@ -399,6 +399,47 @@ public class FileLoader extends BaseController {
     }
 
     /**
+     * wd 在Nnngram Images目录中查找文件，支持按文件名和文件大小匹配
+     */
+    private File findFileInNnngramImagesDir(TLObject attach, String ext) {
+        String attachFileName = getAttachFileName(attach, ext);
+
+        try {
+            //wd 遍历所有外部存储目录查找Nnngram Images
+            File[] externalFilesDirs = ApplicationLoader.applicationContext.getExternalFilesDirs(null);
+            if (externalFilesDirs != null && externalFilesDirs.length > 0) {
+                for (int i = 0; i < externalFilesDirs.length; i++) {
+                    File dirCandidate = externalFilesDirs[i];
+                    if (dirCandidate == null) {
+                        continue;
+                    }
+                    File telegramPath = new File(dirCandidate, "Nnngram");
+                    File nnngramImagesDir = new File(telegramPath, "Nnngram Images");
+                    if (!nnngramImagesDir.isDirectory()) {
+                        continue;
+                    }
+                    //wd 按文件名查找
+                    File candidate = new File(nnngramImagesDir, attachFileName);
+                    if (candidate.exists()) {
+                        return candidate;
+                    }
+                }
+            }
+            //wd 检查传统存储路径
+            File legacyImagesDir = new File(new File(Environment.getExternalStorageDirectory(), "Nnngram"), "Nnngram Images");
+            if (legacyImagesDir.isDirectory()) {
+                File candidate = new File(legacyImagesDir, attachFileName);
+                if (candidate.exists()) {
+                    return candidate;
+                }
+            }
+        } catch (Exception e) {
+            FileLog.e("wd 查找Nnngram Images目录文件异常", e);
+        }
+        return null;
+    }
+
+    /**
      * wd 检查文件是否在Nnngram目录下（用于保护Nnngram目录文件不被删除）
      */
     public static boolean isInNnngramDirectory(File file) {
@@ -1567,6 +1608,28 @@ public class FileLoader extends BaseController {
         File existingLocalFile = null;
         if (attach instanceof TLRPC.Document) {
             TLRPC.Document document = (TLRPC.Document) attach;
+            //wd 先确定文件类型
+            if (document.key != null) {
+                type = MEDIA_DIR_CACHE;
+            } else {
+                if (MessageObject.isVoiceDocument(document)) {
+                    type = MEDIA_DIR_AUDIO;
+                } else if (MessageObject.isVideoDocument(document)) {
+                    type = MEDIA_DIR_VIDEO;
+                } else {
+                    type = MEDIA_DIR_DOCUMENT;
+                }
+            }
+            //wd 对于视频文件，强制优先从Nnngram Video目录查找（在检查localPath之前）
+            if (type == MEDIA_DIR_VIDEO) {
+                File nnngramVideoFile = findFileInNnngramVideoDir(attach, ext);
+                if (nnngramVideoFile != null && nnngramVideoFile.exists()) {
+                    if (BuildVars.LOGS_ENABLED) {
+                        FileLog.d("wd 视频预览优先从Nnngram Video目录获取: " + nnngramVideoFile.getAbsolutePath());
+                    }
+                    return nnngramVideoFile;
+                }
+            }
             //wd 优先验证数据库中记录的本地路径是否有效，防止文件被移动后 localPath 仍指向旧路径导致“假下载”状态
             if (!TextUtils.isEmpty(document.localPath)) {
                 File localFile = new File(document.localPath);
@@ -1587,17 +1650,6 @@ public class FileLoader extends BaseController {
                     }
                 }
                 document.localPath = null;
-            }
-            if (document.key != null) {
-                type = MEDIA_DIR_CACHE;
-            } else {
-                if (MessageObject.isVoiceDocument(document)) {
-                    type = MEDIA_DIR_AUDIO;
-                } else if (MessageObject.isVideoDocument(document)) {
-                    type = MEDIA_DIR_VIDEO;
-                } else {
-                    type = MEDIA_DIR_DOCUMENT;
-                }
             }
             documentId = document.id;
             dcId = document.dc_id;
@@ -1665,14 +1717,14 @@ public class FileLoader extends BaseController {
         if (dir == null) {
             return new File("");
         }
-        //wd 对于视频文件，强制优先从Nnngram Video目录查找
-        if (type == MEDIA_DIR_VIDEO) {
-            File nnngramVideoFile = findFileInNnngramVideoDir(attach, ext);
-            if (nnngramVideoFile != null && nnngramVideoFile.exists()) {
+        //wd 对于图片文件，强制优先从Nnngram Images目录查找
+        if (type == MEDIA_DIR_IMAGE) {
+            File nnngramImagesFile = findFileInNnngramImagesDir(attach, ext);
+            if (nnngramImagesFile != null && nnngramImagesFile.exists()) {
                 if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("wd 视频预览优先从Nnngram Video目录获取: " + nnngramVideoFile.getAbsolutePath());
+                    FileLog.d("wd 图片预览优先从Nnngram Images目录获取: " + nnngramImagesFile.getAbsolutePath());
                 }
-                return nnngramVideoFile;
+                return nnngramImagesFile;
             }
         }
         //wd 对于视频文件，优先从Nnngram Video目录查找，再查数据库，最后查cache
