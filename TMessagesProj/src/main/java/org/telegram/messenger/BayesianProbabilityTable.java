@@ -34,8 +34,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -151,24 +153,22 @@ public class BayesianProbabilityTable {
             try {
                 File probFile = getProbTableFile();
 
-                //wd 如果文件不存在，从assets复制或从特征库初始化
+                //wd 如果文件不存在，从assets复制
                 if (!probFile.exists()) {
-                    if (!copyProbTableFromAssets(probFile)) {
-                        //wd 从特征库初始化概率表
-                        initializeFromFeatureLibrary();
-                        return;
-                    }
+                    copyProbTableFromAssets(probFile);
                 }
 
                 //wd 从JSON文件加载概率表
-                loadProbabilitiesFromJson(probFile);
+                if (probFile.exists()) {
+                    loadProbabilitiesFromJson(probFile);
+                }
 
                 isLoaded.set(true);
                 FileLog.d("wd BayesianProbabilityTable 概率表加载完成，词汇表大小=" + vocabularySize);
             } catch (Exception e) {
                 FileLog.e("wd BayesianProbabilityTable 加载概率表失败", e);
-                //wd 降级：从特征库初始化
-                initializeFromFeatureLibrary();
+                //wd 初始化空概率表
+                initializeEmptyTable();
             }
         }
     }
@@ -274,20 +274,14 @@ public class BayesianProbabilityTable {
             FileLog.d("wd BayesianProbabilityTable 已从assets复制默认概率表");
             return true;
         } catch (IOException e) {
-            FileLog.w("wd BayesianProbabilityTable assets中无默认概率表，将从特征库初始化");
+            FileLog.w("wd BayesianProbabilityTable assets中无默认概率表，将初始化空表");
             return false;
         }
     }
 
-    //wd 从特征库初始化概率表
-    //wd 当没有预训练的概率表时，从特征库数据计算初始概率
-    public void initializeFromFeatureLibrary() {
-        FileLog.d("wd BayesianProbabilityTable 开始从特征库初始化概率表");
-
-        AiAdFeatureLibrary featureLibrary = AiAdFeatureLibrary.getInstance();
-        if (!featureLibrary.isLoaded()) {
-            featureLibrary.init(context);
-        }
+    //wd 初始化空概率表
+    private void initializeEmptyTable() {
+        FileLog.d("wd BayesianProbabilityTable 初始化空概率表");
 
         //wd 清空现有数据
         priorProbabilities.clear();
@@ -296,46 +290,19 @@ public class BayesianProbabilityTable {
         featureCounts.get(CLASS_AD).clear();
         featureCounts.get(CLASS_NORMAL).clear();
 
-        //wd 设置先验概率（假设广告和正常消息各占一半）
+        //wd 设置默认先验概率
         priorProbabilities.put(CLASS_AD, 0.5);
         priorProbabilities.put(CLASS_NORMAL, 0.5);
 
-        //wd 从特征库加载广告关键词
-        int adTotalCount = 0;
-        for (AiAdKeywordFeature feature : featureLibrary.getAdFeatures()) {
-            String keyword = feature.keyword.toLowerCase();
-            int count = Math.max(1, feature.frequency);
-            double weight = feature.weight;
-
-            //wd 根据权重计算伪计数
-            int pseudoCount = (int) (count * weight * 10);
-            featureCounts.get(CLASS_AD).put(keyword, pseudoCount);
-            adTotalCount += pseudoCount;
-        }
-
-        //wd 为正常类别设置一些默认的非广告词
-        String[] normalWords = {"你好", "谢谢", "好的", "哈哈", "嗯嗯", "ok", "hello", "thanks"};
-        int normalTotalCount = 0;
-        for (String word : normalWords) {
-            featureCounts.get(CLASS_NORMAL).put(word, 5);
-            normalTotalCount += 5;
-        }
-
-        classTotalCounts.put(CLASS_AD, adTotalCount);
-        classTotalCounts.put(CLASS_NORMAL, normalTotalCount);
+        //wd 设置默认类别总词数
+        classTotalCounts.put(CLASS_AD, 0);
+        classTotalCounts.put(CLASS_NORMAL, 0);
 
         //wd 计算词汇表大小
         calculateVocabularySize();
 
-        //wd 计算条件概率
-        recalculateConditionalProbabilities();
-
         isLoaded.set(true);
-        FileLog.d("wd BayesianProbabilityTable 从特征库初始化完成，广告词数=" + adTotalCount +
-                " 正常词数=" + normalTotalCount + " 词汇表大小=" + vocabularySize);
-
-        //wd 保存到文件
-        saveProbabilities();
+        FileLog.d("wd BayesianProbabilityTable 空概率表初始化完成");
     }
 
     //wd 计算词汇表大小
@@ -476,6 +443,84 @@ public class BayesianProbabilityTable {
         }
     }
 
+    //wd 设置特征词频（用于编辑器）
+    public void setFeatureCount(String feature, String className, int count) {
+        if (feature == null || feature.isEmpty() || count < 0) {
+            return;
+        }
+
+        Map<String, Integer> counts = featureCounts.get(className);
+        if (counts != null) {
+            String lowerFeature = feature.toLowerCase();
+            int oldCount = counts.getOrDefault(lowerFeature, 0);
+            int delta = count - oldCount;
+
+            if (count > 0) {
+                counts.put(lowerFeature, count);
+            } else {
+                counts.remove(lowerFeature);
+            }
+
+            //wd 更新类别总词数
+            classTotalCounts.put(className, classTotalCounts.getOrDefault(className, 0) + delta);
+
+            //wd 重新计算词汇表大小和条件概率
+            calculateVocabularySize();
+            recalculateConditionalProbabilities();
+
+            FileLog.d("wd BayesianProbabilityTable 设置特征词频: " + lowerFeature + "=" + count);
+        }
+    }
+
+    //wd 移除特征（用于编辑器）
+    public boolean removeFeature(String feature, String className) {
+        if (feature == null || feature.isEmpty()) {
+            return false;
+        }
+
+        Map<String, Integer> counts = featureCounts.get(className);
+        if (counts != null) {
+            String lowerFeature = feature.toLowerCase();
+            Integer removed = counts.remove(lowerFeature);
+            if (removed != null) {
+                //wd 更新类别总词数
+                classTotalCounts.put(className, classTotalCounts.getOrDefault(className, 0) - removed);
+
+                //wd 重新计算词汇表大小和条件概率
+                calculateVocabularySize();
+                recalculateConditionalProbabilities();
+
+                FileLog.d("wd BayesianProbabilityTable 移除特征: " + lowerFeature);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //wd 清空某类所有特征（用于编辑器）
+    public void clearClassFeatures(String className) {
+        Map<String, Integer> counts = featureCounts.get(className);
+        if (counts != null) {
+            counts.clear();
+            classTotalCounts.put(className, 0);
+
+            calculateVocabularySize();
+            recalculateConditionalProbabilities();
+
+            FileLog.d("wd BayesianProbabilityTable 清空类别特征: " + className);
+        }
+    }
+
+    //wd 获取某类所有特征及其词频（用于编辑器）
+    @NonNull
+    public Map<String, Integer> getFeaturesByClass(String className) {
+        Map<String, Integer> counts = featureCounts.get(className);
+        if (counts != null) {
+            return new HashMap<>(counts);
+        }
+        return new HashMap<>();
+    }
+
     //wd 获取类别总词数
     public int getClassTotalCount(String className) {
         return classTotalCounts.getOrDefault(className, 0);
@@ -488,8 +533,8 @@ public class BayesianProbabilityTable {
 
     //wd 获取所有特征词
     @NonNull
-    public java.util.Set<String> getAllFeatures() {
-        java.util.Set<String> allFeatures = new java.util.HashSet<>();
+    public Set<String> getAllFeatures() {
+        Set<String> allFeatures = new java.util.HashSet<>();
         allFeatures.addAll(featureCounts.get(CLASS_AD).keySet());
         allFeatures.addAll(featureCounts.get(CLASS_NORMAL).keySet());
         return allFeatures;
@@ -503,5 +548,21 @@ public class BayesianProbabilityTable {
     //wd 获取平滑参数
     public double getSmoothingAlpha() {
         return SMOOTHING_ALPHA;
+    }
+
+    //wd 重新加载概率表（用于编辑器保存后刷新）
+    public void reloadProbabilities() {
+        synchronized (loadLock) {
+            isLoaded.set(false);
+            priorProbabilities.clear();
+            conditionalProbabilities.get(CLASS_AD).clear();
+            conditionalProbabilities.get(CLASS_NORMAL).clear();
+            featureCounts.get(CLASS_AD).clear();
+            featureCounts.get(CLASS_NORMAL).clear();
+            classTotalCounts.put(CLASS_AD, 0);
+            classTotalCounts.put(CLASS_NORMAL, 0);
+            vocabularySize = 0;
+            loadProbabilities();
+        }
     }
 }

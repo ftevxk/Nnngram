@@ -39,8 +39,8 @@ public class AiAdContentAnalyzer {
     //wd 特征提取器（用于关键词提取功能）
     private BayesianFeatureExtractor featureExtractor;
 
-    //wd 特征库
-    private AiAdFeatureLibrary featureLibrary;
+    //wd 概率表（用于关键词管理）
+    private BayesianProbabilityTable probTable;
 
     //wd 上下文
     private Context context;
@@ -52,7 +52,7 @@ public class AiAdContentAnalyzer {
     private AiAdContentAnalyzer() {
         bayesianClassifier = BayesianClassifier.getInstance();
         featureExtractor = BayesianFeatureExtractor.getInstance();
-        featureLibrary = AiAdFeatureLibrary.getInstance();
+        probTable = BayesianProbabilityTable.getInstance();
     }
 
     //wd 获取单例实例
@@ -73,9 +73,6 @@ public class AiAdContentAnalyzer {
 
         //wd 初始化贝叶斯分类器
         bayesianClassifier.init(context);
-
-        //wd 初始化特征库
-        featureLibrary.init(context);
 
         FileLog.d("wd AiAdContentAnalyzer 初始化完成（贝叶斯版本）");
     }
@@ -126,8 +123,8 @@ public class AiAdContentAnalyzer {
         return new AnalysisResult(isAd, score, matchedKeywords, classificationResult.reason);
     }
 
-    //wd 提取关键词并添加到特征库（用于长按菜单功能）
-    //wd 返回提取的关键词列表，供用户选择
+    //wd 提取关键词（用于长按菜单功能）
+    //wd 返回提取的关键词列表，供用户选择添加到概率表
     @NonNull
     public List<AiKeywordExtractor.ExtractedKeyword> extractKeywordsForFeatureLibrary(String text) {
         if (TextUtils.isEmpty(text)) {
@@ -143,16 +140,16 @@ public class AiAdContentAnalyzer {
             keywords.add(new AiKeywordExtractor.ExtractedKeyword(kw.keyword, kw.weight, kw.frequency));
         }
 
-        //wd 过滤掉已经在特征库中的关键词（或者更新频次）
+        //wd 过滤掉已经在概率表中的关键词（或者更新频次）
         List<AiKeywordExtractor.ExtractedKeyword> filteredKeywords = new ArrayList<>();
         for (AiKeywordExtractor.ExtractedKeyword kw : keywords) {
-            AiAdKeywordFeature existing = featureLibrary.getFeature(kw.keyword);
-            if (existing == null) {
+            int existingCount = probTable.getFeatureCount(kw.keyword.toLowerCase(), BayesianProbabilityTable.CLASS_AD);
+            if (existingCount == 0) {
                 //wd 新关键词，添加到列表
                 filteredKeywords.add(kw);
             } else {
                 //wd 已存在，如果权重更高也显示
-                if (kw.weight > existing.weight) {
+                if (kw.weight > 0.5f) {
                     filteredKeywords.add(kw);
                 }
             }
@@ -161,29 +158,11 @@ public class AiAdContentAnalyzer {
         return filteredKeywords;
     }
 
-    //wd 将提取的关键词添加到特征库
+    //wd 将提取的关键词添加到概率表
     public boolean addKeywordsToFeatureLibrary(List<AiKeywordExtractor.ExtractedKeyword> keywords) {
         if (keywords == null || keywords.isEmpty()) {
             return false;
         }
-
-        List<AiAdKeywordFeature> features = new ArrayList<>();
-        for (AiKeywordExtractor.ExtractedKeyword kw : keywords) {
-            features.add(kw.toFeature());
-        }
-
-        featureLibrary.addFeatures(features);
-
-        //wd 更新贝叶斯概率表
-        updateBayesianProbabilityTable(keywords);
-
-        FileLog.d("wd AiAdContentAnalyzer 已添加 " + features.size() + " 个关键词到特征库");
-        return true;
-    }
-
-    //wd 更新贝叶斯概率表
-    private void updateBayesianProbabilityTable(List<AiKeywordExtractor.ExtractedKeyword> keywords) {
-        BayesianProbabilityTable probTable = BayesianProbabilityTable.getInstance();
 
         for (AiKeywordExtractor.ExtractedKeyword kw : keywords) {
             //wd 更新广告类别的词频
@@ -194,7 +173,9 @@ public class AiAdContentAnalyzer {
 
         //wd 保存概率表
         probTable.saveProbabilities();
-        FileLog.d("wd AiAdContentAnalyzer 已更新贝叶斯概率表");
+
+        FileLog.d("wd AiAdContentAnalyzer 已添加 " + keywords.size() + " 个关键词到概率表");
+        return true;
     }
 
     //wd 检查模型是否已加载

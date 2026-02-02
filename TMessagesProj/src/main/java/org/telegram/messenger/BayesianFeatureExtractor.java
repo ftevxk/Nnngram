@@ -332,11 +332,6 @@ public class BayesianFeatureExtractor {
             this.frequency = frequency;
         }
 
-        //wd 转换为特征对象
-        public AiAdKeywordFeature toFeature() {
-            return new AiAdKeywordFeature(keyword, weight, frequency, "ad");
-        }
-
         @NonNull
         @Override
         public String toString() {

@@ -254,11 +254,11 @@ public class MessageTopicAnalyzer {
 
     //wd 重新加载关键词（用于兼容旧接口）
     public void reloadKeywords() {
-        //wd 新架构中关键词由AiAdFeatureLibrary管理
-        AiAdFeatureLibrary library = AiAdFeatureLibrary.getInstance();
-        if (library != null) {
-            library.reloadFeatures();
-            FileLog.d("wd MessageTopicAnalyzer 已刷新特征库");
+        //wd 新架构中关键词由BayesianProbabilityTable管理
+        BayesianProbabilityTable probTable = BayesianProbabilityTable.getInstance();
+        if (probTable != null) {
+            probTable.reloadProbabilities();
+            FileLog.d("wd MessageTopicAnalyzer 已刷新概率表");
         }
     }
 

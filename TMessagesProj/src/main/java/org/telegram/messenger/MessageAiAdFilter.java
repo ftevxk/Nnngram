@@ -162,7 +162,7 @@ public class MessageAiAdFilter {
 
     public boolean shouldFilter(@NonNull String text, long dialogId, long messageId) {
         if (!isEnabled()) {
-            FileLog.d("wd AI广告过滤器: 已禁用，跳过消息 " + messageId);
+            FileLog.d("wd AI广告过滤器: 已禁用，跳过消息 " + truncateText(text));
             return false;
         }
         if (TextUtils.isEmpty(text)) {
@@ -202,7 +202,7 @@ public class MessageAiAdFilter {
 
         //wd 调试日志
         if (BuildConfig.DEBUG) {
-            FileLog.d("wd AI广告过滤器: 消息 " + messageId +
+            FileLog.d("wd AI广告过滤器: 消息 " + truncateText(text) +
                     " 得分=" + String.format("%.4f", score) +
                     " 阈值=" + String.format("%.4f", threshold) +
                     " 是广告=" + isAd +
@@ -211,7 +211,7 @@ public class MessageAiAdFilter {
 
         //wd 只在真正拦截时输出日志
         if (isAd) {
-            FileLog.d("wd AI广告过滤器: 拦截消息 " + messageId +
+            FileLog.d("wd AI广告过滤器: 拦截消息 " + truncateText(text) +
                     " 得分=" + String.format("%.4f", score) +
                     " 原因=" + analysisResult.reason);
         }
@@ -266,6 +266,18 @@ public class MessageAiAdFilter {
             //wd 释放资源
         }
         clearCache();
+    }
+
+    //wd 截断文本用于日志输出
+    private String truncateText(String text) {
+        if (TextUtils.isEmpty(text)) {
+            return "";
+        }
+        String trimmed = text.trim().replaceAll("\\s+", " ");
+        if (trimmed.length() <= 50) {
+            return trimmed;
+        }
+        return trimmed.substring(0, 50) + "...";
     }
 
     /**

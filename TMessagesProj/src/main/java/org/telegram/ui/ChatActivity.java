@@ -178,8 +178,8 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.AiAdContentAnalyzer;
-import org.telegram.messenger.AiAdFeatureLibrary;
 import org.telegram.messenger.AiKeywordExtractor;
+import org.telegram.messenger.BayesianProbabilityTable;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SendMessagesHelper.SendMessageParams;
@@ -10356,13 +10356,14 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
 
-        FileLog.d("wd AI关键词特征提取: 从文本中提取到 " + keywords.size() + " 个关键词");
+        FileLog.d("wd AI关键词提取: 从文本中提取到 " + keywords.size() + " 个关键词");
 
         //wd 构建关键词项列表
         java.util.List<KeywordExtractResultDialog.ExtractedKeywordItem> keywordItems = new java.util.ArrayList<>();
         for (AiKeywordExtractor.ExtractedKeyword kw : keywords) {
-            //wd 检查是否为新关键词（不在特征库中）
-            boolean isNew = !AiAdFeatureLibrary.getInstance().containsFeature(kw.keyword);
+            //wd 检查是否为新关键词（不在概率表中）
+            int existingCount = BayesianProbabilityTable.getInstance().getFeatureCount(kw.keyword.toLowerCase(), BayesianProbabilityTable.CLASS_AD);
+            boolean isNew = existingCount == 0;
             keywordItems.add(KeywordExtractResultDialog.ExtractedKeywordItem.fromExtractedKeyword(kw, isNew));
         }
 
@@ -10391,12 +10392,12 @@ public class ChatActivity extends BaseFragment implements
 
                 String message = LocaleController.formatString("aiKeywordExtractAdded", R.string.aiKeywordExtractAdded, selectedKeywords.size());
                 Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                FileLog.d("wd AI关键词特征提取: 已添加 " + selectedKeywords.size() + " 个关键词到特征库");
+                FileLog.d("wd AI关键词提取: 已添加 " + selectedKeywords.size() + " 个关键词到概率表");
             }
 
             @Override
             public void onCancelled() {
-                FileLog.d("wd AI关键词特征提取: 用户取消");
+                FileLog.d("wd AI关键词提取: 用户取消");
             }
         });
 

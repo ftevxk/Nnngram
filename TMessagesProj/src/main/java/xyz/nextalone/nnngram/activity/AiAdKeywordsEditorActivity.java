@@ -1,20 +1,19 @@
 /*
- * Copyright (C) 2019-2023 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
+ * Copyright (C) 2024 Nnngram
+ * 贝叶斯广告关键词编辑器
+ * 用于编辑和管理贝叶斯分类器的广告关键词
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package xyz.nextalone.nnngram.activity;
@@ -27,13 +26,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
+import android.widget.TextView;
 
-import org.telegram.messenger.AiAdFeatureLibrary;
-import org.telegram.messenger.AiAdKeywordFeature;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.BayesianProbabilityTable;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -45,21 +44,24 @@ import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RecyclerListView;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
-//wd AI广告关键词特征库编辑器
-//wd 用于编辑和管理AI广告过滤的关键词特征库
+//wd 贝叶斯广告关键词编辑器
+//wd 用于编辑和管理贝叶斯分类器的广告/正常关键词
 public class AiAdKeywordsEditorActivity extends BaseFragment {
 
-    private EditTextBoldCursor editText;
-    private File featureLibraryFile;
+    private RecyclerListView listView;
+    private KeywordAdapter adapter;
+    private BayesianProbabilityTable probTable;
+
+    //wd 当前选中的类别
+    private String currentClass = BayesianProbabilityTable.CLASS_AD;
 
     @Override
     public View createView(Context context) {
@@ -72,161 +74,295 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
                 if (id == -1) {
                     finishFragment();
                 } else if (id == 1) {
-                    //wd 保存
-                    saveFeatureLibrary();
+                    //wd 添加关键词
+                    showAddKeywordDialog();
                 } else if (id == 2) {
-                    //wd 恢复默认
-                    showRestoreDefaultDialog();
+                    //wd 切换类别
+                    showSwitchClassDialog();
                 }
             }
         });
 
-        //wd 添加保存按钮
-        actionBar.createMenu().addItem(1, R.drawable.ic_ab_done);
+        //wd 添加按钮
+        actionBar.createMenu().addItem(1, R.drawable.msg_add);
         actionBar.createMenu().addItem(2, R.drawable.ic_ab_other);
 
-        fragmentView = new ScrollView(context);
-        ScrollView scrollView = (ScrollView) fragmentView;
-        scrollView.setFillViewport(true);
+        probTable = BayesianProbabilityTable.getInstance();
 
+        //wd 创建主布局
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
-        scrollView.addView(layout);
 
         //wd 添加说明头部
         HeaderCell headerCell = new HeaderCell(context);
-        headerCell.setText(LocaleController.getString("AiAdKeywordsDesc", R.string.AiAdKeywordsDesc));
+        headerCell.setText(getCurrentClassDesc());
+        headerCell.setTag("header");
         layout.addView(headerCell);
 
-        //wd 创建编辑框
-        editText = new EditTextBoldCursor(context);
-        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        editText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-        editText.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
-        editText.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-        editText.setGravity(Gravity.TOP | Gravity.START);
-        editText.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16));
-        editText.setHint("keyword,weight,frequency,category,source\n\n例如:\n博彩,0.95,150,ad,ai_extracted\n跑分,0.92,120,ad,ai_extracted");
-        layout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 0));
+        //wd 创建列表
+        listView = new RecyclerListView(context);
+        listView.setLayoutManager(new LinearLayoutManager(context));
+        adapter = new KeywordAdapter();
+        listView.setAdapter(adapter);
+        layout.addView(listView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         //wd 添加底部说明
         TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-        infoCell.setText("格式说明：\n关键词,权重(0.0-1.0),频次,分类(ad/normal),来源(ai_extracted/manual)");
+        infoCell.setText("点击关键词可编辑词频，长按可删除\n词频越高，该关键词对分类的影响越大");
         layout.addView(infoCell);
 
-        //wd 初始化文件路径
-        initFilePath();
+        fragmentView = layout;
 
-        //wd 加载特征库
-        loadFeatureLibrary();
+        //wd 加载数据
+        loadKeywords();
 
         return fragmentView;
     }
 
-    //wd 初始化特征库文件路径
-    private void initFilePath() {
-        File nnngramFilesDir = null;
-        try {
-            nnngramFilesDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_FILES);
-        } catch (Exception e) {
-            FileLog.e("wd FileLoader.getDirectory() 失败，使用降级路径", e);
-        }
-        if (nnngramFilesDir == null) {
-            File externalDir = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-            if (externalDir != null) {
-                nnngramFilesDir = new File(new File(externalDir, "Nnngram"), "Nnngram Files");
-            } else {
-                //wd 最终降级：使用应用私有目录
-                nnngramFilesDir = new File(ApplicationLoader.applicationContext.getFilesDir(), "Nnngram Files");
-            }
-        }
-        File aiFilterDir = new File(nnngramFilesDir, "ai_ad_filter");
-        if (!aiFilterDir.exists()) {
-            aiFilterDir.mkdirs();
-        }
-        featureLibraryFile = new File(aiFilterDir, "ad_feature_library.txt");
-
-        //wd 如果文件不存在，从assets复制
-        if (!featureLibraryFile.exists()) {
-            copyFromAssets();
+    //wd 获取当前类别描述
+    private String getCurrentClassDesc() {
+        int count = (adapter != null) ? adapter.getItemCount() : 0;
+        if (BayesianProbabilityTable.CLASS_AD.equals(currentClass)) {
+            return "广告关键词 (" + count + ")";
+        } else {
+            return "正常关键词 (" + count + ")";
         }
     }
 
-    //wd 从assets复制默认文件
-    private void copyFromAssets() {
-        try {
-            InputStream is = ApplicationLoader.applicationContext.getAssets().open("ai_ad_filter/ad_feature_library.txt");
-            FileWriter writer = new FileWriter(featureLibraryFile);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                writer.write(line + "\n");
-            }
-            reader.close();
-            writer.close();
-            FileLog.d("wd 已复制默认特征库文件");
-        } catch (IOException e) {
-            FileLog.e("wd 复制特征库文件失败", e);
+    //wd 加载关键词列表
+    private void loadKeywords() {
+        Map<String, Integer> features = probTable.getFeaturesByClass(currentClass);
+        List<KeywordItem> items = new ArrayList<>();
+
+        for (Map.Entry<String, Integer> entry : features.entrySet()) {
+            items.add(new KeywordItem(entry.getKey(), entry.getValue()));
+        }
+
+        //wd 按词频降序排序
+        Collections.sort(items, (a, b) -> Integer.compare(b.count, a.count));
+
+        adapter.setItems(items);
+        adapter.notifyDataSetChanged();
+
+        //wd 更新标题
+        View header = fragmentView.findViewWithTag("header");
+        if (header instanceof HeaderCell) {
+            ((HeaderCell) header).setText(getCurrentClassDesc());
         }
     }
 
-    //wd 加载特征库到编辑器
-    private void loadFeatureLibrary() {
-        if (!featureLibraryFile.exists()) {
-            return;
-        }
+    //wd 显示添加关键词对话框
+    private void showAddKeywordDialog() {
+        Context context = getContext();
+        if (context == null) return;
 
-        try {
-            StringBuilder content = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new FileReader(featureLibraryFile));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                content.append(line).append("\n");
-            }
-            reader.close();
-            editText.setText(content.toString());
-        } catch (IOException e) {
-            FileLog.e("wd 读取特征库文件失败", e);
-        }
-    }
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("添加关键词");
 
-    //wd 保存特征库
-    private void saveFeatureLibrary() {
-        String content = editText.getText().toString();
-        if (TextUtils.isEmpty(content)) {
-            finishFragment();
-            return;
-        }
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), 0);
 
-        try {
-            FileWriter writer = new FileWriter(featureLibraryFile);
-            writer.write(content);
-            writer.close();
+        //wd 关键词输入框
+        EditTextBoldCursor keywordInput = new EditTextBoldCursor(context);
+        keywordInput.setHint("关键词");
+        keywordInput.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        layout.addView(keywordInput, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-            //wd 重新加载特征库到AiAdFeatureLibrary
-            AiAdFeatureLibrary library = AiAdFeatureLibrary.getInstance();
-            if (library != null) {
-                library.reloadFeatures();
-                FileLog.d("wd AI广告特征库已重新加载");
-            }
+        //wd 词频输入框
+        EditTextBoldCursor countInput = new EditTextBoldCursor(context);
+        countInput.setHint("词频 (建议1-100)");
+        countInput.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        countInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        layout.addView(countInput, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 16, 0, 0));
 
-            FileLog.d("wd 特征库已保存并刷新缓存");
-            finishFragment();
-        } catch (IOException e) {
-            FileLog.e("wd 保存特征库失败", e);
-        }
-    }
+        builder.setView(layout);
 
-    //wd 显示恢复默认对话框
-    private void showRestoreDefaultDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle(LocaleController.getString("RestoreDefault", R.string.RestoreDefault));
-        builder.setMessage(LocaleController.getString("RestoreDefaultConfirm", R.string.RestoreDefaultConfirm));
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
-            copyFromAssets();
-            loadFeatureLibrary();
+            String keyword = keywordInput.getText().toString().trim();
+            String countStr = countInput.getText().toString().trim();
+
+            if (TextUtils.isEmpty(keyword)) {
+                return;
+            }
+
+            int count = 10; //wd 默认词频
+            if (!TextUtils.isEmpty(countStr)) {
+                try {
+                    count = Integer.parseInt(countStr);
+                } catch (NumberFormatException e) {
+                    //wd 使用默认值
+                }
+            }
+
+            //wd 添加到概率表
+            probTable.setFeatureCount(keyword, currentClass, count);
+            probTable.saveProbabilities();
+
+            FileLog.d("wd AiAdKeywordsEditor 添加关键词: " + keyword + "=" + count);
+
+            //wd 刷新列表
+            loadKeywords();
         });
+
         builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
         showDialog(builder.create());
+    }
+
+    //wd 显示切换类别对话框
+    private void showSwitchClassDialog() {
+        Context context = getContext();
+        if (context == null) return;
+
+        String[] items = {"广告关键词", "正常关键词"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("选择类别");
+        builder.setItems(items, (dialog, which) -> {
+            if (which == 0) {
+                currentClass = BayesianProbabilityTable.CLASS_AD;
+            } else {
+                currentClass = BayesianProbabilityTable.CLASS_NORMAL;
+            }
+            loadKeywords();
+        });
+        showDialog(builder.create());
+    }
+
+    //wd 显示编辑词频对话框
+    private void showEditCountDialog(KeywordItem item) {
+        Context context = getContext();
+        if (context == null) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("编辑词频: " + item.keyword);
+
+        EditTextBoldCursor countInput = new EditTextBoldCursor(context);
+        countInput.setText(String.valueOf(item.count));
+        countInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        countInput.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), AndroidUtilities.dp(16));
+
+        builder.setView(countInput);
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
+            String countStr = countInput.getText().toString().trim();
+            if (TextUtils.isEmpty(countStr)) return;
+
+            try {
+                int count = Integer.parseInt(countStr);
+                if (count <= 0) {
+                    //wd 删除关键词
+                    probTable.removeFeature(item.keyword, currentClass);
+                } else {
+                    //wd 更新词频
+                    probTable.setFeatureCount(item.keyword, currentClass, count);
+                }
+                probTable.saveProbabilities();
+                loadKeywords();
+            } catch (NumberFormatException e) {
+                //wd 忽略
+            }
+        });
+
+        builder.setNeutralButton("删除", (dialog, which) -> {
+            probTable.removeFeature(item.keyword, currentClass);
+            probTable.saveProbabilities();
+            loadKeywords();
+        });
+
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
+    //wd 关键词数据类
+    private static class KeywordItem {
+        final String keyword;
+        final int count;
+
+        KeywordItem(String keyword, int count) {
+            this.keyword = keyword;
+            this.count = count;
+        }
+    }
+
+    //wd 列表适配器
+    private class KeywordAdapter extends RecyclerListView.SelectionAdapter {
+
+        private List<KeywordItem> items = new ArrayList<>();
+
+        void setItems(List<KeywordItem> items) {
+            this.items = items;
+        }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        @Override
+        public boolean isEnabled(RecyclerView.ViewHolder holder) {
+            return true;
+        }
+
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            return new KeywordViewHolder(new KeywordCell(parent.getContext()));
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            if (holder.itemView instanceof KeywordCell) {
+                KeywordItem item = items.get(position);
+                ((KeywordCell) holder.itemView).setData(item);
+            }
+        }
+    }
+
+    //wd 列表项视图
+    private class KeywordCell extends FrameLayout {
+
+        private final TextView keywordText;
+        private final TextView countText;
+
+        KeywordCell(Context context) {
+            super(context);
+
+            setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(12), AndroidUtilities.dp(16), AndroidUtilities.dp(12));
+
+            keywordText = new TextView(context);
+            keywordText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+            keywordText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            addView(keywordText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT,
+                    Gravity.START | Gravity.CENTER_VERTICAL));
+
+            countText = new TextView(context);
+            countText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+            countText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
+            addView(countText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT,
+                    Gravity.END | Gravity.CENTER_VERTICAL));
+
+            setBackground(Theme.getSelectorDrawable(false));
+        }
+
+        void setData(KeywordItem item) {
+            keywordText.setText(item.keyword);
+            countText.setText("词频: " + item.count);
+        }
+    }
+
+    //wd 列表项ViewHolder
+    private class KeywordViewHolder extends RecyclerListView.ViewHolder {
+
+        KeywordViewHolder(View itemView) {
+            super(itemView);
+
+            itemView.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position >= 0 && position < adapter.getItemCount()) {
+                    KeywordItem item = adapter.items.get(position);
+                    showEditCountDialog(item);
+                }
+            });
+        }
     }
 }

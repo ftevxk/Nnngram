@@ -432,16 +432,15 @@
     <string name="aiKeywordFeatureExtract">提取信息关键词</string>
     <string name="aiKeywordExtractNoResult">所选文本中未检测到关键词</string>
     <string name="aiKeywordExtractNoSelected">未选择关键词</string>
-    <string name="aiKeywordExtractAdd">添加到特征库</string>
-    <string name="aiKeywordExtractAdded">已添加 %1$d 个关键词到特征库</string>
-    <string name="AiAdKeywordsExtractConfirm">以下关键词将被添加到AI特征库：</string>
+    <string name="aiKeywordExtractAdd">添加到概率表</string>
+    <string name="aiKeywordExtractAdded">已添加 %1$d 个关键词到概率表</string>
     <string name="KeywordExtractDialogTitle">提取的信息关键词</string>
-    <string name="KeywordExtractDialogSubtitle">选择要添加到特征库的关键词</string>
+    <string name="KeywordExtractDialogSubtitle">选择要添加到概率表的关键词</string>
+    <string name="KeywordExtractWeightLabel">权重:</string>
     <string name="Second">秒</string>
     <string name="AiAdFilter">AI 广告过滤</string>
     <string name="AiAdFilterDesc">使用 AI 模型自动过滤博彩/充值推广广告。被识别为广告的消息将被隐藏。</string>
-    <string name="AiAdKeywords">AI 广告关键词特征库</string>
-    <string name="AiAdKeywordsDesc">管理 AI 广告过滤关键词特征库。格式：关键词,权重,频次,分类,来源</string>
+    <string name="AiAdKeywords">AI 广告关键词概率表</string>
     <string name="RestoreDefault">恢复默认</string>
     <string name="RestoreDefaultConfirm">确定要恢复默认关键词吗？这将覆盖您的自定义关键词。</string>
 </resources>

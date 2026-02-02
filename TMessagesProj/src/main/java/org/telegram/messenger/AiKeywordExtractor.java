@@ -37,16 +37,12 @@ public class AiKeywordExtractor {
     //wd 贝叶斯特征提取器
     private BayesianFeatureExtractor bayesianFeatureExtractor;
 
-    //wd 特征库
-    private AiAdFeatureLibrary featureLibrary;
-
     //wd 上下文
     private Context context;
 
     //wd 私有构造函数
     private AiKeywordExtractor() {
         bayesianFeatureExtractor = BayesianFeatureExtractor.getInstance();
-        featureLibrary = AiAdFeatureLibrary.getInstance();
     }
 
     //wd 获取单例实例
@@ -110,11 +106,6 @@ public class AiKeywordExtractor {
             this.keyword = keyword;
             this.weight = weight;
             this.frequency = frequency;
-        }
-
-        //wd 转换为特征对象
-        public AiAdKeywordFeature toFeature() {
-            return new AiAdKeywordFeature(keyword, weight, frequency, "ad");
         }
 
         @NonNull
