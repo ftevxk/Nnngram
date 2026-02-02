@@ -50,7 +50,7 @@ import com.jakewharton.processphoenix.ProcessPhoenix;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessageAiAdFilter;
+import org.telegram.messenger.AdFilter;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -420,16 +420,16 @@ public class ChatSettingActivity extends BaseActivity {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
         } else if (position == aiAdKeywordsRow) {
-            //wd 跳转到AI广告关键词特征库编辑器
-            presentFragment(new AiAdKeywordsEditorActivity());
+            //wd 跳转到广告关键词编辑器
+            presentFragment(new AdKeywordsEditorActivity());
         } else if (position == aiAdFilterRow) {
-            boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false);
-            ConfigManager.putBoolean(Defines.aiAdFilterEnabled, newValue);
+            boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.adFilterEnabled, false);
+            ConfigManager.putBoolean(Defines.adFilterEnabled, newValue);
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(newValue);
             }
             if (newValue) {
-                MessageAiAdFilter.getInstance(getContext()).initialize();
+                AdFilter.getInstance(getContext()).initialize();
             }
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
@@ -698,7 +698,7 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndValue(LocaleController.getString("MarkdownParser", R.string.MarkdownParser), Config.newMarkdownParser ? "Nnngram" : "Telegram", payload,
                             position + 1 != markdown2Row);
                     } else if (position == aiAdKeywordsRow) {
-                        textCell.setText(LocaleController.getString("AiAdKeywords", R.string.AiAdKeywords), payload);
+                        textCell.setText(LocaleController.getString("AdKeywords", R.string.AdKeywords), payload);
                     }
                     break;
                 }
@@ -801,7 +801,7 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == hideSavedAndArchivedMessagesInListRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.hideSavedAndArchivedMessagesInList), Config.hideSavedAndArchivedMessagesInList, true);
                     } else if (position == aiAdFilterRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("AiAdFilter", R.string.AiAdFilter), ConfigManager.getBooleanOrDefault(Defines.aiAdFilterEnabled, false), true);
+                        textCell.setTextAndCheck(LocaleController.getString("AdFilter", R.string.AdFilter), ConfigManager.getBooleanOrDefault(Defines.adFilterEnabled, false), true);
                     }
                     break;
                 }

@@ -5234,7 +5234,7 @@ public class MessagesStorage extends BaseController {
                             }
                         }
                         MessageObject messageObject = new MessageObject(currentAccount, message, null, null, null, null, null, true, true, 0, false, false, false);
-                        MessageAiAdFilter filter2 = MessageAiAdFilter.getInstance();
+                        AdFilter filter2 = AdFilter.getInstance();
                         if (filter2 != null && filter2.shouldFilter(messageObject)) {
                             continue;
                         }

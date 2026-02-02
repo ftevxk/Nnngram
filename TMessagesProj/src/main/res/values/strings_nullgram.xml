@@ -451,9 +451,18 @@
     <string name="KeywordExtractDialogSubtitle">Select keywords to add to the probability table</string>
     <string name="KeywordExtractWeightLabel">Weight:</string>
     <string name="Second">second</string>
-    <string name="AiAdKeywords">AI Ad Probability Table</string>
+    <string name="AdKeywords">Ad Keywords</string>
+    <string name="AdKeywordsDesc">Click keyword to delete\nMessages containing 2 or more keywords will be filtered</string>
+    <string name="AdKeywordsAdd">Add Ad Keyword</string>
+    <string name="AdKeywordsHint">Enter keyword</string>
+    <string name="AdKeywordsAdded">Keyword added successfully</string>
+    <string name="AdKeywordsExists">Keyword already exists</string>
+    <string name="AdKeywordsClearAllTitle">Clear All</string>
+    <string name="AdKeywordsClearAllConfirm">Are you sure you want to delete all keywords?</string>
+    <string name="AdKeywordsDeleteTitle">Delete Keyword</string>
+    <string name="AdKeywordsDeleteConfirm">Delete keyword "%1$s"?</string>
     <string name="RestoreDefault">Restore Default</string>
     <string name="RestoreDefaultConfirm">Are you sure you want to restore default keywords? This will overwrite your custom keywords.</string>
-    <string name="AiAdFilter">AI Ad Filter</string>
-    <string name="AiAdFilterDesc">Use AI model to automatically filter gambling/promotion ads. Messages detected as ads will be hidden.</string>
+    <string name="AdFilter">Ad Filter</string>
+    <string name="AdFilterDesc">Automatically filter ads by keyword matching. Messages containing 2 or more ad keywords will be hidden.</string>
 </resources>

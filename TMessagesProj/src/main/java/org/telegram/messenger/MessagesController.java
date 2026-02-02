@@ -2055,8 +2055,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
                 MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, false, false);
-                MessageAiAdFilter filter4 = MessageAiAdFilter.getInstance();
-                if (filter4 != null && filter4.shouldFilter(messageObject)) {
+                if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(messageObject)) {
                     continue;
                 }
                 newMessages.add(messageObject);
@@ -7650,8 +7649,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         message.unread = (message.out ? outboxValue : inboxValue) < message.id;
                     }
                     MessageObject msgObj = new MessageObject(currentAccount, message, usersLocal, chatsLocal, true, true);
-                    MessageAiAdFilter filter1 = MessageAiAdFilter.getInstance();
-                    if (filter1 != null && filter1.shouldFilter(msgObj)) {
+                    if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(msgObj)) {
                         continue;
                     }
                     objects.add(msgObj);
@@ -15788,8 +15786,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                                     boolean isDialogCreated = createdDialogIds.contains(dialogId);
                                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, isDialogCreated, isDialogCreated);
-                                    MessageAiAdFilter filter5 = MessageAiAdFilter.getInstance();
-                                    if (filter5 != null && filter5.shouldFilter(obj)) {
+                                    if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(obj)) {
                                         continue;
                                     }
                                     if ((!obj.isOut() || obj.messageOwner.from_scheduled) && obj.isUnread()) {
@@ -16071,8 +16068,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
-                                    MessageAiAdFilter filter6 = MessageAiAdFilter.getInstance();
-                                    if (filter6 != null && filter6.shouldFilter(obj)) {
+                                    if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(obj)) {
                                         continue;
                                     }
 
@@ -17698,9 +17694,8 @@ public class MessagesController extends BaseController implements NotificationCe
 
                     boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                     MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
-                    MessageAiAdFilter filter = MessageAiAdFilter.getInstance();
-                    FileLog.d("wd 调试: 过滤器=" + (filter != null) + ", 启用=" + (filter != null ? filter.isEnabled() : "N/A"));
-                    if (filter != null && filter.shouldFilter(obj)) {
+                    FileLog.d("wd 调试: 过滤器=" + (AdFilter.getInstance() != null) + ", 启用=" + (AdFilter.getInstance() != null ? AdFilter.getInstance().isEnabled() : "N/A"));
+                    if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(obj)) {
                         FileLog.d("wd 调试: 已过滤消息 " + obj.getId());
                         continue;
                     }
@@ -18129,8 +18124,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         messagesArr.add(message);
                         boolean isDialogCreated = createdDialogIds.contains(uid);
                         MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
-                        MessageAiAdFilter filter7 = MessageAiAdFilter.getInstance();
-                        if (filter7 != null && filter7.shouldFilter(obj)) {
+                        if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(obj)) {
                             continue;
                         }
                         arr.add(obj);
@@ -18514,8 +18508,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                 MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
-                MessageAiAdFilter filter8 = MessageAiAdFilter.getInstance();
-                if (filter8 != null && filter8.shouldFilter(obj)) {
+                if (AdFilter.getInstance() != null && AdFilter.getInstance().shouldFilter(obj)) {
                     continue;
                 }
                 getTranslateController().invalidateTranslation(obj);
@@ -20311,8 +20304,6 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     private void updateMessageFilterCache() {
-        //wd 旧的消息过滤器已废弃，不再执行
-        //wd 使用新的AI广告过滤器替代
         messageFilterTextCached = "";
         messageFilterPatternCached = null;
         messageFilterKeywordsCached = null;
@@ -20372,10 +20363,9 @@ public class MessagesController extends BaseController implements NotificationCe
             return true;
         }
 
-        MessageAiAdFilter aiFilter = MessageAiAdFilter.getInstance();
-        if (aiFilter != null && aiFilter.isEnabled()) {
+        if (AdFilter.getInstance() != null && AdFilter.getInstance().isEnabled()) {
             MessageObject msgObj = new MessageObject(currentAccount, message, false, false);
-            return aiFilter.shouldFilter(msgObj);
+            return AdFilter.getInstance().shouldFilter(msgObj);
         }
 
         return false;

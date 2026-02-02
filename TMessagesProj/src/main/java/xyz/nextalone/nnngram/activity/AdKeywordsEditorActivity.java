@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2024 Nnngram
- * 贝叶斯广告关键词编辑器
- * 用于编辑和管理贝叶斯分类器的广告关键词
+ * 广告关键词编辑器
+ * 只管理广告关键词列表，不包含词频和类别
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.AdFilter;
+import org.telegram.messenger.AdKeywordsStore;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BayesianProbabilityTable;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -48,25 +49,21 @@ import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
-//wd 贝叶斯广告关键词编辑器
-//wd 用于编辑和管理贝叶斯分类器的广告/正常关键词
-public class AiAdKeywordsEditorActivity extends BaseFragment {
+//wd 广告关键词编辑器
+//wd 只管理广告关键词列表，不包含词频和类别
+public class AdKeywordsEditorActivity extends BaseFragment {
 
     private RecyclerListView listView;
     private KeywordAdapter adapter;
-    private BayesianProbabilityTable probTable;
-
-    //wd 当前选中的类别
-    private String currentClass = BayesianProbabilityTable.CLASS_AD;
+    private AdKeywordsStore keywordsStore;
 
     @Override
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-        actionBar.setTitle(LocaleController.getString("AiAdKeywords", R.string.AiAdKeywords));
+        actionBar.setTitle(LocaleController.getString("AdKeywords", R.string.AdKeywords));
         actionBar.setAllowOverlayTitle(true);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -77,17 +74,17 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
                     //wd 添加关键词
                     showAddKeywordDialog();
                 } else if (id == 2) {
-                    //wd 切换类别
-                    showSwitchClassDialog();
+                    //wd 清空所有关键词
+                    showClearAllDialog();
                 }
             }
         });
 
         //wd 添加按钮
         actionBar.createMenu().addItem(1, R.drawable.msg_add);
-        actionBar.createMenu().addItem(2, R.drawable.ic_ab_other);
+        actionBar.createMenu().addItem(2, R.drawable.msg_delete);
 
-        probTable = BayesianProbabilityTable.getInstance();
+        keywordsStore = AdKeywordsStore.getInstance();
 
         //wd 创建主布局
         LinearLayout layout = new LinearLayout(context);
@@ -95,7 +92,6 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
 
         //wd 添加说明头部
         HeaderCell headerCell = new HeaderCell(context);
-        headerCell.setText(getCurrentClassDesc());
         headerCell.setTag("header");
         layout.addView(headerCell);
 
@@ -108,7 +104,7 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
 
         //wd 添加底部说明
         TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-        infoCell.setText("点击关键词可编辑词频，长按可删除\n词频越高，该关键词对分类的影响越大");
+        infoCell.setText(LocaleController.getString("AdKeywordsDesc", R.string.AdKeywordsDesc));
         layout.addView(infoCell);
 
         fragmentView = layout;
@@ -119,27 +115,13 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         return fragmentView;
     }
 
-    //wd 获取当前类别描述
-    private String getCurrentClassDesc() {
-        int count = (adapter != null) ? adapter.getItemCount() : 0;
-        if (BayesianProbabilityTable.CLASS_AD.equals(currentClass)) {
-            return "广告关键词 (" + count + ")";
-        } else {
-            return "正常关键词 (" + count + ")";
-        }
-    }
-
     //wd 加载关键词列表
     private void loadKeywords() {
-        Map<String, Integer> features = probTable.getFeaturesByClass(currentClass);
-        List<KeywordItem> items = new ArrayList<>();
+        Set<String> keywords = keywordsStore.getAdKeywords();
+        List<String> items = new ArrayList<>(keywords);
 
-        for (Map.Entry<String, Integer> entry : features.entrySet()) {
-            items.add(new KeywordItem(entry.getKey(), entry.getValue()));
-        }
-
-        //wd 按词频降序排序
-        Collections.sort(items, (a, b) -> Integer.compare(b.count, a.count));
+        //wd 按字母排序
+        Collections.sort(items);
 
         adapter.setItems(items);
         adapter.notifyDataSetChanged();
@@ -147,7 +129,8 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         //wd 更新标题
         View header = fragmentView.findViewWithTag("header");
         if (header instanceof HeaderCell) {
-            ((HeaderCell) header).setText(getCurrentClassDesc());
+            ((HeaderCell) header).setText(LocaleController.getString("AdKeywords", R.string.AdKeywords) +
+                    " (" + items.size() + ")");
         }
     }
 
@@ -157,7 +140,7 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         if (context == null) return;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("添加关键词");
+        builder.setTitle(LocaleController.getString("AdKeywordsAdd", R.string.AdKeywordsAdd));
 
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -165,41 +148,30 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
 
         //wd 关键词输入框
         EditTextBoldCursor keywordInput = new EditTextBoldCursor(context);
-        keywordInput.setHint("关键词");
+        keywordInput.setHint(LocaleController.getString("AdKeywordsHint", R.string.AdKeywordsHint));
         keywordInput.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         layout.addView(keywordInput, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        //wd 词频输入框
-        EditTextBoldCursor countInput = new EditTextBoldCursor(context);
-        countInput.setHint("词频 (建议1-100)");
-        countInput.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        countInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        layout.addView(countInput, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 16, 0, 0));
 
         builder.setView(layout);
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
             String keyword = keywordInput.getText().toString().trim();
-            String countStr = countInput.getText().toString().trim();
 
             if (TextUtils.isEmpty(keyword)) {
                 return;
             }
 
-            int count = 10; //wd 默认词频
-            if (!TextUtils.isEmpty(countStr)) {
-                try {
-                    count = Integer.parseInt(countStr);
-                } catch (NumberFormatException e) {
-                    //wd 使用默认值
-                }
+            //wd 添加到关键词存储
+            keywordsStore.addAdKeyword(keyword);
+            keywordsStore.saveKeywords();
+
+            //wd 刷新过滤器缓存
+            AdFilter filter = AdFilter.getInstance();
+            if (filter != null) {
+                filter.refreshFilterConfig();
             }
 
-            //wd 添加到概率表
-            probTable.setFeatureCount(keyword, currentClass, count);
-            probTable.saveProbabilities();
-
-            FileLog.d("wd AiAdKeywordsEditor 添加关键词: " + keyword + "=" + count);
+            FileLog.d("wd AdKeywordsEditor 添加关键词: " + keyword);
 
             //wd 刷新列表
             loadKeywords();
@@ -209,64 +181,28 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         showDialog(builder.create());
     }
 
-    //wd 显示切换类别对话框
-    private void showSwitchClassDialog() {
-        Context context = getContext();
-        if (context == null) return;
-
-        String[] items = {"广告关键词", "正常关键词"};
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("选择类别");
-        builder.setItems(items, (dialog, which) -> {
-            if (which == 0) {
-                currentClass = BayesianProbabilityTable.CLASS_AD;
-            } else {
-                currentClass = BayesianProbabilityTable.CLASS_NORMAL;
-            }
-            loadKeywords();
-        });
-        showDialog(builder.create());
-    }
-
-    //wd 显示编辑词频对话框
-    private void showEditCountDialog(KeywordItem item) {
+    //wd 显示清空所有关键词对话框
+    private void showClearAllDialog() {
         Context context = getContext();
         if (context == null) return;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("编辑词频: " + item.keyword);
-
-        EditTextBoldCursor countInput = new EditTextBoldCursor(context);
-        countInput.setText(String.valueOf(item.count));
-        countInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        countInput.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), AndroidUtilities.dp(16));
-
-        builder.setView(countInput);
+        builder.setTitle(LocaleController.getString("AdKeywordsClearAllTitle", R.string.AdKeywordsClearAllTitle));
+        builder.setMessage(LocaleController.getString("AdKeywordsClearAllConfirm", R.string.AdKeywordsClearAllConfirm));
 
         builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
-            String countStr = countInput.getText().toString().trim();
-            if (TextUtils.isEmpty(countStr)) return;
+            keywordsStore.clearAdKeywords();
+            keywordsStore.saveKeywords();
 
-            try {
-                int count = Integer.parseInt(countStr);
-                if (count <= 0) {
-                    //wd 删除关键词
-                    probTable.removeFeature(item.keyword, currentClass);
-                } else {
-                    //wd 更新词频
-                    probTable.setFeatureCount(item.keyword, currentClass, count);
-                }
-                probTable.saveProbabilities();
-                loadKeywords();
-            } catch (NumberFormatException e) {
-                //wd 忽略
+            //wd 刷新过滤器缓存
+            AdFilter filter = AdFilter.getInstance();
+            if (filter != null) {
+                filter.refreshFilterConfig();
             }
-        });
 
-        builder.setNeutralButton("删除", (dialog, which) -> {
-            probTable.removeFeature(item.keyword, currentClass);
-            probTable.saveProbabilities();
+            FileLog.d("wd AdKeywordsEditor 清空所有关键词");
+
+            //wd 刷新列表
             loadKeywords();
         });
 
@@ -274,23 +210,41 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         showDialog(builder.create());
     }
 
-    //wd 关键词数据类
-    private static class KeywordItem {
-        final String keyword;
-        final int count;
+    //wd 显示删除确认对话框
+    private void showDeleteConfirmDialog(String keyword) {
+        Context context = getContext();
+        if (context == null) return;
 
-        KeywordItem(String keyword, int count) {
-            this.keyword = keyword;
-            this.count = count;
-        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("AdKeywordsDeleteTitle", R.string.AdKeywordsDeleteTitle));
+        builder.setMessage(LocaleController.formatString("AdKeywordsDeleteConfirm", R.string.AdKeywordsDeleteConfirm, keyword));
+
+        builder.setPositiveButton(LocaleController.getString("Delete", R.string.Delete), (dialog, which) -> {
+            keywordsStore.removeAdKeyword(keyword);
+            keywordsStore.saveKeywords();
+
+            //wd 刷新过滤器缓存
+            AdFilter filter = AdFilter.getInstance();
+            if (filter != null) {
+                filter.refreshFilterConfig();
+            }
+
+            FileLog.d("wd AdKeywordsEditor 删除关键词: " + keyword);
+
+            //wd 刷新列表
+            loadKeywords();
+        });
+
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
     }
 
     //wd 列表适配器
     private class KeywordAdapter extends RecyclerListView.SelectionAdapter {
 
-        private List<KeywordItem> items = new ArrayList<>();
+        private List<String> items = new ArrayList<>();
 
-        void setItems(List<KeywordItem> items) {
+        void setItems(List<String> items) {
             this.items = items;
         }
 
@@ -312,8 +266,8 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (holder.itemView instanceof KeywordCell) {
-                KeywordItem item = items.get(position);
-                ((KeywordCell) holder.itemView).setData(item);
+                String keyword = items.get(position);
+                ((KeywordCell) holder.itemView).setData(keyword);
             }
         }
     }
@@ -322,7 +276,6 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
     private class KeywordCell extends FrameLayout {
 
         private final TextView keywordText;
-        private final TextView countText;
 
         KeywordCell(Context context) {
             super(context);
@@ -335,18 +288,11 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
             addView(keywordText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT,
                     Gravity.START | Gravity.CENTER_VERTICAL));
 
-            countText = new TextView(context);
-            countText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            countText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
-            addView(countText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT,
-                    Gravity.END | Gravity.CENTER_VERTICAL));
-
             setBackground(Theme.getSelectorDrawable(false));
         }
 
-        void setData(KeywordItem item) {
-            keywordText.setText(item.keyword);
-            countText.setText("词频: " + item.count);
+        void setData(String keyword) {
+            keywordText.setText(keyword);
         }
     }
 
@@ -359,8 +305,8 @@ public class AiAdKeywordsEditorActivity extends BaseFragment {
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position >= 0 && position < adapter.getItemCount()) {
-                    KeywordItem item = adapter.items.get(position);
-                    showEditCountDialog(item);
+                    String keyword = adapter.items.get(position);
+                    showDeleteConfirmDialog(keyword);
                 }
             });
         }

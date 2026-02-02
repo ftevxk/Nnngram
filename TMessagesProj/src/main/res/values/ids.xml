@@ -81,4 +81,5 @@
     <item name="passcode_btn_backspace" type="id"/>
     <item name="passcode_btn_done" type="id"/>
     <item name="hyperos_ai" type="id" />
+    <item name="menu_ad_filter_add_keyword" type="id" />
 </resources>

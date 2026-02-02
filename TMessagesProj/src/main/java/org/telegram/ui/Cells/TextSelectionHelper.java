@@ -67,11 +67,8 @@ import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LanguageDetector;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.AiAdContentAnalyzer;
-import org.telegram.messenger.AiKeywordExtractor;
-import org.telegram.messenger.MessageAiAdFilter;
+import org.telegram.messenger.AdFilter;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessageTopicAnalyzer;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
@@ -102,6 +99,7 @@ import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.helpers.HyperOsHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
+import xyz.nextalone.nnngram.utils.AlertUtil;
 import xyz.nextalone.nnngram.utils.Defines;
 import xyz.nextalone.nnngram.utils.Log;
 
@@ -1469,6 +1467,8 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 menu.add(Menu.NONE, android.R.id.selectAll, index++, android.R.string.selectAll);
                 menus.put(TRANSLATE, index);
                 menu.add(Menu.NONE, TRANSLATE, index++, LocaleController.getString(R.string.TranslateMessage));
+                menus.put(R.id.menu_ad_filter_add_keyword, index);
+                menu.add(Menu.NONE, R.id.menu_ad_filter_add_keyword, index++, LocaleController.getString(R.string.AdKeywordsAdd));
                 return true;
             }
 
@@ -1554,6 +1554,28 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                         return true;
                     }
                     HyperOsHelper.INSTANCE.startHyperOsAiService(textSelectionOverlay, str.toString());
+                    hideActions();
+                    clear(true);
+                    return true;
+                } else if (itemId == R.id.menu_ad_filter_add_keyword) {
+                    CharSequence str = getSelectedText();
+                    if (str == null) {
+                        return true;
+                    }
+                    //wd 添加选中文本为广告关键词
+                    String selectedText = str.toString().trim();
+                    if (!selectedText.isEmpty()) {
+                        AdFilter filter = AdFilter.getInstance();
+                        if (filter != null) {
+                            boolean added = filter.addAdKeyword(selectedText);
+                            if (added) {
+                                AlertUtil.showToast(LocaleController.getString("AdKeywordsAdded", R.string.AdKeywordsAdded));
+                                FileLog.d("wd 通过文本选择添加广告关键词: " + selectedText);
+                            } else {
+                                AlertUtil.showToast(LocaleController.getString("AdKeywordsExists", R.string.AdKeywordsExists));
+                            }
+                        }
+                    }
                     hideActions();
                     clear(true);
                     return true;

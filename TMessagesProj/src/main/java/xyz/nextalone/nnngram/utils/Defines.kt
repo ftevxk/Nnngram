@@ -299,13 +299,8 @@ object Defines {
     @BooleanConfig(true) const val showTextTranslate = "showTextTranslate"
     @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
-    // AI Ad Filter
-    @BooleanConfig const val aiAdFilterEnabled = "aiAdFilterEnabled"
-    //wd 移除aiAdFeatureCoverageThreshold，使用固定阈值0.65
-    @Deprecated("Use fixed threshold 0.65 instead")
-    const val aiAdFilterThreshold = "aiAdFilterThreshold"
-    @Deprecated("No longer used")
-    @BooleanConfig const val aiAdFilterStrictMode = "aiAdFilterStrictMode"
+    // Ad Filter
+    @BooleanConfig const val adFilterEnabled = "adFilterEnabled"
 
     /**
      * 数组中元素未找到的下标，值为-1

@@ -438,9 +438,18 @@
     <string name="KeywordExtractDialogSubtitle">选择要添加到概率表的关键词</string>
     <string name="KeywordExtractWeightLabel">权重:</string>
     <string name="Second">秒</string>
-    <string name="AiAdFilter">AI 广告过滤</string>
-    <string name="AiAdFilterDesc">使用 AI 模型自动过滤博彩/充值推广广告。被识别为广告的消息将被隐藏。</string>
-    <string name="AiAdKeywords">AI 广告关键词概率表</string>
+    <string name="AdFilter">广告过滤</string>
+    <string name="AdFilterDesc">使用关键词匹配自动过滤广告消息。命中2个及以上广告关键词的消息将被隐藏。</string>
+    <string name="AdKeywords">广告关键词</string>
+    <string name="AdKeywordsDesc">点击关键词可删除\n命中2个及以上关键词的消息将被判定为广告</string>
+    <string name="AdKeywordsAdd">添加广告关键词</string>
+    <string name="AdKeywordsHint">输入关键词</string>
+    <string name="AdKeywordsAdded">关键词添加成功</string>
+    <string name="AdKeywordsExists">关键词已存在</string>
+    <string name="AdKeywordsClearAllTitle">清空所有</string>
+    <string name="AdKeywordsClearAllConfirm">确定要删除所有关键词吗？</string>
+    <string name="AdKeywordsDeleteTitle">删除关键词</string>
+    <string name="AdKeywordsDeleteConfirm">删除关键词"%1$s"？</string>
     <string name="RestoreDefault">恢复默认</string>
     <string name="RestoreDefaultConfirm">确定要恢复默认关键词吗？这将覆盖您的自定义关键词。</string>
 </resources>
