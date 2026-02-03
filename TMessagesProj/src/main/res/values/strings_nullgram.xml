@@ -465,4 +465,8 @@
     <string name="RestoreDefaultConfirm">Are you sure you want to restore default keywords? This will overwrite your custom keywords.</string>
     <string name="AdFilter">Ad Filter</string>
     <string name="AdFilterDesc">Automatically filter ads by keyword matching. Messages containing 2 or more ad keywords will be hidden.</string>
+    <string name="AdKeywordsConfig">Filter Settings</string>
+    <string name="AdKeywordsConfigDesc">Configure the conditions for filtering ad messages</string>
+    <string name="AdKeywordsMultiThreshold">Multi-Keyword Threshold</string>
+    <string name="AdKeywordsRepeatThreshold">Repeat Keyword Threshold</string>
 </resources>

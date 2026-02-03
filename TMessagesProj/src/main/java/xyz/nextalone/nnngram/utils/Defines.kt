@@ -301,6 +301,8 @@ object Defines {
 
     // Ad Filter
     @BooleanConfig const val adFilterEnabled = "adFilterEnabled"
+    @IntConfig(2) const val adFilterMultiKeywordThreshold = "adFilterMultiKeywordThreshold"
+    @IntConfig(3) const val adFilterRepeatKeywordThreshold = "adFilterRepeatKeywordThreshold"
 
     /**
      * 数组中元素未找到的下标，值为-1

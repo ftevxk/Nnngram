@@ -452,4 +452,8 @@
     <string name="AdKeywordsDeleteConfirm">删除关键词"%1$s"？</string>
     <string name="RestoreDefault">恢复默认</string>
     <string name="RestoreDefaultConfirm">确定要恢复默认关键词吗？这将覆盖您的自定义关键词。</string>
+    <string name="AdKeywordsConfig">过滤设置</string>
+    <string name="AdKeywordsConfigDesc">配置广告消息过滤条件</string>
+    <string name="AdKeywordsMultiThreshold">多关键词阈值</string>
+    <string name="AdKeywordsRepeatThreshold">重复关键词阈值</string>
 </resources>

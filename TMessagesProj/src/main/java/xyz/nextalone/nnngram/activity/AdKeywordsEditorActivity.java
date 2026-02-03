@@ -43,8 +43,10 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
+import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.NumberPicker;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
@@ -52,13 +54,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.utils.Defines;
+
 //wd 广告关键词编辑器
-//wd 只管理广告关键词列表，不包含词频和类别
 public class AdKeywordsEditorActivity extends BaseFragment {
 
     private RecyclerListView listView;
     private KeywordAdapter adapter;
     private AdKeywordsStore keywordsStore;
+    private TextSettingsCell multiKeywordCell;
+    private TextSettingsCell repeatKeywordCell;
 
     @Override
     public View createView(Context context) {
@@ -90,7 +96,31 @@ public class AdKeywordsEditorActivity extends BaseFragment {
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
 
-        //wd 添加说明头部
+        //wd 添加配置区域头部
+        HeaderCell configHeaderCell = new HeaderCell(context);
+        configHeaderCell.setText(LocaleController.getString("AdKeywordsConfig", R.string.AdKeywordsConfig));
+        layout.addView(configHeaderCell);
+
+        //wd 多关键词阈值配置
+        multiKeywordCell = new TextSettingsCell(context);
+        multiKeywordCell.setBackground(Theme.getSelectorDrawable(false));
+        updateMultiKeywordCell();
+        multiKeywordCell.setOnClickListener(v -> showMultiKeywordThresholdDialog());
+        layout.addView(multiKeywordCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        //wd 重复关键词阈值配置
+        repeatKeywordCell = new TextSettingsCell(context);
+        repeatKeywordCell.setBackground(Theme.getSelectorDrawable(false));
+        updateRepeatKeywordCell();
+        repeatKeywordCell.setOnClickListener(v -> showRepeatKeywordThresholdDialog());
+        layout.addView(repeatKeywordCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        //wd 配置说明
+        TextInfoPrivacyCell configInfoCell = new TextInfoPrivacyCell(context);
+        configInfoCell.setText(LocaleController.getString("AdKeywordsConfigDesc", R.string.AdKeywordsConfigDesc));
+        layout.addView(configInfoCell);
+
+        //wd 添加关键词列表头部
         HeaderCell headerCell = new HeaderCell(context);
         headerCell.setTag("header");
         layout.addView(headerCell);
@@ -113,6 +143,104 @@ public class AdKeywordsEditorActivity extends BaseFragment {
         loadKeywords();
 
         return fragmentView;
+    }
+
+    //wd 更新多关键词阈值显示
+    private void updateMultiKeywordCell() {
+        int threshold = ConfigManager.getIntOrDefault(Defines.adFilterMultiKeywordThreshold, 2);
+        multiKeywordCell.setTextAndValue(
+                LocaleController.getString("AdKeywordsMultiThreshold", R.string.AdKeywordsMultiThreshold),
+                String.valueOf(threshold),
+                false);
+    }
+
+    //wd 更新重复关键词阈值显示
+    private void updateRepeatKeywordCell() {
+        int threshold = ConfigManager.getIntOrDefault(Defines.adFilterRepeatKeywordThreshold, 3);
+        repeatKeywordCell.setTextAndValue(
+                LocaleController.getString("AdKeywordsRepeatThreshold", R.string.AdKeywordsRepeatThreshold),
+                String.valueOf(threshold),
+                false);
+    }
+
+    //wd 显示多关键词阈值选择对话框
+    private void showMultiKeywordThresholdDialog() {
+        Context context = getContext();
+        if (context == null) return;
+
+        int currentValue = ConfigManager.getIntOrDefault(Defines.adFilterMultiKeywordThreshold, 2);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("AdKeywordsMultiThreshold", R.string.AdKeywordsMultiThreshold));
+
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), 0);
+
+        NumberPicker picker = new NumberPicker(context);
+        picker.setMinValue(1);
+        picker.setMaxValue(10);
+        picker.setValue(currentValue);
+        layout.addView(picker);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
+            int newValue = picker.getValue();
+            ConfigManager.putInt(Defines.adFilterMultiKeywordThreshold, newValue);
+            updateMultiKeywordCell();
+
+            //wd 刷新过滤器
+            AdFilter filter = AdFilter.getInstance();
+            if (filter != null) {
+                filter.refreshFilterConfig();
+            }
+
+            FileLog.d("wd AdKeywordsEditor 设置多关键词阈值: " + newValue);
+        });
+
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
+    //wd 显示重复关键词阈值选择对话框
+    private void showRepeatKeywordThresholdDialog() {
+        Context context = getContext();
+        if (context == null) return;
+
+        int currentValue = ConfigManager.getIntOrDefault(Defines.adFilterRepeatKeywordThreshold, 3);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("AdKeywordsRepeatThreshold", R.string.AdKeywordsRepeatThreshold));
+
+        LinearLayout layout = new LinearLayout(context);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), 0);
+
+        NumberPicker picker = new NumberPicker(context);
+        picker.setMinValue(1);
+        picker.setMaxValue(10);
+        picker.setValue(currentValue);
+        layout.addView(picker);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialog, which) -> {
+            int newValue = picker.getValue();
+            ConfigManager.putInt(Defines.adFilterRepeatKeywordThreshold, newValue);
+            updateRepeatKeywordCell();
+
+            //wd 刷新过滤器
+            AdFilter filter = AdFilter.getInstance();
+            if (filter != null) {
+                filter.refreshFilterConfig();
+            }
+
+            FileLog.d("wd AdKeywordsEditor 设置重复关键词阈值: " + newValue);
+        });
+
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
     }
 
     //wd 加载关键词列表
@@ -285,7 +413,7 @@ public class AdKeywordsEditorActivity extends BaseFragment {
             keywordText = new TextView(context);
             keywordText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             keywordText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-            addView(keywordText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT,
+            addView(keywordText, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,
                     Gravity.START | Gravity.CENTER_VERTICAL));
 
             setBackground(Theme.getSelectorDrawable(false));

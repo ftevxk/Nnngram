@@ -70,6 +70,11 @@ public class AdFilter {
 
     private AdFilter(Context context) {
         this.context = context.getApplicationContext();
+        //wd 确保 AdKeywordsStore 已初始化
+        AdKeywordsStore store = AdKeywordsStore.getInstance();
+        if (store != null) {
+            store.init(this.context);
+        }
         loadKeywords();
     }
 
@@ -112,9 +117,8 @@ public class AdFilter {
     //wd 加载关键词
     private void loadKeywords() {
         AdKeywordsStore store = AdKeywordsStore.getInstance();
-        if (store.isLoaded()) {
-            adKeywords = store.getAdKeywords();
-        }
+        adKeywords = store.getAdKeywords();
+        FileLog.d("wd AdFilter 加载关键词，数量=" + adKeywords.size());
     }
 
     public boolean isEnabled() {
@@ -163,32 +167,59 @@ public class AdFilter {
 
     //wd 执行过滤判断 - 关键词匹配
     private FilterResult performFiltering(String text) {
-        //wd 确保关键词已加载
-        if (adKeywords.isEmpty()) {
-            loadKeywords();
-        }
+        //wd 每次都从存储获取最新关键词
+        AdKeywordsStore store = AdKeywordsStore.getInstance();
+        Set<String> currentKeywords = store.getAdKeywords();
 
         //wd 将文本转为小写进行匹配
         String lowerText = text.toLowerCase();
         Set<String> matchedKeywords = new HashSet<>();
+        Map<String, Integer> keywordCountMap = new HashMap<>();
 
-        //wd 统计匹配的关键词数量
-        for (String keyword : adKeywords) {
-            if (lowerText.contains(keyword.toLowerCase())) {
+        //wd 统计匹配的关键词数量和每个关键词的出现次数
+        for (String keyword : currentKeywords) {
+            String lowerKeyword = keyword.toLowerCase();
+            int count = countOccurrences(lowerText, lowerKeyword);
+            if (count > 0) {
                 matchedKeywords.add(keyword);
+                keywordCountMap.put(keyword, count);
             }
         }
 
+        //wd 获取配置阈值
+        int multiKeywordThreshold = ConfigManager.getIntOrDefault(Defines.adFilterMultiKeywordThreshold, 2);
+        int repeatKeywordThreshold = ConfigManager.getIntOrDefault(Defines.adFilterRepeatKeywordThreshold, 3);
+
         int matchCount = matchedKeywords.size();
-        boolean isAd = matchCount >= MATCH_THRESHOLD;
+        int maxRepeatCount = 0;
+        for (int count : keywordCountMap.values()) {
+            if (count > maxRepeatCount) {
+                maxRepeatCount = count;
+            }
+        }
+
+        //wd 任一条件满足即判定为广告
+        boolean isAd = matchCount >= multiKeywordThreshold || maxRepeatCount >= repeatKeywordThreshold;
 
         //wd 只在真正拦截时输出日志
         if (isAd) {
             FileLog.d("wd 广告过滤器: 拦截消息 " + truncateText(text) +
-                    " 匹配关键词数=" + matchCount + " 关键词=" + matchedKeywords);
+                    " 匹配关键词数=" + matchCount + " 最大重复次数=" + maxRepeatCount +
+                    " 关键词=" + matchedKeywords);
         }
 
         return new FilterResult(isAd, matchCount, matchedKeywords);
+    }
+
+    //wd 统计关键词在文本中出现次数
+    private int countOccurrences(String text, String keyword) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(keyword, index)) != -1) {
+            count++;
+            index += keyword.length();
+        }
+        return count;
     }
 
     private String buildCacheKey(long dialogId, long messageId, String text) {
@@ -224,6 +255,8 @@ public class AdFilter {
 
     //wd 刷新过滤器配置
     public void refreshFilterConfig() {
+        AdKeywordsStore store = AdKeywordsStore.getInstance();
+        store.reloadKeywords();
         loadKeywords();
         clearCache();
         FileLog.d("wd AdFilter: 配置已刷新，关键词数量=" + adKeywords.size());
