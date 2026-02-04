@@ -11483,6 +11483,15 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             long checkFileTime = SystemClock.elapsedRealtime();
             MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, true, false, mode == ChatActivity.MODE_SAVED);
+            //wd 消息加载时广告过滤
+            AdFilter adFilter = AdFilter.getInstance();
+            if (adFilter == null && ApplicationLoader.applicationContext != null) {
+                adFilter = AdFilter.getInstance(ApplicationLoader.applicationContext);
+            }
+            if (adFilter != null && adFilter.shouldFilter(messageObject)) {
+                FileLog.d("wd 消息加载广告过滤器: 拦截消息 id=" + messageObject.getId());
+                continue;
+            }
             messageObject.scheduled = mode == 1;
             objects.add(messageObject);
             if (isCache) {

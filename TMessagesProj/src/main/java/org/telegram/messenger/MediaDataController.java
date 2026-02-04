@@ -6528,7 +6528,17 @@ public class MediaDataController extends BaseController {
                 if (MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaDocument || MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaPhoto) {
                     checkedCount++;
                 }
-                messageObjects.add(new MessageObject(currentAccount, message, usersDict, chatsDict, false, checkedCount < 30));
+                MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, false, checkedCount < 30);
+                //wd 置顶消息广告过滤
+                AdFilter adFilter = AdFilter.getInstance();
+                if (adFilter == null && ApplicationLoader.applicationContext != null) {
+                    adFilter = AdFilter.getInstance(ApplicationLoader.applicationContext);
+                }
+                if (adFilter != null && adFilter.shouldFilter(messageObject)) {
+                    FileLog.d("wd 置顶消息广告过滤器: 拦截消息 id=" + messageObject.getId());
+                    continue;
+                }
+                messageObjects.add(messageObject);
             }
             return messageObjects;
         } else {
@@ -6541,9 +6551,22 @@ public class MediaDataController extends BaseController {
                     if (MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaDocument || MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaPhoto) {
                         checkedCount++;
                     }
-                    messageObjects.add(new MessageObject(currentAccount, message, usersDict, chatsDict, false, checkedCount < 30));
+                    MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, false, checkedCount < 30);
+                    //wd 置顶消息广告过滤
+                    AdFilter adFilter = AdFilter.getInstance();
+                    if (adFilter == null && ApplicationLoader.applicationContext != null) {
+                        adFilter = AdFilter.getInstance(ApplicationLoader.applicationContext);
+                    }
+                    if (adFilter != null && adFilter.shouldFilter(messageObject)) {
+                        FileLog.d("wd 置顶消息广告过滤器: 拦截消息 id=" + messageObject.getId());
+                        continue;
+                    }
+                    messageObjects.add(messageObject);
                 }
-                AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.didLoadPinnedMessages, messageObjects.get(0).getDialogId(), null, true, messageObjects, null, 0, -1, false));
+                //wd 过滤后如果列表为空，不发送通知
+                if (!messageObjects.isEmpty()) {
+                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.didLoadPinnedMessages, messageObjects.get(0).getDialogId(), null, true, messageObjects, null, 0, -1, false));
+                }
             });
         }
         return null;

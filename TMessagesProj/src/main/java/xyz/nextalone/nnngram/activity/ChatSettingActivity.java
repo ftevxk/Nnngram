@@ -50,7 +50,6 @@ import com.jakewharton.processphoenix.ProcessPhoenix;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.AdFilter;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -130,8 +129,6 @@ public class ChatSettingActivity extends BaseActivity {
     private int showTabsOnForwardRow;
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
-    private int aiAdFilterRow;
-    private int aiAdKeywordsRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
@@ -419,18 +416,6 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
-        } else if (position == aiAdKeywordsRow) {
-            //wd 跳转到广告关键词编辑器
-            presentFragment(new AdKeywordsEditorActivity());
-        } else if (position == aiAdFilterRow) {
-            boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.adFilterEnabled, false);
-            ConfigManager.putBoolean(Defines.adFilterEnabled, newValue);
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(newValue);
-            }
-            if (newValue) {
-                AdFilter.getInstance(getContext()).initialize();
-            }
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
             if (view instanceof TextCheckCell) {
@@ -585,8 +570,6 @@ public class ChatSettingActivity extends BaseActivity {
         showTabsOnForwardRow = addRow("showTabsOnForward");
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
-        aiAdFilterRow = addRow("aiAdFilter");
-        aiAdKeywordsRow = addRow("aiAdKeywords");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
@@ -697,8 +680,6 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == markdownParserRow) {
                         textCell.setTextAndValue(LocaleController.getString("MarkdownParser", R.string.MarkdownParser), Config.newMarkdownParser ? "Nnngram" : "Telegram", payload,
                             position + 1 != markdown2Row);
-                    } else if (position == aiAdKeywordsRow) {
-                        textCell.setText(LocaleController.getString("AdKeywords", R.string.AdKeywords), payload);
                     }
                     break;
                 }
@@ -800,8 +781,6 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.cancelLoadingVideoWhenClose), Config.cancelLoadingVideoWhenClose, true);
                     } else if (position == hideSavedAndArchivedMessagesInListRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.hideSavedAndArchivedMessagesInList), Config.hideSavedAndArchivedMessagesInList, true);
-                    } else if (position == aiAdFilterRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("AdFilter", R.string.AdFilter), ConfigManager.getBooleanOrDefault(Defines.adFilterEnabled, false), true);
                     }
                     break;
                 }
@@ -892,7 +871,7 @@ public class ChatSettingActivity extends BaseActivity {
             if (position == chat2Row || position == stickerSize2Row) {
                 return TYPE_SHADOW;
             } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow
-                || position == aiAdKeywordsRow || position == textStyleSettingsRow) {
+                || position == textStyleSettingsRow) {
                 return TYPE_SETTINGS;
             } else if (position == chatRow || position == stickerSizeHeaderRow || position == markdownRow || position == gifSizeHeaderRow) {
                 return TYPE_HEADER;
