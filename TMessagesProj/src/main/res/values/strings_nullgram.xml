@@ -432,6 +432,7 @@
     <string name="PlayerDecoderPerferHW">Prefer device decoders</string>
     <string name="showIdAndDc">Show ID and DC</string>
     <string name="PhotoViewerEdgeToEdge">Enable PhotoViewer edgeToEdge</string>
+    <string name="mentionReadIndicator">Show mention read indicator</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>
     <string name="OpenTheMediaConversationDirectly">Open the media conversation directly</string>

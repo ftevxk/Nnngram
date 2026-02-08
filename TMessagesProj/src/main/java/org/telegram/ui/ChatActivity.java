@@ -348,6 +348,7 @@ import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.config.DialogConfig;
 import xyz.nextalone.nnngram.config.ForwardContext;
 import xyz.nextalone.nnngram.helpers.MessageHelper;
+import xyz.nextalone.nnngram.helpers.MentionReadHelper;
 import xyz.nextalone.nnngram.helpers.QrHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper.Status;
@@ -2924,6 +2925,7 @@ public class ChatActivity extends BaseFragment implements
                 getNotificationCenter().addObserver(this, NotificationCenter.commentsRead);
                 getNotificationCenter().addObserver(this, NotificationCenter.changeRepliesCounter);
                 getNotificationCenter().addObserver(this, NotificationCenter.messagesRead);
+                getNotificationCenter().addObserver(this, NotificationCenter.mentionReadParticipantsLoaded);
                 getNotificationCenter().addObserver(this, NotificationCenter.didLoadChatInviter);
                 getNotificationCenter().addObserver(this, NotificationCenter.groupCallUpdated);
             } else {
@@ -3440,6 +3442,7 @@ public class ChatActivity extends BaseFragment implements
         getNotificationCenter().removeObserver(this, NotificationCenter.closeChats);
         getNotificationCenter().removeObserver(this, NotificationCenter.closeChatActivity);
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesRead);
+        getNotificationCenter().removeObserver(this, NotificationCenter.mentionReadParticipantsLoaded);
         getNotificationCenter().removeObserver(this, NotificationCenter.threadMessagesRead);
         getNotificationCenter().removeObserver(this, NotificationCenter.monoForumMessagesRead);
         getNotificationCenter().removeObserver(this, NotificationCenter.commentsRead);
@@ -21950,9 +21953,22 @@ public class ChatActivity extends BaseFragment implements
                             if (chatAdapter != null) {
                                 chatAdapter.invalidateRowWithMessageObject(obj);
                             }
+                            if (Config.mentionReadIndicator && !obj.getMentionedUserIds().isEmpty()) {
+                                obj.mentionReadParticipantsFetched = false;
+                                MentionReadHelper.fetchReadParticipants(obj, currentAccount);
+                            }
                         }
                     }
                     break;
+                }
+            }
+        } else if (id == NotificationCenter.mentionReadParticipantsLoaded) {
+            long dialogId = (Long) args[0];
+            int msgId = (Integer) args[1];
+            if (dialogId == dialog_id) {
+                MessageObject msg = messagesDict[0].get(msgId);
+                if (msg != null && chatAdapter != null) {
+                    chatAdapter.invalidateRowWithMessageObject(msg);
                 }
             }
         } else if (id == NotificationCenter.historyCleared) {
@@ -34678,6 +34694,13 @@ public class ChatActivity extends BaseFragment implements
                     cell.linkedChatId = chatInfo != null ? chatInfo.linked_chat_id : 0;
                     cell.setMessageObject(messageObject, cell.getCurrentMessagesGroup(), cell.isPinnedBottom(), cell.isPinnedTop(), cell.isFirstInChat(), cell.isLastInChatList());
                     cell.setIsUpdating(false);
+                    if (Config.mentionReadIndicator && messageObject.isOutOwner()
+                            && !messageObject.isUnread() && !messageObject.mentionReadParticipantsFetched
+                            && !messageObject.mentionReadParticipantsLoading
+                            && !messageObject.getMentionedUserIds().isEmpty()
+                            && MentionReadHelper.isEligible(messageObject, currentChat, chatInfo)) {
+                        MentionReadHelper.fetchReadParticipants(messageObject, currentAccount);
+                    }
                 }
                 if (cell != scrimView) {
                     cell.setCheckPressed(!disableSelection, disableSelection && selected);
