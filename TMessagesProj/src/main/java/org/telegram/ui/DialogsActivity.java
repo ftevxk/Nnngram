@@ -5274,12 +5274,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     final boolean fromTopPeer = user != null && !user.contact && MediaDataController.getInstance(currentAccount).containsTopPeer(dialogId);
                     filterOptions
                         .addIf(dialogId > 0, R.drawable.msg_discussion, LocaleController.getString(R.string.SendMessage), () -> {
+                            //wd Story区域点击不添加fromDialogsList标记
                             presentFragment(ChatActivity.of(dialogId));
                         })
                         .addIf(dialogId > 0, R.drawable.msg_openprofile, LocaleController.getString(R.string.OpenProfile), () -> {
                             presentFragment(ProfileActivity.of(dialogId));
                         })
                         .addIf(dialogId < 0, R.drawable.msg_channel, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(chat) ? R.string.OpenChannel2 : R.string.OpenGroup2), () -> {
+                            //wd Story区域点击不添加fromDialogsList标记
                             presentFragment(ChatActivity.of(dialogId));
                         }).addIf(!muted && dialogId > 0, R.drawable.msg_mute, LocaleController.getString(R.string.NotificationsStoryMute2), () -> {
                             MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("stories_" + key, false).apply();
@@ -8627,6 +8629,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
                     TLRPC.Dialog dialog = getMessagesController().getDialog(dialogId);
                     boolean needOpenChatActivity = dialog != null && dialog.view_forum_as_messages;
+                    //wd 从会话列表打开，添加标记
+                    args.putBoolean("fromDialogsList", true);
 
                     if (chat != null && (chat.monoforum || chat.forum) && topicId == 0) {
                         if (chat.monoforum) {
@@ -9272,6 +9276,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (searchString != null) {
                 getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
             }
+            //wd 从会话列表预览打开，添加标记
+            args.putBoolean("fromDialogsList", true);
             prepareBlurBitmap();
             parentLayout.setHighlightActionButtons(true);
             if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y) {
@@ -13615,6 +13621,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (obj instanceof TLRPC.Chat) {
                 Bundle args = new Bundle();
                 args.putLong("chat_id", ((TLRPC.Chat) obj).id);
+                //wd 搜索结果点击不添加fromDialogsList标记
                 ChatActivity chatActivity = new ChatActivity(args);
                 chatActivity.setNextChannels(searchViewPager.channelsSearchAdapter.getNextChannels(position));
                 presentFragment(chatActivity);
@@ -13627,6 +13634,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     args.putLong("chat_id", -msg.getDialogId());
                 }
                 args.putInt("message_id", msg.getId());
+                //wd 搜索结果点击不添加fromDialogsList标记
                 ChatActivity chatActivity = new ChatActivity(args);
                 presentFragment(highlightFoundQuote(chatActivity, msg));
             }
@@ -13644,6 +13652,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     args.putLong("chat_id", -msg.getDialogId());
                 }
                 args.putInt("message_id", msg.getId());
+                //wd 搜索结果点击不添加fromDialogsList标记
                 ChatActivity chatActivity = new ChatActivity(args);
                 presentFragment(highlightFoundQuote(chatActivity, msg));
             }

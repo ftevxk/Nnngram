@@ -3116,11 +3116,12 @@ public class ChatActivity extends BaseFragment implements
             loadInfo = userInfo == null;
         }
         
-        //wd 直接打开媒体对话，检查配置并设置标志位
+        //wd 直接打开媒体对话，检查配置并设置标志位，仅在从会话列表打开时触发
+        boolean fromDialogsList = arguments.getBoolean("fromDialogsList", false);
         String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
         boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialog_id + ",");
-        FileLog.d("wd ChatActivity: 打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialog_id + ", 启用=" + isEnabled);
-        if (isEnabled && dialog_id != 0) {
+        FileLog.d("wd ChatActivity: 打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialog_id + ", 启用=" + isEnabled + ", 来自会话列表=" + fromDialogsList);
+        if (isEnabled && dialog_id != 0 && fromDialogsList) {
             FileLog.d("wd ChatActivity: 标记需要直接打开媒体对话，对话ID=" + dialog_id);
             needOpenMediaDirectly = true;
         }
