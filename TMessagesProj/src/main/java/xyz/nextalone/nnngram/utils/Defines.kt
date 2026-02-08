@@ -304,6 +304,8 @@ object Defines {
     @BooleanConfig const val adFilterEnabled = "adFilterEnabled"
     @IntConfig(2) const val adFilterMultiKeywordThreshold = "adFilterMultiKeywordThreshold"
     @IntConfig(3) const val adFilterRepeatKeywordThreshold = "adFilterRepeatKeywordThreshold"
+    //wd 会话级别广告过滤配置前缀
+    const val adFilterChatPrefix = "ad_filter_chat_"
 
     /**
      * 数组中元素未找到的下标，值为-1

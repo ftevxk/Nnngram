@@ -33,7 +33,7 @@ import android.widget.FrameLayout;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AdFilter;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -88,8 +88,6 @@ public class ExperimentSettingActivity extends BaseActivity {
     private int showFragmentSwitchToastRow;
     private int enableXiaomiHyperAiRow;
     private int disableSecondAddressRow;
-    private int aiAdFilterRow;
-    private int aiAdKeywordsRow;
 
     private int specialRow;
     private int special2Row;
@@ -283,18 +281,6 @@ public class ExperimentSettingActivity extends BaseActivity {
                 Config.setPlayerDecoder(types.get(i));
                 listAdapter.notifyItemChanged(playerDecoderRow, PARTIAL);
             });
-        } else if (position == aiAdKeywordsRow) {
-            //wd 跳转到广告关键词编辑器
-            presentFragment(new AdKeywordsEditorActivity());
-        } else if (position == aiAdFilterRow) {
-            boolean newValue = !ConfigManager.getBooleanOrDefault(Defines.adFilterEnabled, false);
-            ConfigManager.putBoolean(Defines.adFilterEnabled, newValue);
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(newValue);
-            }
-            if (newValue) {
-                AdFilter.getInstance(getContext()).initialize();
-            }
         }
     }
 
@@ -334,8 +320,6 @@ public class ExperimentSettingActivity extends BaseActivity {
             enableXiaomiHyperAiRow = addRow("enableXiaomiHyperAi");
         }
         disableSecondAddressRow = addRow("disableSecondAddress");
-        aiAdFilterRow = addRow("aiAdFilter");
-        aiAdKeywordsRow = addRow("aiAdKeywords");
         experiment2Row = addRow();
 
         if (Config.showHiddenSettings) {
@@ -426,11 +410,7 @@ public class ExperimentSettingActivity extends BaseActivity {
                         };
                         textCell.setTextAndValue(LocaleController.getString("keepOnlineStatusAs", R.string.keepOnlineStatusAs),
                             value, payload, false);
-                    } else if (position == aiAdKeywordsRow) {
-                        textCell.setText(LocaleController.getString("AdKeywords", R.string.AdKeywords), payload);
                     }
-
-
                     break;
                 }
                 case TYPE_CHECK: {
@@ -504,8 +484,6 @@ public class ExperimentSettingActivity extends BaseActivity {
                             default -> LocaleController.getString(R.string.PlayerDecoderSoftware);
                         };
                         textCell.setTextAndValue(LocaleController.getString(R.string.PlayerDecoder), value, payload, false);
-                    } else if (position == aiAdFilterRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("AdFilter", R.string.AdFilter), ConfigManager.getBooleanOrDefault(Defines.adFilterEnabled, false), true);
                     }
                     break;
                 }
@@ -542,7 +520,7 @@ public class ExperimentSettingActivity extends BaseActivity {
         public int getItemViewType(int position) {
             if (position == experiment2Row || position == premium2Row || position == pangu2Row || position == special2Row) {
                 return TYPE_SHADOW;
-            } else if (position == modifyDownloadSpeedRow || position == keepOnlineStatusAsRow || position == aiAdKeywordsRow) {
+            } else if (position == modifyDownloadSpeedRow || position == keepOnlineStatusAsRow) {
                 return TYPE_SETTINGS;
             } else if (position == experimentRow || position == premiumRow || position == panguRow || position == specialRow) {
                 return TYPE_HEADER;

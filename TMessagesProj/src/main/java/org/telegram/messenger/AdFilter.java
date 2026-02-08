@@ -19,6 +19,7 @@
 package org.telegram.messenger;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -126,7 +127,8 @@ public class AdFilter {
     }
 
     public boolean shouldFilter(@NonNull MessageObject messageObject) {
-        if (!isEnabled()) {
+        //wd 使用会话级别配置检查是否启用广告过滤
+        if (!shouldFilterForChat(messageObject.getDialogId())) {
             return false;
         }
         String text = getMessageText(messageObject);
@@ -142,7 +144,8 @@ public class AdFilter {
     }
 
     public boolean shouldFilter(@NonNull String text, long dialogId, long messageId) {
-        if (!isEnabled()) {
+        //wd 使用会话级别配置检查是否启用广告过滤
+        if (!shouldFilterForChat(dialogId)) {
             return false;
         }
         if (TextUtils.isEmpty(text)) {
@@ -341,5 +344,64 @@ public class AdFilter {
      */
     public boolean isReady() {
         return isInitialized.get();
+    }
+
+    //wd 获取会话广告过滤配置键
+    private String getChatAdFilterKey(long dialogId) {
+        return Defines.adFilterChatPrefix + dialogId;
+    }
+
+    //wd 获取SharedPreferences
+    private SharedPreferences getPrefs() {
+        if (context == null) {
+            FileLog.e("wd AdFilter context为null");
+            return null;
+        }
+        return context.getSharedPreferences("ad_filter_prefs", Context.MODE_PRIVATE);
+    }
+
+    /**
+     * 检查指定会话是否启用了广告过滤
+     * wd 如果全局广告过滤开启，默认返回true
+     * wd 如果全局关闭，检查会话级别配置
+     */
+    public boolean isChatAdFilterEnabled(long dialogId) {
+        //wd 如果全局广告过滤已开启，默认启用
+        if (isEnabled()) {
+            return true;
+        }
+        //wd 否则检查会话级别配置
+        SharedPreferences prefs = getPrefs();
+        if (prefs == null) {
+            return false;
+        }
+        return prefs.getBoolean(getChatAdFilterKey(dialogId), false);
+    }
+
+    /**
+     * 设置指定会话的广告过滤状态
+     * wd 持久化存储到SharedPreferences
+     */
+    public void setChatAdFilterEnabled(long dialogId, boolean enabled) {
+        SharedPreferences prefs = getPrefs();
+        if (prefs == null) {
+            FileLog.e("wd AdFilter 无法获取SharedPreferences");
+            return;
+        }
+        prefs.edit().putBoolean(getChatAdFilterKey(dialogId), enabled).apply();
+        FileLog.d("wd AdFilter 设置会话 " + dialogId + " 广告过滤状态: " + enabled);
+    }
+
+    /**
+     * 检查是否应该过滤指定会话的消息
+     * wd 优先检查会话级别配置，如果没有则使用全局配置
+     */
+    public boolean shouldFilterForChat(long dialogId) {
+        //wd 如果全局广告过滤已开启，直接返回true
+        if (isEnabled()) {
+            return true;
+        }
+        //wd 否则检查会话级别配置
+        return isChatAdFilterEnabled(dialogId);
     }
 }

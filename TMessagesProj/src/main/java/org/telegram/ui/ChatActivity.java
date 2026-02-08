@@ -1663,6 +1663,8 @@ public class ChatActivity extends BaseFragment implements
     //wd 更多菜单增加代理设置与消息过滤器入口
     private final static int proxy = UUID.randomUUID().hashCode();
     private final static int message_filter = UUID.randomUUID().hashCode();
+    //wd 会话广告过滤菜单项
+    private final static int chat_ad_filter = UUID.randomUUID().hashCode();
 
     RecyclerListView.OnItemLongClickListenerExtended onItemLongClickListener = new RecyclerListView.OnItemLongClickListenerExtended() {
         @Override
@@ -4286,6 +4288,10 @@ public class ChatActivity extends BaseFragment implements
                 else if (id == proxy) {
                     presentFragment(new ProxyListActivity());
                 }
+                //wd 会话广告过滤开关
+                else if (id == chat_ad_filter) {
+                    toggleChatAdFilter();
+                }
             }
         });
         View backButton = actionBar.getBackButton();
@@ -4470,6 +4476,17 @@ public class ChatActivity extends BaseFragment implements
             }
             headerItem = menu.addItem(chat_menu_options, R.drawable.ic_ab_other, themeDelegate);
             headerItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
+            //wd 设置子菜单委托，在菜单显示时更新广告过滤勾选状态
+            headerItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
+                @Override
+                public void onShowSubMenu() {
+                    updateChatAdFilterMenuItem();
+                }
+
+                @Override
+                public void onHideSubMenu() {
+                }
+            });
 
             if (currentUser != null && currentUser.self && chatMode != MODE_SAVED) {
                 savedChatsItem = headerItem.lazilyAddSubItem(view_as_topics, R.drawable.msg_topics, LocaleController.getString(R.string.SavedViewAsChats));
@@ -4573,6 +4590,8 @@ public class ChatActivity extends BaseFragment implements
             //wd 更多菜单增加代理设置页面跳转与AI广告关键词
             headerItem.lazilyAddSubItem(proxy, R.drawable.msg2_proxy_off, LocaleController.getString(R.string.ProxySettings));
             headerItem.lazilyAddSubItem(message_filter, R.drawable.msg2_block2, LocaleController.getString(R.string.AdKeywords));
+            //wd 添加会话广告过滤菜单项（带勾选状态，不显示左侧图标，使用checkbox样式）
+            headerItem.lazilyAddSubItem(chat_ad_filter, 0, null, LocaleController.getString(R.string.ChatAdFilter), true, true);
 
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
@@ -19634,6 +19653,37 @@ public class ChatActivity extends BaseFragment implements
             headerItem.showSubItem(bot_settings);
         } else {
             headerItem.hideSubItem(bot_settings);
+        }
+    }
+
+    //wd 切换当前会话的广告过滤状态
+    private void toggleChatAdFilter() {
+        boolean currentState = AdFilter.getInstance(getContext()).isChatAdFilterEnabled(dialog_id);
+        boolean newState = !currentState;
+        AdFilter.getInstance(getContext()).setChatAdFilterEnabled(dialog_id, newState);
+        //wd 更新菜单项勾选状态
+        updateChatAdFilterMenuItem();
+        FileLog.d("wd 会话 " + dialog_id + " 广告过滤状态切换为: " + newState);
+    }
+
+    //wd 更新广告过滤菜单项的图标和状态
+    private void updateChatAdFilterMenuItem() {
+        if (headerItem != null) {
+            View subItem = headerItem.getSubItem(chat_ad_filter);
+            if (subItem instanceof ActionBarMenuSubItem) {
+                boolean enabled = AdFilter.getInstance(getContext()).isChatAdFilterEnabled(dialog_id);
+                ActionBarMenuSubItem menuItem = (ActionBarMenuSubItem) subItem;
+                if (enabled) {
+                    //wd 选中状态：绿色勾选图标
+                    menuItem.setIcon(R.drawable.list_check);
+                    menuItem.setIconColor(0xFF4CAF50); //wd 绿色
+                } else {
+                    //wd 未选中状态：红色X图标
+                    menuItem.setIcon(R.drawable.msg_close);
+                    menuItem.setIconColor(0xFFE53935); //wd 红色
+                }
+                FileLog.d("wd 更新会话 " + dialog_id + " 广告过滤菜单项状态: " + enabled);
+            }
         }
     }
 

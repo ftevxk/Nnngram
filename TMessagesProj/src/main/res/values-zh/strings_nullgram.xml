@@ -439,8 +439,6 @@
     <string name="KeywordExtractDialogSubtitle">选择要添加到概率表的关键词</string>
     <string name="KeywordExtractWeightLabel">权重:</string>
     <string name="Second">秒</string>
-    <string name="AdFilter">广告过滤</string>
-    <string name="AdFilterDesc">使用关键词匹配自动过滤广告消息。命中2个及以上广告关键词的消息将被隐藏。</string>
     <string name="AdKeywords">广告关键词</string>
     <string name="AdKeywordsDesc">点击关键词可删除\n命中2个及以上关键词的消息将被判定为广告</string>
     <string name="AdKeywordsAdd">添加广告关键词</string>
@@ -457,4 +455,5 @@
     <string name="AdKeywordsConfigDesc">配置广告消息过滤条件</string>
     <string name="AdKeywordsMultiThreshold">多关键词阈值</string>
     <string name="AdKeywordsRepeatThreshold">重复关键词阈值</string>
+    <string name="ChatAdFilter">广告过滤</string>
 </resources>
