@@ -291,6 +291,7 @@ object Defines {
     @BooleanConfig(true) const val showTextQuote = "showTextQuote"
     @BooleanConfig(true) const val showTextMonoCode = "showTextMonoCode"
     @BooleanConfig(true) const val showTextTranslate = "showTextTranslate"
+    @BooleanConfig(true) const val showTextDate = "showTextDate"
     @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
     /**
