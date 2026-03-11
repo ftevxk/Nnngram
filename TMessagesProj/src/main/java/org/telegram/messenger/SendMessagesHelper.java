@@ -1954,6 +1954,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     sendMessageParams.monoForumPeer = monoForumPeerId;
                     sendMessageParams.suggestionParams = suggestionParams;
                     sendMessageParams.caption = caption != null ? caption.toString() : null;
+                    sendMessageParams.entities = caption != null ? getMediaDataController().getEntities(new CharSequence[]{caption}, true) : null;
                     sendMessageParams.invert_media = invertMedia;
                     sendMessage(sendMessageParams);
                 });
