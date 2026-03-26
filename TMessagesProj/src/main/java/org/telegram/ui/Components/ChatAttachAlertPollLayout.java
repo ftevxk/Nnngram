@@ -63,6 +63,7 @@ import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.ChatActivity;
+import org.telegram.ui.Components.blur3.ViewGroupPartRenderer;
 import org.telegram.ui.Stories.recorder.KeyboardNotifier;
 
 import java.util.ArrayList;
@@ -247,6 +248,9 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 return super.requestChildRectangleOnScreen(child, rectangle, immediate);
             }
         };
+        iBlur3Capture = listView;
+        iBlur3CaptureView = listView;
+        occupyNavigationBar = true;
         listView.setItemAnimator(itemAnimator = new DefaultItemAnimator() {
             @Override
             protected void onMoveAnimationUpdate(RecyclerView.ViewHolder holder) {
@@ -261,7 +265,8 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         itemAnimator.setDurations(350);
         listView.setClipToPadding(false);
         listView.setVerticalScrollBarEnabled(false);
-        listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, AndroidUtilities.dp(53), listView) {
+        listView.setSections(true);
+        listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, AndroidUtilities.dp(53 + 12), listView) {
 
             @Override
             public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
@@ -440,8 +445,8 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     int top = parentAlert.scrollOffsetY[0] - backgroundPaddingTop - offset;
                     if (top + backgroundPaddingTop < ActionBar.getCurrentActionBarHeight()) {
                         RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findViewHolderForAdapterPosition(1);
-                        if (holder != null && holder.itemView.getTop() > AndroidUtilities.dp(53)) {
-                            listView.smoothScrollBy(0, holder.itemView.getTop() - AndroidUtilities.dp(53));
+                        if (holder != null && holder.itemView.getTop() > AndroidUtilities.dp(53 + 12)) {
+                            listView.smoothScrollBy(0, holder.itemView.getTop() - AndroidUtilities.dp(53 + 12));
                         }
                     }
                 }
@@ -667,7 +672,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             return Integer.MAX_VALUE;
         }
         RecyclerListView.Holder holder = (RecyclerListView.Holder) listView.findContainingViewHolder(child);
-        int top = (int) child.getY() - AndroidUtilities.dp(8);
+        int top = (int) child.getY() - AndroidUtilities.dp(8 + 12);
         int newOffset = top > 0 && holder != null && holder.getAdapterPosition() == 1 ? top : 0;
         if (top >= 0 && holder != null && holder.getAdapterPosition() == 1) {
             newOffset = top;
@@ -710,8 +715,9 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             parentAlert.setAllowNestedScroll(allowNesterScroll);
         }
         ignoreLayout = true;
-        if (topPadding != padding) {
+        if (topPadding != padding || listView.getPaddingBottom() != listPaddingBottom) {
             topPadding = padding;
+            listView.setPaddingWithoutRequestLayout(0, 0, 0, listPaddingBottom);
             listView.setItemAnimator(null);
             listAdapter.notifyItemChanged(paddingRow);
         }
@@ -1058,7 +1064,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) emojiView.getLayoutParams();
             if (layoutParams.width != AndroidUtilities.displaySize.x || layoutParams.height != newHeight || wasEmojiSearchOpened != isEmojiSearchOpened) {
                 layoutParams.width = AndroidUtilities.displaySize.x;
-                layoutParams.height = newHeight;
+                layoutParams.height = newHeight + AndroidUtilities.navigationBarHeight;
                 emojiView.setLayoutParams(layoutParams);
                 emojiPadding = layoutParams.height;
                 keyboardNotifier.fire();
@@ -1177,7 +1183,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             int currentHeight = (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y ? keyboardHeightLand : keyboardHeight);
 
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) currentView.getLayoutParams();
-            layoutParams.height = currentHeight;
+            layoutParams.height = currentHeight + AndroidUtilities.navigationBarHeight;
             currentView.setLayoutParams(layoutParams);
             if (!AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet() && currentCell != null) {
                 AndroidUtilities.hideKeyboard(currentCell.getEditField());
@@ -1336,7 +1342,9 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         }
         emojiView = new EmojiView(null, true, false, false, getContext(), true, null, null, true, resourcesProvider, false);
         emojiView.emojiCacheType = AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW;
+        emojiView.shouldLightenBackground = false;
         emojiView.fixBottomTabContainerTranslation = false;
+        emojiView.setShouldDrawBackground(false);
         emojiView.allowEmojisForNonPremium(false);
         emojiView.setVisibility(GONE);
         if (AndroidUtilities.isTablet()) {
@@ -1432,6 +1440,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
         });
         parentAlert.sizeNotifierFrameLayout.addView(emojiView);
+        emojiView.setBottomInset(AndroidUtilities.navigationBarHeight);
     }
 
     private void animateEmojiViewTranslationY(float fromY, float toY) {
@@ -1492,7 +1501,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     Drawable drawable = Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow);
                     CombinedDrawable combinedDrawable = new CombinedDrawable(new ColorDrawable(getThemedColor(Theme.key_windowBackgroundGray)), drawable);
                     combinedDrawable.setFullsize(true);
-                    cell.setBackgroundDrawable(combinedDrawable);
+                    // cell.setBackgroundDrawable(combinedDrawable);
                     if (position == solutionInfoRow) {
                         cell.setText(getString(R.string.AddAnExplanationInfo));
                     } else if (position == settingsSectionRow) {
@@ -1616,7 +1625,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     Drawable drawable = Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow);
                     CombinedDrawable combinedDrawable = new CombinedDrawable(new ColorDrawable(getThemedColor(Theme.key_windowBackgroundGray)), drawable);
                     combinedDrawable.setFullsize(true);
-                    view.setBackgroundDrawable(combinedDrawable);
+                    // view.setBackgroundDrawable(combinedDrawable);
                     break;
                 case 2:
                     view = new TextInfoPrivacyCell(mContext, resourcesProvider);
@@ -1625,7 +1634,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     view = new TextCell(mContext, resourcesProvider);
                     break;
                 case 4: {
-                    PollEditTextCell cell = new PollEditTextCell(mContext, false, isPremium ? PollEditTextCell.TYPE_EMOJI : PollEditTextCell.TYPE_DEFAULT, null, null, resourcesProvider) {
+                    PollEditTextCell cell = new PollEditTextCell(mContext, false, isPremium ? PollEditTextCell.TYPE_EMOJI : PollEditTextCell.TYPE_DEFAULT, null, resourcesProvider) {
                         @Override
                         protected void onFieldTouchUp(EditTextBoldCursor editText) {
                             parentAlert.makeFocusable(editText, true);
@@ -1719,7 +1728,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                     view = new TextCheckCell(mContext, resourcesProvider);
                     break;
                 case 7: {
-                    PollEditTextCell cell = new PollEditTextCell(mContext, false, isPremium ? PollEditTextCell.TYPE_EMOJI : PollEditTextCell.TYPE_DEFAULT, null, null, resourcesProvider) {
+                    PollEditTextCell cell = new PollEditTextCell(mContext, false, isPremium ? PollEditTextCell.TYPE_EMOJI : PollEditTextCell.TYPE_DEFAULT, null, resourcesProvider) {
                         @Override
                         protected void onFieldTouchUp(EditTextBoldCursor editText) {
                             parentAlert.makeFocusable(editText, true);
@@ -1790,7 +1799,8 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 }
                 case 8: {
                     view = new EmptyView(mContext);
-                    view.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+                    // view.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
+                    view.setTag(RecyclerListView.TAG_NOT_SECTION);
                     break;
                 }
                 case 9: {
@@ -1800,10 +1810,11 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                             setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), topPadding);
                         }
                     };
+                    view.setTag(RecyclerListView.TAG_NOT_SECTION);
                     break;
                 }
                 default: {
-                    PollEditTextCell cell = new PollEditTextCell(mContext, false, isPremium ? PollEditTextCell.TYPE_EMOJI : PollEditTextCell.TYPE_DEFAULT,null , v -> {
+                    PollEditTextCell cell = new PollEditTextCell(mContext, false, isPremium ? PollEditTextCell.TYPE_EMOJI : PollEditTextCell.TYPE_DEFAULT, v -> {
                         if (v.getTag() != null) {
                             return;
                         }

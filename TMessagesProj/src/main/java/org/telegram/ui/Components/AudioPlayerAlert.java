@@ -1,18 +1,9 @@
 /*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
+ * This is the source code of Telegram for Android v. 5.x.x.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Copyright Nikolai Kudashov, 2013-2018.
  */
 
 package org.telegram.ui.Components;
@@ -129,6 +120,8 @@ import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import xyz.nextalone.gen.Config;
 
 import xyz.nextalone.gen.Config;
 
@@ -497,7 +490,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         actionBar.setAlpha(0.0f);
 
         ActionBarMenu menu = actionBar.createMenu();
-        searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+        searchItem = menu.addItem(0, R.drawable.outline_header_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
             @Override
             public void onSearchCollapse() {
                 if (searching) {
@@ -1301,7 +1294,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         }), true, dp(1.33f), dp(1)));
         playerLayout.addView(unsaveFromProfileTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 42, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, 12, 12, 12, 12));
 
-        saveToProfileButton = new ButtonWithCounterView(context, resourcesProvider);
+        saveToProfileButton = new ButtonWithCounterView(context, resourcesProvider).setRound();
         SpannableStringBuilder sb = new SpannableStringBuilder();
         sb.append("+ ");
         sb.setSpan(new ColoredImageSpan(R.drawable.filled_track_add), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -2148,8 +2141,8 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             final long dialogId = messageObject.getDialogId();
             final long docId = messageObject.getDocument() != null ? messageObject.getDocument().id : 0L;
             final boolean noforwards = !Config.ignoreChatStrict && (
-                dialogId < 0 && MessagesController.getInstance(currentAccount).isChatNoForwards(-dialogId) ||
-                MessagesController.getInstance(currentAccount).isChatNoForwards(messageObject.getChatId()) ||
+                dialogId < 0 && MessagesController.getInstance(currentAccount).isPeerNoForwards(dialogId) ||
+                MessagesController.getInstance(currentAccount).isPeerNoForwards(messageObject.getDialogId()) ||
                 messageObject.messageOwner.noforwards
             );
             optionsButton.showSubItem(5);

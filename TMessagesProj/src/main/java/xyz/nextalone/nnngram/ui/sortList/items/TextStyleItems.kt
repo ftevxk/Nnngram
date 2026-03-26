@@ -17,6 +17,7 @@ object TextStyleItems : SortListItems() {
         Defines.showTextCreateMention,
         Defines.showTextCreateLink,
         Defines.showTextRegular,
+        Defines.showTextDate,
     )
     override var itemNames = arrayOf(
         LocaleController.getString("Quote", R.string.Quote),
@@ -30,10 +31,11 @@ object TextStyleItems : SortListItems() {
         LocaleController.getString("CreateMention", R.string.CreateMention),
         LocaleController.getString("CreateLink", R.string.CreateLink),
         LocaleController.getString("Regular", R.string.Regular),
+        LocaleController.getString("FormattedDate", R.string.FormattedDate),
     )
 
     val itemIds = arrayOf(
-        R.id.menu_quote, R.id.menu_spoiler, R.id.menu_bold, R.id.menu_italic, R.id.menu_code, R.id.menu_mono, R.id.menu_strike, R.id.menu_underline, R.id.menu_mention, R.id.menu_link, R.id.menu_regular,
+        R.id.menu_quote, R.id.menu_spoiler, R.id.menu_bold, R.id.menu_italic, R.id.menu_code, R.id.menu_mono, R.id.menu_strike, R.id.menu_underline, R.id.menu_mention, R.id.menu_link, R.id.menu_regular, R.id.menu_date
     )
 
     override var define = Defines.textStyleSettings

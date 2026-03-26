@@ -1,23 +1,14 @@
 /*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
+ * This is the source code of Telegram for Android v. 5.x.x.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
+ * Copyright Nikolai Kudashov, 2013-2018.
  */
 
 package org.telegram.ui.Cells;
+
+import static org.telegram.messenger.AndroidUtilities.dp;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -165,18 +156,18 @@ public class SharedLinkCell extends FrameLayout {
     private SpoilerEffect spoilerPressed;
     private int spoilerTypePressed = -1;
 
-    private final int titleY = AndroidUtilities.dp(10);
+    private int titleY = dp(10);
     private StaticLayout titleLayout;
 
-    private int descriptionY = AndroidUtilities.dp(30);
+    private int descriptionY = dp(30);
     private StaticLayout descriptionLayout;
     private final AtomicReference<Layout> patchedDescriptionLayout = new AtomicReference<>();
 
-    private int description2Y = AndroidUtilities.dp(30);
+    private int description2Y = dp(30);
     private StaticLayout descriptionLayout2;
     private final AtomicReference<Layout> patchedDescriptionLayout2 = new AtomicReference<>();
 
-    private int captionY = AndroidUtilities.dp(30);
+    private int captionY = dp(30);
     private StaticLayout captionLayout;
 
     private MessageObject message;
@@ -188,7 +179,7 @@ public class SharedLinkCell extends FrameLayout {
 
     private int dateLayoutX;
     private StaticLayout dateLayout;
-    private int fromInfoLayoutY = AndroidUtilities.dp(30);
+    private int fromInfoLayoutY = dp(30);
     private StaticLayout fromInfoLayout;
     private AnimatedEmojiSpan.EmojiGroupedSpans fromInfoLayoutEmojis;
 
@@ -217,12 +208,12 @@ public class SharedLinkCell extends FrameLayout {
 
         descriptionTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
-        titleTextPaint.setTextSize(AndroidUtilities.dp(14));
-        descriptionTextPaint.setTextSize(AndroidUtilities.dp(14));
+        titleTextPaint.setTextSize(dp(14));
+        descriptionTextPaint.setTextSize(dp(14));
 
         setWillNotDraw(false);
         linkImageView = new ImageReceiver(this);
-        linkImageView.setRoundRadius(AndroidUtilities.dp(4));
+        linkImageView.setRoundRadius(dp(8));
         letterDrawable = new LetterDrawable(resourcesProvider, LetterDrawable.STYLE_DEFAULT);
 
         checkBox = new CheckBox2(context, 21, resourcesProvider);
@@ -234,11 +225,11 @@ public class SharedLinkCell extends FrameLayout {
 
         if (viewType == VIEW_TYPE_GLOBAL_SEARCH) {
             description2TextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-            description2TextPaint.setTextSize(AndroidUtilities.dp(13));
+            description2TextPaint.setTextSize(dp(13));
         }
 
         captionTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        captionTextPaint.setTextSize(AndroidUtilities.dp(13));
+        captionTextPaint.setTextSize(dp(13));
     }
 
     @SuppressLint("DrawAllocation")
@@ -252,7 +243,7 @@ public class SharedLinkCell extends FrameLayout {
         linkLayout.clear();
         links.clear();
 
-        int maxWidth = MeasureSpec.getSize(widthMeasureSpec) - AndroidUtilities.dp(AndroidUtilities.leftBaseline) - AndroidUtilities.dp(8);
+        int maxWidth = MeasureSpec.getSize(widthMeasureSpec) - dp(AndroidUtilities.leftBaseline) - dp(8);
 
         String title = null;
         CharSequence description = null;
@@ -374,8 +365,8 @@ public class SharedLinkCell extends FrameLayout {
             String str = LocaleController.stringForMessageListDate(message.messageOwner.date);
             int width = (int) Math.ceil(description2TextPaint.measureText(str));
             dateLayout = ChatMessageCell.generateStaticLayout(str, description2TextPaint, width, width, 0, 1);
-            dateLayoutX = maxWidth - width - AndroidUtilities.dp(8);
-            dateWidth = width + AndroidUtilities.dp(12);
+            dateLayoutX = maxWidth - width - dp(8);
+            dateWidth = width + dp(12);
         }
 
         if (title != null) {
@@ -386,9 +377,9 @@ public class SharedLinkCell extends FrameLayout {
                     titleFinal = titleH;
                 }
 
-                titleLayout = ChatMessageCell.generateStaticLayout(titleFinal, titleTextPaint, maxWidth - dateWidth - AndroidUtilities.dp(4), maxWidth - dateWidth - AndroidUtilities.dp(4), 0, 3);
+                titleLayout = ChatMessageCell.generateStaticLayout(titleFinal, titleTextPaint, maxWidth - dateWidth - dp(4), maxWidth - dateWidth - dp(4), 0, 3);
                 if (titleLayout.getLineCount() > 0) {
-                    descriptionY = titleY + titleLayout.getLineBottom(titleLayout.getLineCount() - 1) + AndroidUtilities.dp(4);
+                    descriptionY = titleY + titleLayout.getLineBottom(titleLayout.getLineCount() - 1) + dp(4);
                 }
             } catch (Exception e) {
                 FileLog.e(e);
@@ -407,7 +398,7 @@ public class SharedLinkCell extends FrameLayout {
             try {
                 descriptionLayout = ChatMessageCell.generateStaticLayout(description, descriptionTextPaint, maxWidth, maxWidth, 0, desctiptionLines);
                 if (descriptionLayout.getLineCount() > 0) {
-                    description2Y = descriptionY + descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1) + AndroidUtilities.dp(5);
+                    description2Y = descriptionY + descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1) + dp(5);
                 }
                 spoilersPool.addAll(descriptionLayoutSpoilers);
                 descriptionLayoutSpoilers.clear();
@@ -422,7 +413,7 @@ public class SharedLinkCell extends FrameLayout {
             try {
                 descriptionLayout2 = ChatMessageCell.generateStaticLayout(description2, descriptionTextPaint, maxWidth, maxWidth, 0, desctiptionLines);
                 if (descriptionLayout != null) {
-                    description2Y += AndroidUtilities.dp(10);
+                    description2Y += dp(10);
                 }
                 spoilersPool.addAll(descriptionLayout2Spoilers);
                 descriptionLayout2Spoilers.clear();
@@ -438,13 +429,13 @@ public class SharedLinkCell extends FrameLayout {
             CharSequence sequence = AndroidUtilities.highlightText(caption, message.highlightedWords, null);
             if (sequence != null) {
                 sequence = TextUtils.ellipsize(AndroidUtilities.ellipsizeCenterEnd(sequence, message.highlightedWords.get(0), maxWidth, captionTextPaint, 130), captionTextPaint, maxWidth, TextUtils.TruncateAt.END);
-                captionLayout = new StaticLayout(sequence, captionTextPaint, maxWidth + AndroidUtilities.dp(4), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                captionLayout = new StaticLayout(sequence, captionTextPaint, maxWidth + dp(4), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
             }
         }
 
         if (captionLayout != null) {
             captionY = descriptionY;
-            descriptionY += captionLayout.getLineBottom(captionLayout.getLineCount() - 1) + AndroidUtilities.dp(5);
+            descriptionY += captionLayout.getLineBottom(captionLayout.getLineCount() - 1) + dp(5);
             description2Y = descriptionY;
         }
 
@@ -460,7 +451,7 @@ public class SharedLinkCell extends FrameLayout {
                     StaticLayout layout = new StaticLayout(linkFinal, descriptionTextPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                     linkY = description2Y;
                     if (descriptionLayout2 != null && descriptionLayout2.getLineCount() != 0) {
-                        linkY += descriptionLayout2.getLineBottom(descriptionLayout2.getLineCount() - 1) + AndroidUtilities.dp(5);
+                        linkY += descriptionLayout2.getLineBottom(descriptionLayout2.getLineCount() - 1) + dp(5);
                     }
                     if (!message.isSpoilersRevealed) {
                         List<SpoilerEffect> l = new ArrayList<>();
@@ -475,9 +466,9 @@ public class SharedLinkCell extends FrameLayout {
             }
         }
 
-        int maxPhotoWidth = AndroidUtilities.dp(52);
-        int x = LocaleController.isRTL ? MeasureSpec.getSize(widthMeasureSpec) - AndroidUtilities.dp(10) - maxPhotoWidth : AndroidUtilities.dp(10);
-        letterDrawable.setBounds(x, AndroidUtilities.dp(11), x + maxPhotoWidth, AndroidUtilities.dp(63));
+        int maxPhotoWidth = dp(52);
+        int x = LocaleController.isRTL ? MeasureSpec.getSize(widthMeasureSpec) - dp(10) - maxPhotoWidth : dp(10);
+        letterDrawable.setBounds(x, dp(11), x + maxPhotoWidth, dp(63));
 
         if (hasPhoto) {
             TLRPC.PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, maxPhotoWidth, true);
@@ -491,7 +482,7 @@ public class SharedLinkCell extends FrameLayout {
             if (currentPhotoObjectThumb != null) {
                 currentPhotoObjectThumb.size = -1;
             }
-            linkImageView.setImageCoords(x, AndroidUtilities.dp(11), maxPhotoWidth, maxPhotoWidth);
+            linkImageView.setImageCoords(x, dp(11), maxPhotoWidth, maxPhotoWidth);
             String fileName = FileLoader.getAttachFileName(currentPhotoObject);
             String filter = String.format(Locale.US, "%d_%d", maxPhotoWidth, maxPhotoWidth);
             String thumbFilter = String.format(Locale.US, "%d_%d_b", maxPhotoWidth, maxPhotoWidth);
@@ -506,18 +497,18 @@ public class SharedLinkCell extends FrameLayout {
 
         int height = 0;
         if (titleLayout != null && titleLayout.getLineCount() != 0) {
-            height += titleLayout.getLineBottom(titleLayout.getLineCount() - 1) + AndroidUtilities.dp(4);
+            height += titleLayout.getLineBottom(titleLayout.getLineCount() - 1) + dp(4);
         }
         if (captionLayout != null && captionLayout.getLineCount() != 0) {
-            height += captionLayout.getLineBottom(captionLayout.getLineCount() - 1) + AndroidUtilities.dp(5);
+            height += captionLayout.getLineBottom(captionLayout.getLineCount() - 1) + dp(5);
         }
         if (descriptionLayout != null && descriptionLayout.getLineCount() != 0) {
-            height += descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1) + AndroidUtilities.dp(5);
+            height += descriptionLayout.getLineBottom(descriptionLayout.getLineCount() - 1) + dp(5);
         }
         if (descriptionLayout2 != null && descriptionLayout2.getLineCount() != 0) {
-            height += descriptionLayout2.getLineBottom(descriptionLayout2.getLineCount() - 1) + AndroidUtilities.dp(5);
+            height += descriptionLayout2.getLineBottom(descriptionLayout2.getLineCount() - 1) + dp(5);
             if (descriptionLayout != null) {
-                height += AndroidUtilities.dp(10);
+                height += dp(10);
             }
         }
         int linksHeight = 0;
@@ -530,11 +521,11 @@ public class SharedLinkCell extends FrameLayout {
         height += linksHeight;
 
         if (fromInfoLayout != null) {
-            fromInfoLayoutY = linkY + linksHeight + AndroidUtilities.dp(5);
-            height += fromInfoLayout.getLineBottom(fromInfoLayout.getLineCount() - 1) + AndroidUtilities.dp(5);
+            fromInfoLayoutY = linkY + linksHeight + dp(5);
+            height += fromInfoLayout.getLineBottom(fromInfoLayout.getLineCount() - 1) + dp(5);
         }
-        checkBox.measure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(24), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(24), MeasureSpec.EXACTLY));
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), Math.max(AndroidUtilities.dp(76), height + AndroidUtilities.dp(17)) + (needDivider ? 1 : 0));
+        checkBox.measure(MeasureSpec.makeMeasureSpec(dp(24), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(dp(24), MeasureSpec.EXACTLY));
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), Math.max(dp(76), height + dp(17)) + (needDivider ? 1 : 0));
     }
 
     public void setLink(MessageObject messageObject, boolean divider) {
@@ -588,7 +579,7 @@ public class SharedLinkCell extends FrameLayout {
                     StaticLayout layout = linkLayout.get(a);
                     if (layout.getLineCount() > 0) {
                         int height = layout.getLineBottom(layout.getLineCount() - 1);
-                        int linkPosX = AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
+                        int linkPosX = dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
                         if (
                             x >= linkPosX + layout.getLineLeft(0) && x <= linkPosX + layout.getLineWidth(0) &&
                             y >= linkY + offset && y <= linkY + offset + height
@@ -651,7 +642,7 @@ public class SharedLinkCell extends FrameLayout {
                     }
                 }
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    int offX = AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
+                    int offX = dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
                     if (descriptionLayout != null && x >= offX && x <= offX + descriptionLayout.getWidth() && y >= descriptionY && y <= descriptionY + descriptionLayout.getHeight()) {
                         for (SpoilerEffect eff : descriptionLayoutSpoilers) {
                             if (eff.getBounds().contains(x - offX, y - descriptionY)) {
@@ -693,7 +684,7 @@ public class SharedLinkCell extends FrameLayout {
     }
 
     private void startSpoilerRipples(int x, int y, int offset) {
-        int linkPosX = AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
+        int linkPosX = dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
         resetPressedLink();
         SpoilerEffect eff = spoilerPressed;
         eff.setOnRippleEndCallback(() -> post(() -> {
@@ -796,15 +787,15 @@ public class SharedLinkCell extends FrameLayout {
         }
         if (dateLayout != null) {
             canvas.save();
-            canvas.translate(AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline) + (LocaleController.isRTL ? 0 : dateLayoutX), titleY);
+            canvas.translate(dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline) + (LocaleController.isRTL ? 0 : dateLayoutX), titleY);
             dateLayout.draw(canvas);
             canvas.restore();
         }
         if (titleLayout != null) {
             canvas.save();
-            float x = AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
+            float x = dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline);
             if (LocaleController.isRTL) {
-                x += dateLayout == null ? 0 : (dateLayout.getWidth() + AndroidUtilities.dp(4));
+                x += dateLayout == null ? 0 : (dateLayout.getWidth() + dp(4));
             }
             canvas.translate(x, titleY);
             titleLayout.draw(canvas);
@@ -814,23 +805,23 @@ public class SharedLinkCell extends FrameLayout {
         if (captionLayout != null) {
             captionTextPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
             canvas.save();
-            canvas.translate(AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), captionY);
+            canvas.translate(dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), captionY);
             captionLayout.draw(canvas);
             canvas.restore();
         }
         if (descriptionLayout != null) {
             descriptionTextPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
             canvas.save();
-            canvas.translate(AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), descriptionY);
-            SpoilerEffect.renderWithRipple(this, false, descriptionTextPaint.getColor(), -AndroidUtilities.dp(2), patchedDescriptionLayout, 0, descriptionLayout, descriptionLayoutSpoilers, canvas, false);
+            canvas.translate(dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), descriptionY);
+            SpoilerEffect.renderWithRipple(this, false, descriptionTextPaint.getColor(), -dp(2), patchedDescriptionLayout, 0, descriptionLayout, descriptionLayoutSpoilers, canvas, false);
             canvas.restore();
         }
 
         if (descriptionLayout2 != null) {
             descriptionTextPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
             canvas.save();
-            canvas.translate(AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), description2Y);
-            SpoilerEffect.renderWithRipple(this, false, descriptionTextPaint.getColor(), -AndroidUtilities.dp(2), patchedDescriptionLayout2, 0, descriptionLayout2, descriptionLayout2Spoilers, canvas, false);
+            canvas.translate(dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), description2Y);
+            SpoilerEffect.renderWithRipple(this, false, descriptionTextPaint.getColor(), -dp(2), patchedDescriptionLayout2, 0, descriptionLayout2, descriptionLayout2Spoilers, canvas, false);
             canvas.restore();
         }
 
@@ -842,7 +833,7 @@ public class SharedLinkCell extends FrameLayout {
                 List<SpoilerEffect> spoilers = linkSpoilers.get(a);
                 if (layout.getLineCount() > 0) {
                     canvas.save();
-                    canvas.translate(AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), linkY + offset);
+                    canvas.translate(dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), linkY + offset);
 
                     path.rewind();
                     if (spoilers != null) {
@@ -880,7 +871,7 @@ public class SharedLinkCell extends FrameLayout {
 
         if (fromInfoLayout != null) {
             canvas.save();
-            canvas.translate(AndroidUtilities.dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), fromInfoLayoutY );
+            canvas.translate(dp(LocaleController.isRTL ? 8 : AndroidUtilities.leftBaseline), fromInfoLayoutY );
             fromInfoLayout.draw(canvas);
             AnimatedEmojiSpan.drawAnimatedEmojis(canvas, fromInfoLayout, fromInfoLayoutEmojis, 0, null, 0, 0, 0, 1f);
             canvas.restore();
@@ -892,9 +883,9 @@ public class SharedLinkCell extends FrameLayout {
 
         if (needDivider) {
             if (LocaleController.isRTL) {
-                canvas.drawLine(0, getMeasuredHeight() - 1, getMeasuredWidth() - AndroidUtilities.dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, Theme.dividerPaint);
+                canvas.drawLine(0, getMeasuredHeight() - 1, getMeasuredWidth() - dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, Theme.dividerPaint);
             } else {
-                canvas.drawLine(AndroidUtilities.dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, getMeasuredWidth(), getMeasuredHeight() - 1, Theme.dividerPaint);
+                canvas.drawLine(dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, getMeasuredWidth(), getMeasuredHeight() - 1, Theme.dividerPaint);
             }
         }
     }
