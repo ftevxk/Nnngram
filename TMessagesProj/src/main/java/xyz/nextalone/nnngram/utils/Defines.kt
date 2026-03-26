@@ -274,6 +274,7 @@ object Defines {
     @BooleanConfig const val cancelLoadingVideoWhenClose = "cancelLoadingVideoWhenClose"
     @BooleanConfig const val hideSavedAndArchivedMessagesInList = "hideSavedAndArchivedMessagesInList"
     @BooleanConfig(true) const val showIdAndDc = "showIdAndDc"
+    @BooleanConfig const val scrollToNextUnreadWhenAtTop = "scrollToNextUnreadWhenAtTop"
 
     // Drawer List
     @BooleanConfig(true) const val showNewGroup = "showNewGroup"
@@ -298,6 +299,7 @@ object Defines {
     @BooleanConfig(true) const val showTextQuote = "showTextQuote"
     @BooleanConfig(true) const val showTextMonoCode = "showTextMonoCode"
     @BooleanConfig(true) const val showTextTranslate = "showTextTranslate"
+    @BooleanConfig(true) const val showTextDate = "showTextDate"
     @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
     // Ad Filter

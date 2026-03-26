@@ -66,14 +66,11 @@ import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper.ProviderType;
 import xyz.nextalone.nnngram.translate.providers.DeepLTranslator;
-import xyz.nextalone.nnngram.ui.DrawerProfilePreviewCell;
 import xyz.nextalone.nnngram.ui.PopupBuilder;
 import xyz.nextalone.nnngram.utils.Defines;
 
 @SuppressLint("NotifyDataSetChanged")
 public class GeneralSettingActivity extends BaseActivity {
-
-    private DrawerProfilePreviewCell profilePreviewCell;
 
     private int generalRow;
 
@@ -172,48 +169,6 @@ public class GeneralSettingActivity extends BaseActivity {
             Config.toggleHidePhone();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.hidePhone);
-            }
-            parentLayout.rebuildAllFragmentViews(false, false);
-            getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
-            listAdapter.notifyItemChanged(drawerRow, PARTIAL);
-        } else if (position == drawerListRow) {
-            showDrawerListAlert();
-        } else if (position == avatarAsDrawerBackgroundRow) {
-            Config.toggleAvatarAsDrawerBackground();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(Config.avatarAsDrawerBackground);
-            }
-            getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
-            TransitionManager.beginDelayedTransition(profilePreviewCell);
-            listAdapter.notifyItemChanged(drawerRow, PARTIAL);
-            if (Config.avatarAsDrawerBackground) {
-                updateRows();
-                listAdapter.notifyItemRangeInserted(avatarBackgroundBlurRow, 2);
-            } else {
-                listAdapter.notifyItemRangeRemoved(avatarBackgroundBlurRow, 2);
-                updateRows();
-            }
-        } else if (position == avatarBackgroundBlurRow) {
-            Config.toggleAvatarBackgroundBlur();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(Config.avatarBackgroundBlur);
-            }
-            getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
-            listAdapter.notifyItemChanged(drawerRow, PARTIAL);
-        } else if (position == avatarBackgroundDarkenRow) {
-            Config.toggleAvatarBackgroundDarken();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(Config.avatarBackgroundDarken);
-            }
-            getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
-            listAdapter.notifyItemChanged(drawerRow, PARTIAL);
-        } else if (position == largeAvatarAsBackgroundRow) {
-            Config.toggleLargeAvatarAsBackground();
-            getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
-            TransitionManager.beginDelayedTransition(profilePreviewCell);
-            listAdapter.notifyItemChanged(drawerRow, PARTIAL);
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(Config.largeAvatarAsBackground);
             }
         } else if (position == showExactNumberRow) {
             Config.toggleShowExactNumber();
@@ -569,18 +524,7 @@ public class GeneralSettingActivity extends BaseActivity {
         super.updateRows();
 
         drawerRow = addRow();
-        avatarAsDrawerBackgroundRow = addRow("avatarAsDrawerBackground");
-        if (Config.avatarAsDrawerBackground) {
-            avatarBackgroundBlurRow = addRow("avatarBackgroundBlur");
-            avatarBackgroundDarkenRow = addRow("avatarBackgroundDarken");
-            largeAvatarAsBackgroundRow = addRow("largeAvatarAsBackground");
-        } else {
-            avatarBackgroundBlurRow = -1;
-            avatarBackgroundDarkenRow = -1;
-            largeAvatarAsBackgroundRow = -1;
-        }
         hidePhoneRow = addRow("hidePhone");
-        drawerListRow = addRow("drawerList");
         hideDialogsFloatingButtonRow = addRow("hideDialogsFloatingButton");
         drawer2Row = addRow();
 
@@ -944,7 +888,9 @@ public class GeneralSettingActivity extends BaseActivity {
                 }
                 case 4: {
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
-                    if (position == generalRow) {
+                    if (position == drawerRow) {
+                        headerCell.setText(LocaleController.getString(R.string.Chat));
+                    } else if (position == generalRow) {
                         headerCell.setText(LocaleController.getString("General", R.string.General));
                     } else if (position == translatorRow) {
                         headerCell.setText(LocaleController.getString("Translator", R.string.Translator));
@@ -966,11 +912,6 @@ public class GeneralSettingActivity extends BaseActivity {
                     if (position == overrideDevicePerformanceDescRow) {
                         cell.setText(LocaleController.getString("OverrideDevicePerformanceDesc", R.string.OverrideDevicePerformanceDesc));
                     }
-                    break;
-                }
-                case 8: {
-                    DrawerProfilePreviewCell cell = (DrawerProfilePreviewCell) holder.itemView;
-                    cell.setUser(getUserConfig().getCurrentUser(), false);
                     break;
                 }
             }
@@ -1014,11 +955,6 @@ public class GeneralSettingActivity extends BaseActivity {
                     view = new TextInfoPrivacyCell(mContext);
                     view.setBackground(Theme.getThemedDrawable(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
                     break;
-                case 8:
-                    profilePreviewCell = new DrawerProfilePreviewCell(mContext);
-                    profilePreviewCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
-                    profilePreviewCell.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
-                    return new RecyclerListView.Holder(profilePreviewCell);
             }
             //noinspection ConstantConditions
             view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
@@ -1031,16 +967,14 @@ public class GeneralSettingActivity extends BaseActivity {
                 return 1;
             } else if (position == tabsTitleTypeRow || position == translationProviderRow || position == deepLFormalityRow || position == translationTargetRow ||
                 position == translatorTypeRow || position == doNotTranslateRow || position == overrideDevicePerformanceRow || position == customTitleRow ||
-                position == drawerListRow || position == deepLxApiRow || position == editTextTranslationTargetRow ||
+                position == deepLxApiRow || position == editTextTranslationTargetRow ||
                 position == llmProviderRow || position == llmApiKeyRow || position == llmApiUrlRow || position == llmModelNameRow ||
                 position == llmSystemPromptRow || position == llmTemperatureRow) {
                 return 2;
-            } else if (position == generalRow || position == translatorRow || position == devicesRow || position == storiesRow || position == llmSettingsRow) {
+            } else if (position == drawerRow || position == generalRow || position == translatorRow || position == devicesRow || position == storiesRow || position == llmSettingsRow) {
                 return 4;
             } else if (position == overrideDevicePerformanceDescRow) {
                 return 7;
-            } else if (position == drawerRow) {
-                return 8;
             } else if ((position > generalRow && position < general2Row) ||
                     (position > devicesRow && position < devices2Row) ||
                     (position > drawerRow && position < drawer2Row) ||

@@ -1,18 +1,9 @@
 /*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
+ * This is the source code of Telegram for Android v. 5.x.x.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Copyright Nikolai Kudashov, 2013-2018.
  */
 
 package org.telegram.messenger;
@@ -72,6 +63,8 @@ import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.IconCompat;
+
+import com.google.common.collect.Lists;
 
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.utils.tlutils.TlUtils;
@@ -481,7 +474,8 @@ public class NotificationsController extends BaseController {
                 messageObject.messageOwner.mentioned && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage ||
                 DialogObject.isEncryptedDialog(dialog_id) ||
                 messageObject.messageOwner.peer_id.channel_id != 0 && !messageObject.isSupergroup() ||
-                dialog_id == UserObject.VERIFY
+                dialog_id == UserObject.VERIFY ||
+                dialog_id == UserObject.OAUTH
             ) {
                 continue;
             }
@@ -1111,6 +1105,19 @@ public class NotificationsController extends BaseController {
                     Collections.sort(storyPushMessages, Comparator.comparingLong(n -> n.date));
                     continue;
                 }
+                if (messageObject != null && messageObject.isOauthPush) {
+                    if (messageObject.messageOwner == null) continue;
+                    int msg_id = messageObject.messageOwner.id;
+                    long date = messageObject.messageOwner.date;
+                    long expire_date = date + 60;
+                    long now = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
+                    if (now > expire_date) continue;
+                    AndroidUtilities.runOnUIThread(() -> {
+                        final LongSparseArray<ArrayList<Integer>> deletedMessages = new LongSparseArray<>();
+                        deletedMessages.put(0, Lists.newArrayList(msg_id));
+                        removeDeletedMessagesFromNotifications(deletedMessages, false);
+                    }, (expire_date - now) * 1000L);
+                }
                 int mid = messageObject.getId();
                 long randomId = messageObject.isFcmMessage() ? messageObject.messageOwner.random_id : 0;
                 long dialogId = messageObject.getDialogId();
@@ -1166,13 +1173,13 @@ public class NotificationsController extends BaseController {
                     }
                     continue;
                 }
-                if (isFcm) {
+                if (isFcm && !messageObject.isOauthPush) {
                     getMessagesStorage().putPushMessage(messageObject);
                 }
 
                 long originalDialogId = dialogId;
                 long topicId = MessageObject.getTopicId(currentAccount, messageObject.messageOwner, getMessagesController().isForum(messageObject));
-                if (dialogId == openedDialogId && ApplicationLoader.isScreenOn && !messageObject.isStoryReactionPush) {
+                if (dialogId == openedDialogId && ApplicationLoader.isScreenOn && !messageObject.isStoryReactionPush && !messageObject.isOauthPush) {
                     if (!isFcm) {
                         playInChatSound();
                     }
@@ -2520,7 +2527,9 @@ public class NotificationsController extends BaseController {
         }
 
         String name = null;
-        if (fromId > 0) {
+        if (messageObject.getDialogId() == UserObject.OAUTH || messageObject.isOauthPush) {
+            name = LocaleController.getString(R.string.BotAuthNotificationTitle);
+        } else if (fromId > 0) {
             if (messageObject.messageOwner.from_scheduled) {
                 if (dialogId == selfUsedId) {
                     name = LocaleController.getString(R.string.MessageScheduledReminderNotification);
@@ -2558,7 +2567,10 @@ public class NotificationsController extends BaseController {
             if (chatId == 0 && fromId != 0) {
                 if (dialogPreviewEnabled && preferences.getBoolean("EnablePreviewAll", true)) {
                     if (messageObject.messageOwner instanceof TLRPC.TL_messageService) {
-                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
+                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChangeCreator ||
+                            messageObject.messageOwner.action instanceof TLRPC.TL_messageActionNewCreatorPending) {
+                            msg = messageObject.messageText.toString();
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
                             msg = LocaleController.getString(R.string.WallpaperSameNotification);
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatWallPaper) {
                             msg = LocaleController.getString(R.string.WallpaperNotification);
@@ -4126,8 +4138,7 @@ public class NotificationsController extends BaseController {
             }
             SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
             int dismissDate = preferences.getInt("dismissDate", 0);
-            // lastMessageObject.messageOwner.date == 0 if using microG
-            if (!lastMessageObject.isStoryPush && lastMessageObject.messageOwner.date > 0 && lastMessageObject.messageOwner.date <= dismissDate) {
+            if (!lastMessageObject.isStoryPush && lastMessageObject.messageOwner.date <= dismissDate) {
                 dismissNotification();
                 return;
             }
@@ -4481,6 +4492,9 @@ public class NotificationsController extends BaseController {
             Intent intent = new Intent(ApplicationLoader.applicationContext, LaunchActivity.class);
             intent.setAction("com.tmessages.openchat" + Math.random() + Integer.MAX_VALUE);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            if (lastMessageObject != null && lastMessageObject.isOauthPush) {
+                intent.putExtra("oauth_url", lastMessageObject.localName);
+            }
             //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
             if (lastMessageObject.isStoryReactionPush) {
                 intent.putExtra("storyId", Math.abs(lastMessageObject.getId()));
@@ -4808,7 +4822,6 @@ public class NotificationsController extends BaseController {
             arrayList.add(messageObject);
         }
 
-
         LongSparseArray<Integer> oldIdsWear = new LongSparseArray<>();
         for (int i = 0; i < wearNotificationsIds.size(); i++) {
             oldIdsWear.put(wearNotificationsIds.keyAt(i), wearNotificationsIds.valueAt(i));
@@ -4950,7 +4963,9 @@ public class NotificationsController extends BaseController {
                             photoPath = user.photo.photo_small;
                         }
                     }
-                    if (dialogId == UserObject.VERIFY) {
+                    if (dialogId == UserObject.OAUTH) {
+                        name = LocaleController.getString(R.string.BotAuthNotificationTitle);
+                    } else if (dialogId == UserObject.VERIFY) {
                         name = LocaleController.getString(R.string.VerifyCodesNotifications);
                     } else if (UserObject.isReplyUser(dialogId)) {
                         name = LocaleController.getString(R.string.RepliesTitle);
@@ -5068,8 +5083,8 @@ public class NotificationsController extends BaseController {
 
             if (chat != null) {
                 Person.Builder personBuilder = new Person.Builder().setName(name);
-                if (Build.VERSION.SDK_INT >= 28) {
-                    loadRoundAvatar(avatarFile, personBuilder, -chat.id, chat.title, null);
+                if (avatarFile != null && avatarFile.exists() && Build.VERSION.SDK_INT >= 28) {
+                    loadRoundAvatar(dialogId, avatarFile, personBuilder);
                 }
                 personCache.put(-chat.id, personBuilder.build());
             }
@@ -5122,13 +5137,10 @@ public class NotificationsController extends BaseController {
                     sender = getUserConfig().getCurrentUser();
                 }
                 try {
-                    if (sender != null) {
+                    if (sender != null && sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
                         Person.Builder personBuilder = new Person.Builder().setName(LocaleController.getString(R.string.FromYou));
-                        File avatar = null;
-                        if (sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
-                            avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
-                        }
-                        loadRoundAvatar(avatar, personBuilder, sender.id, sender.first_name, sender.last_name);
+                        File avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
+                        loadRoundAvatar(getUserConfig().getClientUserId(), avatar, personBuilder);
                         selfPerson = personBuilder.build();
                         personCache.put(selfUserId, selfPerson);
                     }
@@ -5205,7 +5217,9 @@ public class NotificationsController extends BaseController {
                         continue;
                     }
                     String message = getShortStringForMessage(messageObject, senderName, preview);
-                    if (dialogId == UserObject.VERIFY && messageObject.getForwardedFromId() != null) {
+                    if (dialogId == UserObject.OAUTH) {
+                        senderName[0] = LocaleController.getString(R.string.BotAuthNotificationTitle);
+                    } else if (dialogId == UserObject.VERIFY && messageObject.getForwardedFromId() != null) {
                         senderName[0] = getMessagesController().getPeerName(messageObject.getForwardedFromId());
                     } else if (dialogId == selfUserId) {
                         senderName[0] = name;
@@ -5268,12 +5282,8 @@ public class NotificationsController extends BaseController {
                         Person.Builder personBuilder = new Person.Builder().setName(personName);
                         if (preview[0] && !DialogObject.isEncryptedDialog(dialogId) && Build.VERSION.SDK_INT >= 28) {
                             File avatar = null;
-                            TLRPC.User senderUser = null;
-                            TLRPC.Chat senderChat = null;
                             if (DialogObject.isUserDialog(dialogId) || isChannel) {
                                 avatar = avatarFile;
-                                senderUser = user;
-                                senderChat = chat;
                             } else {
                                 long fromId = messageObject.getSenderId();
                                 TLRPC.User sender = getMessagesController().getUser(fromId);
@@ -5283,39 +5293,24 @@ public class NotificationsController extends BaseController {
                                         getMessagesController().putUser(sender, true);
                                     }
                                 }
-                                if (sender != null) {
-                                    senderUser = sender;
-                                    if (sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
-                                        avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
-                                    }
+                                if (sender != null && sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
+                                    avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
                                 }
                             }
                             if (avatar == null && dialogId == UserObject.VERIFY && messageObject.getForwardedFromId() != null) {
                                 if (uid >= 0) {
                                     TLRPC.User sender = getMessagesController().getUser(uid);
-                                    if (sender != null) {
-                                        senderUser = sender;
-                                        if (sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
-                                            avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
-                                        }
+                                    if (sender != null && sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
+                                        avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
                                     }
                                 } else {
                                     TLRPC.Chat sender = getMessagesController().getChat(-uid);
-                                    if (sender != null) {
-                                        senderChat = sender;
-                                        if (sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
-                                            avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
-                                        }
+                                    if (sender != null && sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
+                                        avatar = getFileLoader().getPathToAttach(sender.photo.photo_small, true);
                                     }
                                 }
                             }
-                            if (senderUser != null) {
-                                loadRoundAvatar(avatar, personBuilder, senderUser.id, senderUser.first_name, senderUser.last_name);
-                            } else if (senderChat != null) {
-                                loadRoundAvatar(avatar, personBuilder, -senderChat.id, senderChat.title, null);
-                            } else {
-                                loadRoundAvatar(avatar, personBuilder);
-                            }
+                            loadRoundAvatar(dialogId, avatar, personBuilder);
                         }
                         person = personBuilder.build();
                         personCache.put(uid, person);
@@ -5448,7 +5443,9 @@ public class NotificationsController extends BaseController {
             intent.setAction("com.tmessages.openchat" + Math.random() + Integer.MAX_VALUE);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            if (lastMessageObject != null && lastMessageObject.isStoryReactionPush) {
+            if (lastMessageObject != null && lastMessageObject.isOauthPush) {
+                intent.putExtra("oauth_url", lastMessageObject.localName);
+            } else if (lastMessageObject != null && lastMessageObject.isStoryReactionPush) {
                 intent.putExtra("storyId", Math.abs(lastMessageObject.getId()));
             } else if (lastMessageObject != null && lastMessageObject.isLiveStoryPush) {
                 if (dialogId < 0) {
@@ -5585,7 +5582,7 @@ public class NotificationsController extends BaseController {
                         .build();
                 builder.addAction(copyAction);
             }
-            if (dialogKey.dialogId != UserObject.VERIFY) {
+            if (dialogKey.dialogId != UserObject.VERIFY && dialogKey.dialogId != UserObject.OAUTH) {
                 if (wearReplyAction != null) {
                     builder.addAction(wearReplyAction);
                 }
@@ -5752,63 +5749,30 @@ public class NotificationsController extends BaseController {
         return new Pair<>(storiesCount, hidden);
     }
 
-    public static Person.Builder loadRoundAvatar(File avatar, Person.Builder personBuilder) {
-        return loadRoundAvatar(avatar, personBuilder, 0, null, null);
-    }
-
-    public static Person.Builder loadRoundAvatar(File avatar, Person.Builder personBuilder, long id, String firstName, String lastName) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    public static Person.Builder loadRoundAvatar(long dialogId, File avatar, Person.Builder personBuilder) {
+        if (dialogId == UserObject.OAUTH) {
+            personBuilder.setIcon(IconCompat.createWithResource(ApplicationLoader.applicationContext, R.drawable.ic_launcher_dr));
+            return personBuilder;
+        }
+        if (avatar != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                Bitmap bitmap = null;
-                if (avatar != null && avatar.exists()) {
-                    bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(avatar), (decoder, info, src) -> {
-                        decoder.setPostProcessor((canvas) -> {
-                            Path path = new Path();
-                            path.setFillType(Path.FillType.INVERSE_EVEN_ODD);
-                            int width = canvas.getWidth();
-                            int height = canvas.getHeight();
-                            path.addRoundRect(0, 0, width, height, width / 2, width / 2, Path.Direction.CW);
-                            Paint paint = new Paint();
-                            paint.setAntiAlias(true);
-                            paint.setColor(Color.TRANSPARENT);
-                            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-                            canvas.drawPath(path, paint);
-                            return PixelFormat.TRANSLUCENT;
-                        });
+                Bitmap bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(avatar), (decoder, info, src) -> {
+                    decoder.setPostProcessor((canvas) -> {
+                        Path path = new Path();
+                        path.setFillType(Path.FillType.INVERSE_EVEN_ODD);
+                        int width = canvas.getWidth();
+                        int height = canvas.getHeight();
+                        path.addRoundRect(0, 0, width, height, width / 2, width / 2, Path.Direction.CW);
+                        Paint paint = new Paint();
+                        paint.setAntiAlias(true);
+                        paint.setColor(Color.TRANSPARENT);
+                        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+                        canvas.drawPath(path, paint);
+                        return PixelFormat.TRANSLUCENT;
                     });
-                } else if (firstName != null || lastName != null) {
-                    int sz = AndroidUtilities.dp(64);
-                    bitmap = Bitmap.createBitmap(sz, sz, Bitmap.Config.ARGB_8888);
-                    Canvas canvas = new Canvas(bitmap);
-
-                    int colorIndex = AvatarDrawable.getColorIndex(id);
-                    int[] colors = new int[] {
-                        Theme.getColor(Theme.keys_avatar_background[colorIndex]),
-                        Theme.getColor(Theme.keys_avatar_background2[colorIndex])
-                    };
-                    LinearGradient shader = new LinearGradient(0, 0, 0, sz, colors, new float[] {0, 1}, Shader.TileMode.CLAMP);
-                    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    paint.setShader(shader);
-                    canvas.drawCircle(sz / 2f, sz / 2f, sz / 2f, paint);
-
-                    StringBuilder stringBuilder = new StringBuilder();
-                    AvatarDrawable.getAvatarSymbols(firstName, lastName, null, stringBuilder);
-                    String text = stringBuilder.toString();
-
-                    if (!text.isEmpty()) {
-                        TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-                        textPaint.setTypeface(AndroidUtilities.bold());
-                        textPaint.setTextSize(sz * 0.4f);
-                        textPaint.setColor(0xFFFFFFFF);
-                        Rect rect = new Rect();
-                        textPaint.getTextBounds(text, 0, text.length(), rect);
-                        canvas.drawText(text, sz / 2f - rect.width() / 2f - rect.left, sz / 2f - rect.height() / 2f - rect.top, textPaint);
-                    }
-                }
-                if (bitmap != null) {
-                    IconCompat icon = IconCompat.createWithBitmap(bitmap);
-                    personBuilder.setIcon(icon);
-                }
+                });
+                IconCompat icon = IconCompat.createWithBitmap(bitmap);
+                personBuilder.setIcon(icon);
             } catch (Throwable ignore) {
 
             }

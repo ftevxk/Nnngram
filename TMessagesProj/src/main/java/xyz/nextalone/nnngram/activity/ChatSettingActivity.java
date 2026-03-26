@@ -150,6 +150,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int searchHashtagInCurrentChatRow;
     private int cancelLoadingVideoWhenCloseRow;
     private int hideSavedAndArchivedMessagesInListRow;
+    private int scrollToNextUnreadWhenAtTopRow;
     private int chat2Row;
 
     private int markdownRow;
@@ -522,6 +523,11 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.hideSavedAndArchivedMessagesInList);
             }
+        } else if (position == scrollToNextUnreadWhenAtTopRow) {
+            Config.toggleScrollToNextUnreadWhenAtTop();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.scrollToNextUnreadWhenAtTop);
+            }
         }
     }
 
@@ -597,6 +603,7 @@ public class ChatSettingActivity extends BaseActivity {
         searchHashtagInCurrentChatRow = addRow("searchHashtagInCurrentChat");
         cancelLoadingVideoWhenCloseRow = addRow("cancelLoadingVideoWhenClose");
         hideSavedAndArchivedMessagesInListRow = addRow("hideSavedAndArchivedMessagesInList");
+        scrollToNextUnreadWhenAtTopRow = addRow("scrollToNextUnreadWhenAtTop");
         chat2Row = addRow();
 
         markdownRow = addRow();
@@ -790,6 +797,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.cancelLoadingVideoWhenClose), Config.cancelLoadingVideoWhenClose, true);
                     } else if (position == hideSavedAndArchivedMessagesInListRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.hideSavedAndArchivedMessagesInList), Config.hideSavedAndArchivedMessagesInList, true);
+                    } else if (position == scrollToNextUnreadWhenAtTopRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.scrollToNextUnreadWhenAtTop), Config.scrollToNextUnreadWhenAtTop, true);
                     }
                     break;
                 }
