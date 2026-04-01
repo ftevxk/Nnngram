@@ -4282,7 +4282,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 viewPage.listView.setViewsOffset(ty);
                             }
                             if (viewPage.pullForegroundDrawable != null) {
-                                viewPage.pullForegroundDrawable.pullProgress = k;
+                                viewPage.pullForegroundDrawable.setPullProgress(k);
                                 viewPage.pullForegroundDrawable.setListView(viewPage.listView);
                             }
                         } else {
@@ -4295,7 +4295,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             }
                             if (viewPage.pullForegroundDrawable != null) {
                                 viewPage.pullForegroundDrawable.resetText();
-                                viewPage.pullForegroundDrawable.pullProgress = 0f;
+                                viewPage.pullForegroundDrawable.setPullProgress(0f);
                                 viewPage.pullForegroundDrawable.setListView(viewPage.listView);
                             }
                         }
@@ -9352,7 +9352,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    private boolean hasHiddenArchive() {
+    public boolean hasHiddenArchive() {
         return !onlySelect && initialDialogsType == DIALOGS_TYPE_DEFAULT && folderId == 0 && getMessagesController().hasHiddenArchive();
     }
 
@@ -11541,6 +11541,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             this.headerType = type;
         }
     }
+
+    public static final int MAIN_TABS_HEIGHT = 48;
+    public static final int MAIN_TABS_MARGIN = 8;
+    public static final int MAIN_TABS_HEIGHT_WITH_MARGINS = MAIN_TABS_HEIGHT + MAIN_TABS_MARGIN * 2;
 
     public static final int DIALOGS_TYPE_DEFAULT = 0;
     public static final int DIALOGS_TYPE_BOT_SHARE = 1; // selecting group to write with inline bot query, including sharing a game
