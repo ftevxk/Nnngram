@@ -160,6 +160,7 @@ import org.telegram.ui.Adapters.DialogsSearchAdapter;
 import org.telegram.ui.Adapters.FiltersView;
 import org.telegram.ui.Cells.AccountSelectCell;
 import org.telegram.ui.Cells.ActiveGiftAuctionsHintCell;
+import org.telegram.ui.Cells.AnimatedStatusView;
 import org.telegram.ui.Cells.ArchiveHintInnerCell;
 import org.telegram.ui.Cells.BaseCell;
 import org.telegram.ui.Cells.DialogCell;
@@ -689,7 +690,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private Long statusDrawableGiftId;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
-    private DrawerProfileCell.AnimatedStatusView animatedStatusView;
+    private AnimatedStatusView animatedStatusView;
     public RightSlidingDialogContainer rightSlidingDialogContainer;
 
     public final Property<DialogsActivity, Float> SCROLL_Y = new AnimationProperties.FloatProperty<DialogsActivity>("animationValue") {
@@ -5372,7 +5373,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             contentView.addView(actionBar, layoutParams);
         }
         if (!onlySelect) {
-            animatedStatusView = new DrawerProfileCell.AnimatedStatusView(context, 20, 60);
+            animatedStatusView = new AnimatedStatusView(context, 20, 60);
             contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
         }
 
@@ -5716,7 +5717,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (this.storiesOverscroll == 0) {
             storiesOverscrollCalled = false;
         }
-        dialogStoriesCell.setOverscoll(storiesOverscroll);
+        dialogStoriesCell.setOverscroll(storiesOverscroll);
         viewPage.listView.setViewsOffset(storiesOverscroll);
         viewPage.listView.setOverScrollMode(storiesOverscroll != 0 ? RecyclerView.OVER_SCROLL_NEVER : RecyclerView.OVER_SCROLL_ALWAYS);
         fragmentView.invalidate();

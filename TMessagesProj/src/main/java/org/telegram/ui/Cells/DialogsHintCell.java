@@ -220,6 +220,10 @@ public class DialogsHintCell extends FrameLayout {
 
     private int height;
 
+    public int height() {
+        return height;
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.displaySize.y, MeasureSpec.AT_MOST));

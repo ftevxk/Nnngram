@@ -245,6 +245,8 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
     private boolean checkPlayerAfterAnimation;
     private boolean checkImportAfterAnimation;
 
+    private FragmentContextView additionalContextView;
+
     private final static float[] speeds = new float[] {
         .5f, 1f, 1.2f, 1.5f, 1.7f, 2f
     };
@@ -1118,6 +1120,10 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 view.setPadding(0, (int) (getVisibility() == View.VISIBLE ? topPadding : 0), 0, 0);
             }
         }
+    }
+
+    public void setAdditionalContextView(FragmentContextView view) {
+        additionalContextView = view;
     }
 
     private boolean equals(float a, float b) {

@@ -230,9 +230,18 @@ public class DrawerLayoutContainer extends FrameLayout {
         }
     }
 
-    @Override
     public boolean hasOverlappingRendering() {
         return false;
+    }
+
+    public boolean isDrawerOpened() {
+        return false;
+    }
+
+    public void setAllowOpenDrawerBySwipe(boolean value) {
+    }
+
+    public void openDrawer(boolean animated) {
     }
 
     private final Paint internalNavbarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);

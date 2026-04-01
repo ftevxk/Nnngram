@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.telephony.TelephonyManager;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -726,6 +727,10 @@ public class ApplicationLoader extends Application {
 
     public IUpdateLayout takeUpdateLayout(Activity activity, ViewGroup sideMenuContainer) {
         return new UpdateLayout(activity, sideMenuContainer);
+    }
+
+    public View takeUpdateButton(Context context) {
+        return null;
     }
 
     public TLRPC.Update parseTLUpdate(int constructor) {
