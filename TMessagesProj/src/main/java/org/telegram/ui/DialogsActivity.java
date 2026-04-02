@@ -3026,9 +3026,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             actionBar.setRightDrawableOnClick(null);
         }
         statusDrawable.setColor(Theme.getColor(Theme.key_profile_verifiedBackground));
-        if (animatedStatusView != null) {
-            animatedStatusView.setColor(Theme.getColor(Theme.key_profile_verifiedBackground));
-        }
         if (selectAnimatedEmojiDialog != null && selectAnimatedEmojiDialog.getContentView() instanceof SelectAnimatedEmojiDialog) {
             SimpleTextView textView = actionBar.getTitleTextView();
             ((SelectAnimatedEmojiDialog) selectAnimatedEmojiDialog.getContentView()).setScrimDrawable(textView != null && textView.getRightDrawable() == statusDrawable ? statusDrawable : null, textView);
@@ -4916,7 +4913,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             fragmentContextView.setAdditionalContextView(fragmentLocationContextView);
             fragmentLocationContextView.setAdditionalContextView(fragmentContextView);
 
-            dialogsHintCell = new DialogsHintCell(context, contentView);
+            dialogsHintCell = new DialogsHintCell(context);
             dialogsHintCell.setBackground(Theme.createSimpleSelectorRoundRectDrawable(0, getThemedColor(Theme.key_windowBackgroundWhite), Theme.blendOver(getThemedColor(Theme.key_windowBackgroundWhite), getThemedColor(Theme.key_listSelector))));
             updateDialogsHint();
             CacheControlActivity.calculateTotalSize(size -> {
@@ -5867,9 +5864,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             AndroidUtilities.rectTmp2.offset((int) actionBarTitle.getX(), (int) actionBarTitle.getY());
             yoff = -(actionBar.getHeight() - AndroidUtilities.rectTmp2.centerY()) - dp(16);
             xoff = AndroidUtilities.rectTmp2.centerX() - dp(16);
-            if (animatedStatusView != null) {
-                animatedStatusView.translate(AndroidUtilities.rectTmp2.centerX(), AndroidUtilities.rectTmp2.centerY());
-            }
         }
         SelectAnimatedEmojiDialog popupLayout = new SelectAnimatedEmojiDialog(this, getContext(), true, xoff, SelectAnimatedEmojiDialog.TYPE_EMOJI_STATUS, getResourceProvider()) {
             @Override
@@ -5917,9 +5911,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     emojiStatus = status;
                 }
                 getMessagesController().updateEmojiStatus(emojiStatus, gift);
-                if (documentId != null) {
-                    animatedStatusView.animateChange(ReactionsLayoutInBubble.VisibleReaction.fromCustomEmoji(documentId));
-                }
                 if (popup[0] != null) {
                     selectAnimatedEmojiDialog = null;
                     popup[0].dismiss();
@@ -6162,7 +6153,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             dialogsHintCellVisible = false;
             dialogsHintCell.setVisibility(View.GONE);
             if (authHintCell == null) {
-                authHintCell = new UnconfirmedAuthHintCell(getContext(), fragmentView instanceof SizeNotifierFrameLayout ? (SizeNotifierFrameLayout) fragmentView : null);
+                authHintCell = new UnconfirmedAuthHintCell(getContext());
                 ((ContentView) fragmentView).addView(authHintCell);
             }
             authHintCell.set(DialogsActivity.this, currentAccount);
@@ -6172,7 +6163,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             dialogsHintCell.setVisibility(View.GONE);
 
             if (activeGiftAuctionsHintCell == null) {
-                activeGiftAuctionsHintCell = new ActiveGiftAuctionsHintCell(getContext(), fragmentView instanceof SizeNotifierFrameLayout ? (SizeNotifierFrameLayout) fragmentView : null, currentAccount);
+                activeGiftAuctionsHintCell = new ActiveGiftAuctionsHintCell(getContext(), currentAccount);
                 ((ContentView) fragmentView).addView(activeGiftAuctionsHintCell);
             }
 
@@ -6345,7 +6336,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             dialogsHintCell.setVisibility(View.VISIBLE);
             dialogsHintCell.setCompact(true);
             dialogsHintCell.setOnClickListener(v -> {
-                showDialog(AlertsCreator.createBirthdayPickerDialog(getContext(), getString(R.string.EditProfileBirthdayTitle), getString(R.string.EditProfileBirthdayButton), null, birthday -> {
+                showDialog(AlertsCreator.createBirthdayPickerDialog(
+                    getContext(),
+                    getString(R.string.EditProfileBirthdayTitle),
+                    getString(R.string.EditProfileBirthdayButton),
+                    null,
+                    birthday -> {
                     TL_account.updateBirthday req = new TL_account.updateBirthday();
                     req.flags |= 1;
                     req.birthday = birthday;
@@ -6397,7 +6393,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     params.transitionFromLeft = true;
                     params.allowNestedScroll = false;
                     showAsSheet(new PrivacyControlActivity(PrivacyControlActivity.PRIVACY_RULES_TYPE_BIRTHDAY), params);
-                }, false, getResourceProvider()).create());
+                }, false, false, getResourceProvider()).create());
             });
             dialogsHintCell.setText(Emoji.replaceWithRestrictedEmoji(LocaleController.getString(R.string.BirthdaySetupTitle), dialogsHintCell.titleView, this::updateDialogsHint), LocaleController.formatString(R.string.BirthdaySetupMessage));
             dialogsHintCell.setOnCloseListener(v -> {
@@ -9332,10 +9328,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         scrollYOffset = value;
         if (topBulletin != null) {
             topBulletin.updatePosition();
-        }
-        if (animatedStatusView != null) {
-            animatedStatusView.translateY2((int) value);
-            animatedStatusView.setAlpha(1f - -value / ActionBar.getCurrentActionBarHeight());
         }
         fragmentView.invalidate();
     }

@@ -4682,8 +4682,8 @@ public class ChatActivity extends BaseFragment implements
             }
 
             //wd 更多菜单增加代理设置页面跳转与AI广告关键词
-            headerItem.lazilyAddSubItem(proxy, R.drawable.msg_proxy, LocaleController.getString(R.string.ProxySettings));
-            headerItem.lazilyAddSubItem(message_filter, R.drawable.msg_block, LocaleController.getString(R.string.AdKeywords));
+            headerItem.lazilyAddSubItem(proxy, 0, LocaleController.getString(R.string.ProxySettings));
+            headerItem.lazilyAddSubItem(message_filter, 0, LocaleController.getString(R.string.AdKeywords));
             //wd 添加会话广告过滤菜单项（带勾选状态，不显示左侧图标，使用checkbox样式）
             headerItem.lazilyAddSubItem(chat_ad_filter, 0, null, LocaleController.getString(R.string.ChatAdFilter), true, true);
 
