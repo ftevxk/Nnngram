@@ -167,10 +167,6 @@ import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Cells.DialogsEmptyCell;
 import org.telegram.ui.Cells.DialogsHintCell;
 import org.telegram.ui.Cells.DividerCell;
-import org.telegram.ui.Cells.DrawerActionCell;
-import org.telegram.ui.Cells.DrawerAddCell;
-import org.telegram.ui.Cells.DrawerProfileCell;
-import org.telegram.ui.Cells.DrawerUserCell;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.HashtagSearchCell;
 import org.telegram.ui.Cells.HeaderCell;
@@ -520,7 +516,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Nullable
     private ActionBarMenuSubItem blockItem;
 
-    private IUpdateButton updateButton;
     private float additionalFloatingTranslation;
     private float additionalFloatingTranslation2;
     private float floatingButtonTranslation;
@@ -690,7 +685,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private Long statusDrawableGiftId;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
-    private AnimatedStatusView animatedStatusView;
     public RightSlidingDialogContainer rightSlidingDialogContainer;
 
     public final Property<DialogsActivity, Float> SCROLL_Y = new AnimationProperties.FloatProperty<DialogsActivity>("animationValue") {
@@ -5372,56 +5366,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             contentView.addView(actionBar, layoutParams);
         }
-        if (!onlySelect) {
-            animatedStatusView = new AnimatedStatusView(context, 20, 60);
-            contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
-        }
 
-        if (searchString == null && initialDialogsType == DIALOGS_TYPE_DEFAULT) {
-            updateButton = ApplicationLoader.applicationLoaderInstance.takeUpdateButton(context);
-            if (updateButton != null) {
-                contentView.addView(updateButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.LEFT | Gravity.BOTTOM));
-                ViewCompat.setOnApplyWindowInsetsListener(updateButton, (v, insets) -> {
-                    WindowInsetsCompat root = ViewCompat.getRootWindowInsets(v);
-                    int bottom = 0;
-                    if (root != null) {
-                        bottom = root.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom + root.getInsets(WindowInsetsCompat.Type.captionBar()).bottom;
-                    }
-                    FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
-                    int targetHeight = AndroidUtilities.dp(48) + bottom;
-                    boolean changed = false;
-                    if (lp.height != targetHeight) {
-                        lp.height = targetHeight;
-                        changed = true;
-                    }
-                    if (lp.bottomMargin != 0) {
-                        lp.bottomMargin = 0;
-                        changed = true;
-                    }
-                    if (changed) {
-                        v.setLayoutParams(lp);
-                    }
-                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottom);
-                    return insets;
-                });
-                ViewCompat.requestApplyInsets(updateButton);
-                updateButton.onTranslationUpdate(ty -> {
-                    additionalFloatingTranslation2 = dp(48) - ty;
-                    if (additionalFloatingTranslation2 < 0) {
-                        additionalFloatingTranslation2 = 0;
-                    }
-                    if (!floatingHidden) {
-                        updateFloatingButtonOffset();
-                    }
-                });
-                updateButton.setOnClickListener(v -> {
-                    if (!SharedConfig.isAppUpdateAvailable()) {
-                        return;
-                    }
-                    APKUtils.installUpdate(getParentActivity(), SharedConfig.pendingAppUpdate.document);
-                });
-            }
-        }
 
         undoViewIndex = contentView.getChildCount();
         undoView[0] = null;
@@ -12483,14 +12428,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             }
-            if (sideMenu != null) {
-                View child = sideMenu.getChildAt(0);
-                if (child instanceof DrawerProfileCell) {
-                    DrawerProfileCell profileCell = (DrawerProfileCell) child;
-                    profileCell.applyBackground(true);
-                    profileCell.updateColors();
-                }
-            }
+
             if (viewPages != null) {
                 for (int a = 0; a < viewPages.length; a++) {
                     if (viewPages[a].pullForegroundDrawable != null) {
@@ -12805,26 +12743,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_chats_archivePullDownBackgroundActive));
 
         arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_chats_menuBackground));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerProfileCell.class}, null, null, null, Theme.key_chats_menuName));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerProfileCell.class}, null, null, null, Theme.key_chats_menuPhone));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerProfileCell.class}, null, null, null, Theme.key_chats_menuPhoneCats));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerProfileCell.class}, null, null, null, Theme.key_chat_serviceBackground));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerProfileCell.class}, null, null, null, Theme.key_chats_menuTopShadow));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerProfileCell.class}, null, null, null, Theme.key_chats_menuTopShadowCats));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_IMAGECOLOR, new Class[]{DrawerProfileCell.class}, new String[]{"darkThemeView"}, null, null, null, Theme.key_chats_menuName));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR | ThemeDescription.FLAG_CHECKTAG, new Class[]{DrawerProfileCell.class}, null, null, cellDelegate, Theme.key_chats_menuTopBackgroundCats));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR | ThemeDescription.FLAG_CHECKTAG, new Class[]{DrawerProfileCell.class}, null, null, cellDelegate, Theme.key_chats_menuTopBackground));
-
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_IMAGECOLOR, new Class[]{DrawerActionCell.class}, new String[]{"textView"}, null, null, null, Theme.key_chats_menuItemIcon));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerActionCell.class}, new String[]{"textView"}, null, null, null, Theme.key_chats_menuItemText));
-
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerUserCell.class}, new String[]{"textView"}, null, null, null, Theme.key_chats_menuItemText));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{DrawerUserCell.class}, new String[]{"checkBox"}, null, null, null, Theme.key_chats_unreadCounterText));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{DrawerUserCell.class}, new String[]{"checkBox"}, null, null, null, Theme.key_chats_unreadCounter));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{DrawerUserCell.class}, new String[]{"checkBox"}, null, null, null, Theme.key_chats_menuBackground));
-        arrayList.add(new ThemeDescription(sideMenu, ThemeDescription.FLAG_IMAGECOLOR, new Class[]{DrawerAddCell.class}, new String[]{"textView"}, null, null, null, Theme.key_chats_menuItemIcon));
-        arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DrawerAddCell.class}, new String[]{"textView"}, null, null, null, Theme.key_chats_menuItemText));
-
         arrayList.add(new ThemeDescription(sideMenu, 0, new Class[]{DividerCell.class}, Theme.dividerPaint, null, null, Theme.key_divider));
 
         if (searchViewPager != null) {
