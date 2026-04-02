@@ -302,6 +302,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     public float progressToShowStories;
     public boolean hasStories = false;
     public boolean hasOnlySlefStories = false;
+    public boolean hasMainTabs;
     private boolean animateToHasStories = false;
     private float scrollYOffset;
     private boolean actionModeFullyShowed;
@@ -2864,6 +2865,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             allowBots = arguments.getBoolean("allowBots", true);
             closeFragment = arguments.getBoolean("closeFragment", true);
             allowGlobalSearch = arguments.getBoolean("allowGlobalSearch", true);
+            hasMainTabs = arguments.getBoolean("hasMainTabs", false);
 
             byte[] requestPeerTypeBytes = arguments.getByteArray("requestPeerType");
             if (requestPeerTypeBytes != null) {
@@ -6457,7 +6459,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             dialogsHintCell.showImage();
             final AvatarDrawable avatarDrawable = new AvatarDrawable();
             avatarDrawable.setInfo(getUserConfig().getClientUserId());
-            final RLottieDrawable drawable = new RLottieDrawable(R.raw.photopic, "photopic", dp(38), dp(38), true, null);
+            final RLottieDrawable drawable = new RLottieDrawable(R.raw.photo_suggest_icon, "photo_suggest_icon", dp(38), dp(38), true, null);
             drawable.setMasterParent(dialogsHintCell.imageView);
             avatarDrawable.setCustomIcon(drawable);
             avatarDrawable.setIconTranslation(dp(1), 0);
@@ -11367,7 +11369,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     View databaseMigrationHint;
 
     private void updateMenuButton(boolean animated) {
-        if (menuDrawable == null || updateButton == null) {
+        if (menuDrawable == null) {
             return;
         }
         int type;
@@ -11399,7 +11401,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             type = MenuDrawable.TYPE_DEFAULT;
             downloadProgress = 0.0f;
         }
-        updateButton.update(animated);
         menuDrawable.setType(type, animated);
         menuDrawable.setUpdateDownloadProgress(downloadProgress, animated);
     }
@@ -12944,7 +12945,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     ValueAnimator slideBackTransitionAnimator;
 
     @Override
-    protected Animator getCustomSlideTransition(boolean topFragment, boolean backAnimation, float distanceToMove) {
+    public Animator getCustomSlideTransition(boolean topFragment, boolean backAnimation, float distanceToMove) {
         if (backAnimation) {
             slideBackTransitionAnimator = ValueAnimator.ofFloat(slideFragmentProgress, 1f);
             return slideBackTransitionAnimator;
@@ -13095,7 +13096,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return isArchive() || rightSlidingDialogContainer.isOpenned ? INavigationLayout.BackButtonState.BACK : INavigationLayout.BackButtonState.MENU;
     }
 
-    @Override
     public void setProgressToDrawerOpened(float progress) {
         if (SharedConfig.getDevicePerformanceClass() <= SharedConfig.PERFORMANCE_CLASS_LOW || isSlideBackTransition) {
             return;

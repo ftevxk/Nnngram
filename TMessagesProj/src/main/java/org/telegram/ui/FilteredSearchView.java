@@ -2008,23 +2008,19 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
             floatingDateAnimation.cancel();
             floatingDateAnimation = null;
         }
-        if (animated) {
-            floatingDateAnimation = new AnimatorSet();
-            floatingDateAnimation.setDuration(180);
-            floatingDateAnimation.playTogether(
-                ObjectAnimator.ofFloat(floatingDateView, View.ALPHA, 0.0f),
-                ObjectAnimator.ofFloat(floatingDateView, View.TRANSLATION_Y, -AndroidUtilities.dp(48)));
-            floatingDateAnimation.setInterpolator(CubicBezierInterpolator.EASE_OUT);
-            floatingDateAnimation.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    floatingDateAnimation = null;
-                }
-            });
-            floatingDateAnimation.start();
-        } else {
-            floatingDateView.setAlpha(0.0f);
-        }
+        floatingDateAnimation = new AnimatorSet();
+        floatingDateAnimation.setDuration(180);
+        floatingDateAnimation.playTogether(
+            ObjectAnimator.ofFloat(floatingDateView, View.ALPHA, 0.0f),
+            ObjectAnimator.ofFloat(floatingDateView, View.TRANSLATION_Y, -AndroidUtilities.dp(48)));
+        floatingDateAnimation.setInterpolator(CubicBezierInterpolator.EASE_OUT);
+        floatingDateAnimation.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                floatingDateAnimation = null;
+            }
+        });
+        floatingDateAnimation.start();
     }
 
     @Override

@@ -25,14 +25,16 @@ plugins {
 val java = JavaVersion.VERSION_17
 
 repositories {
+    maven("https://maven.aliyun.com/repository/google")
+    maven("https://maven.aliyun.com/repository/public")
     google()
     gradlePluginPortal()
     mavenCentral()
+}
 
-    dependencies {
-        //noinspection UseTomlInstead
-        implementation("org.eclipse.jgit:org.eclipse.jgit:7.3.0.202506031305-r")
-    }
+dependencies {
+    //noinspection UseTomlInstead
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.3.0.202506031305-r")
 }
 
 java {
