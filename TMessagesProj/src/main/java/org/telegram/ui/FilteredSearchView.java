@@ -168,6 +168,7 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
 
     private static SpannableStringBuilder[] arrowSpan = new SpannableStringBuilder[3];
 
+    private AnimatorSet floatingDateAnimation;
     private int photoViewerClassGuid;
 
     private final MessageHashId messageHashIdTmp = new MessageHashId(0, 0);

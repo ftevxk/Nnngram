@@ -268,6 +268,22 @@ import xyz.nextalone.nnngram.utils.UpdateUtils;
 public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, FloatingDebugProvider {
 
     public final static boolean DISPLAY_SPEEDOMETER_IN_DOWNLOADS_SEARCH = true;
+    public static boolean switchingTheme = false;
+    public static final int SEARCH_FIELD_HEIGHT = 56;
+
+    private MainTabsActivityController mainTabsActivityController;
+
+    public void setMainTabsActivityController(MainTabsActivityController controller) {
+        this.mainTabsActivityController = controller;
+    }
+
+    public float getTopPanelAnimatedHeight() {
+        return 0;
+    }
+
+    public float getTopPanelVisibility() {
+        return 1f;
+    }
 
     private boolean canShowFilterTabsView;
     private boolean filterTabsViewIsVisible;
@@ -428,7 +444,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private boolean downloadsItemVisible;
     private ActionBarMenuItem proxyItem;
     private boolean proxyItemVisible;
-    private ActionBarMenuItem searchItem;
+    public ActionBarMenuItem searchItem;
     private ActionBarMenuItem optionsItem;
     private AnimatorSet speedAnimator;
     private ActionBarMenuItem doneItem;
