@@ -117,6 +117,7 @@ public class GeneralSettingActivity extends BaseActivity {
     private int hideAllTabRow;
     private int ignoreMutedCountRow;
     private int disableSharePhoneWithContactByDefaultRow;
+    private int keepContactNicknameRow;
     private int ignoreUserSpecifiedReplyColorRow;
     private int ignoreFolderUnreadCountRow;
     private int hideProxyEntryInTitleRow;
@@ -253,6 +254,11 @@ public class GeneralSettingActivity extends BaseActivity {
             Config.toggleDisableSharePhoneWithContactByDefault();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.disableSharePhoneWithContactByDefault);
+            }
+        } else if (position == keepContactNicknameRow) {
+            Config.toggleKeepContactNickname();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.keepContactNickname);
             }
         } else if (position == ignoreUserSpecifiedReplyColorRow) {
             Config.toggleIgnoreUserSpecifiedReplyColor();
@@ -590,6 +596,7 @@ public class GeneralSettingActivity extends BaseActivity {
         hideAllTabRow = addRow("hideAllTab");
         ignoreMutedCountRow = addRow("ignoreMutedCount");
         disableSharePhoneWithContactByDefaultRow = addRow("disableSharePhoneWithContactByDefault");
+        keepContactNicknameRow = addRow("keepContactNickname");
         ignoreUserSpecifiedReplyColorRow = addRow("ignoreUserSpecifiedReplyColor");
         tabsTitleTypeRow = addRow("tabsTitleType");
         ignoreFolderUnreadCountRow = addRow("ignoreFolderUnreadCount");
@@ -854,6 +861,10 @@ public class GeneralSettingActivity extends BaseActivity {
                     } else if (position == disableSharePhoneWithContactByDefaultRow) {
                         textCell.setTextAndCheck(LocaleController.getString("disableSharePhoneWithContactByDefault", R.string.disableSharePhoneWithContactByDefault),
                             Config.disableSharePhoneWithContactByDefault, true);
+                    } else if (position == keepContactNicknameRow) {
+                        textCell.setTextAndValueAndCheck(LocaleController.getString("keepContactNickname", R.string.keepContactNickname),
+                            LocaleController.getString("keepContactNicknameDesc", R.string.keepContactNicknameDesc),
+                            Config.keepContactNickname, true, true);
                     } else if (position == ignoreUserSpecifiedReplyColorRow) {
                         textCell.setTextAndCheck(LocaleController.getString("ignoreUserSpecifiedReplyColor", R.string.ignoreUserSpecifiedReplyColor),
                             Config.ignoreUserSpecifiedReplyColor, true);
@@ -1213,4 +1224,5 @@ public class GeneralSettingActivity extends BaseActivity {
         });
         builder.show();
     }
+
 }

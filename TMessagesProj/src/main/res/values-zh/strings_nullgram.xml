@@ -231,6 +231,8 @@
     <string name="hideAllTab">隐藏「全部对话」栏</string>
     <string name="ignoreMutedCount">忽略标签中的静音计数</string>
     <string name="disableSharePhoneWithContactByDefault">添加联系人时不分享手机号码</string>
+    <string name="keepContactNickname">同步联系人时保留昵称</string>
+    <string name="keepContactNicknameDesc">同步联系人时不使用手机通讯录名称覆盖 Telegram 联系人昵称</string>
     <string name="disableStickersAutoReorder">禁用贴纸自动重新排列</string>
     <string name="autoDisableBuiltInProxy">自动关闭内置代理</string>
     <string name="autoDisableBuiltInProxyDesc">当 Nullgram 检测到您打开 VPN 时，它将自动关闭内置代理</string>

@@ -235,6 +235,8 @@
     <string name="hideAllTab">Hide \"All Chats\" tab</string>
     <string name="ignoreMutedCount">Ignore Muted Count in tab</string>
     <string name="disableSharePhoneWithContactByDefault">No Share Phone Number When Add Contact</string>
+    <string name="keepContactNickname">Keep Contact Nickname on Sync</string>
+    <string name="keepContactNicknameDesc">Do not overwrite Telegram contact names with phone book names during sync</string>
     <string name="disableStickersAutoReorder">Disable sticker packs auto-reorder</string>
     <string name="autoDisableBuiltInProxy">Auto Disable Built-In Proxy</string>
     <string name="autoDisableBuiltInProxyDesc">It will automatically turn off the built-in proxy when Nullgram detected you turn on the VPN</string>
