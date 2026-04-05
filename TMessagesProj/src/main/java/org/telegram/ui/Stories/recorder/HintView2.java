@@ -333,7 +333,7 @@ public class HintView2 extends View {
         return this;
     }
 
-    public static float measureCorrectly(CharSequence text, TextPaint paint) {
+    public static float measureCorrectly(CharSequence text, Paint paint) {
         if (text == null) {
             return 0;
         }

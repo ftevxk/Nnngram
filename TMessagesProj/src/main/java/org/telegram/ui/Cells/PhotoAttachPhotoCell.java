@@ -1,20 +1,9 @@
 /*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
+ * This is the source code of Telegram for Android v. 5.x.x.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
+ * Copyright Nikolai Kudashov, 2013-2018.
  */
 
 package org.telegram.ui.Cells;
@@ -78,7 +67,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.Components.spoilers.SpoilerEffect2;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.Stars.StarsIntroActivity;
 
 public class PhotoAttachPhotoCell extends FrameLayout {
 
@@ -91,6 +79,7 @@ public class PhotoAttachPhotoCell extends FrameLayout {
     private FrameLayout videoInfoContainer;
     private AnimatorSet animatorSet;
     private boolean isLast;
+    private boolean allowLivePhotos;
     private boolean pressed;
     private static Rect rect = new Rect();
     private PhotoAttachPhotoCellDelegate delegate;
@@ -166,6 +155,8 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         imageView = new BackupImageView(context) {
             private Paint crossfadePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             private long lastUpdate;
+            private Drawable livePhotoIcon;
+            private Drawable livePhotoIconOff;
 
             @Override
             protected void onDraw(Canvas canvas) {
@@ -222,6 +213,28 @@ public class PhotoAttachPhotoCell extends FrameLayout {
                     imageViewCrossfadeSnapshot = null;
                     crossfadeDuration = null;
                     invalidate();
+                }
+
+                if (photoEntry != null && photoEntry.isLivePhoto && allowLivePhotos) {
+                    Drawable icon;
+                    if (photoEntry.discardLivePhoto) {
+                        if (livePhotoIconOff == null) {
+                            livePhotoIconOff = getContext().getResources().getDrawable(R.drawable.media_live_off).mutate();
+                        }
+                        icon = livePhotoIconOff;
+                    } else {
+                        if (livePhotoIcon == null) {
+                            livePhotoIcon = getContext().getResources().getDrawable(R.drawable.media_live_on).mutate();
+                        }
+                        icon = livePhotoIcon;
+                    }
+                    icon.setBounds(
+                            (int) (imageReceiver.getImageX() + dp(8)),
+                            (int) (imageReceiver.getImageY() + dp(8)),
+                            (int) (imageReceiver.getImageX() + dp(8 + 22)),
+                            (int) (imageReceiver.getImageY() + dp(8 + 18))
+                    );
+                    icon.draw(canvas);
                 }
             }
 
@@ -298,21 +311,22 @@ public class PhotoAttachPhotoCell extends FrameLayout {
     }
 
     public void setHighQuality(boolean highQuality) {
+        highQuality = highQuality && isChecked();
         if (this.highQuality != highQuality) {
             this.highQuality = highQuality;
 
             if (photoEntry != null) {
-                if (photoEntry.isVideo) {
+                if (photoEntry.isVideo && !photoEntry.isLivePhoto) {
                     imageView.setOrientation(0, true);
                     videoInfoContainer.setVisibility(VISIBLE);
                     videoPlayImageView.setVisibility(VISIBLE);
                     ((LayoutParams) videoTextView.getLayoutParams()).leftMargin = dp(13);
                     videoTextView.setText(AndroidUtilities.formatShortDuration(photoEntry.duration));
-                } else if (!photoEntry.highQuality) {
+                } else if (photoEntry.isHighQuality()) {
                     videoInfoContainer.setVisibility(VISIBLE);
                     videoPlayImageView.setVisibility(GONE);
                     ((LayoutParams) videoTextView.getLayoutParams()).leftMargin = dp(0);
-                    videoTextView.setText("SD");
+                    videoTextView.setText(getString(R.string.ShortHighQuality));
                 } else {
                     videoPlayImageView.setVisibility(GONE);
                     videoInfoContainer.setVisibility(INVISIBLE);
@@ -483,21 +497,22 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         return videoInfoContainer;
     }
 
-    public void setPhotoEntry(MediaController.PhotoEntry entry, boolean selectedMultiple, boolean needCheckShow, boolean last) {
+    public void setPhotoEntry(MediaController.PhotoEntry entry, boolean selectedMultiple, boolean needCheckShow, boolean last, boolean allowLivePhotos) {
         pressed = false;
         photoEntry = entry;
         isLast = last;
-        if (photoEntry.isVideo) {
+        this.allowLivePhotos = allowLivePhotos;
+        if (photoEntry.isVideo && !photoEntry.isLivePhoto) {
             imageView.setOrientation(0, true);
             videoInfoContainer.setVisibility(VISIBLE);
             videoPlayImageView.setVisibility(VISIBLE);
             ((LayoutParams) videoTextView.getLayoutParams()).leftMargin = dp(13);
             videoTextView.setText(AndroidUtilities.formatShortDuration(photoEntry.duration));
-        } else if (!photoEntry.highQuality) {
+        } else if (photoEntry.isHighQuality() && isChecked()) {
             videoInfoContainer.setVisibility(VISIBLE);
             videoPlayImageView.setVisibility(GONE);
             ((LayoutParams) videoTextView.getLayoutParams()).leftMargin = dp(0);
-            videoTextView.setText("SD");
+            videoTextView.setText(getString(R.string.ShortHighQuality));
         } else {
             videoPlayImageView.setVisibility(GONE);
             videoInfoContainer.setVisibility(INVISIBLE);
@@ -507,7 +522,7 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         } else if (photoEntry.thumbPath != null) {
             imageView.setImage(photoEntry.thumbPath, null, Theme.chat_attachEmptyDrawable);
         } else if (photoEntry.path != null) {
-            if (photoEntry.isVideo) {
+            if (photoEntry.isVideo && !photoEntry.isLivePhoto) {
                 imageView.setImage("vthumb://" + photoEntry.imageId + ":" + photoEntry.path, null, Theme.chat_attachEmptyDrawable);
             } else {
                 imageView.setOrientation(photoEntry.orientation, photoEntry.invert, true);
@@ -522,7 +537,7 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         videoInfoContainer.setAlpha(showing ? 0.0f : 1.0f);
         requestLayout();
         setHasSpoiler(entry.hasSpoiler);
-        setHighQuality(entry.highQuality);
+        setHighQuality(entry.isHighQuality() && isChecked());
         setStarsPrice(entry.starsAmount, selectedMultiple);
     }
 
@@ -608,6 +623,7 @@ public class PhotoAttachPhotoCell extends FrameLayout {
                 container.setScaleY(checked ? 0.787f : 1.0f);
             }
         }
+        setHighQuality(photoEntry != null && photoEntry.isHighQuality() && isChecked());
     }
 
     public void setNum(int num) {
@@ -716,7 +732,9 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         super.onInitializeAccessibilityNodeInfo(info);
         info.setEnabled(true);
         StringBuilder sb = new StringBuilder();
-        if (photoEntry != null && photoEntry.isVideo) {
+        if (photoEntry != null && photoEntry.isLivePhoto) {
+            sb.append(getString(R.string.AttachLivePhoto));
+        } else if (photoEntry != null && photoEntry.isVideo) {
             sb.append(getString(R.string.AttachVideo) + ", " + LocaleController.formatDuration(photoEntry.duration));
         } else {
             sb.append(getString(R.string.AttachPhoto));

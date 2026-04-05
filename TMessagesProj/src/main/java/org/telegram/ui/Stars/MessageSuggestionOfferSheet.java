@@ -199,7 +199,7 @@ public class MessageSuggestionOfferSheet extends BottomSheet {
         /* Tabs */
 
         if (allowTON) {
-            currencyTabsView = new HorizontalRoundTabsLayout(context);
+            currencyTabsView = new HorizontalRoundTabsLayout(context, resourcesProvider);
             ArrayList<CharSequence> tabs = new ArrayList<>();
             tabs.add(getString(R.string.SuggestedOfferStars));
             tabs.add(getString(R.string.SuggestedOfferTON));

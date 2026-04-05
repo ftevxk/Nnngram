@@ -404,4 +404,12 @@
     <string name="LLMApiUrlNotice">輸入 API 基礎位址（例如：https://api.openai.com/v1）</string>
     <string name="LLMModelNameNotice">輸入模型名稱（例如：gpt-4o-mini）</string>
     <string name="LLMSystemPromptNotice">自訂翻譯系統提示詞。留空則使用預設提示詞。</string>
+    <!-- AI Editor Tone Styles -->
+    <string name="AIEditorToneFormal">正式</string>
+    <string name="AIEditorToneShort">簡短</string>
+    <string name="AIEditorToneTribal">部落風</string>
+    <string name="AIEditorToneCorp">商務</string>
+    <string name="AIEditorToneBiblical">聖經體</string>
+    <string name="AIEditorToneViking">維京風</string>
+    <string name="AIEditorToneZen">禪意</string>
 </resources>

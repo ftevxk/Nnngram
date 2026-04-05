@@ -107,6 +107,7 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
     float imageScale = 1f;
 
     boolean showVideoLayout;
+    boolean showLivePhoto;
     StaticLayout videoInfoLayot;
     String videoText;
     boolean drawVideoIcon = true;
@@ -311,6 +312,7 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
             viewsText.setText("", false);
             videoInfoLayot = null;
             showVideoLayout = false;
+            showLivePhoto = false;
             gradientDrawableLoading = false;
             gradientDrawable = null;
             privacyType = -1;
@@ -348,6 +350,7 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         videoText = null;
         videoInfoLayot = null;
         showVideoLayout = false;
+        showLivePhoto = false;
         this.imageReceiver.clearDecorators();
         this.imageReceiverFullSize.clearDecorators();
         if (isStory && messageObject.storyItem.views != null) {
@@ -370,8 +373,9 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         } else if (messageObject.uploadingStory != null && messageObject.uploadingStory.firstFramePath != null) {
             imageReceiver.setImage(ImageLocation.getForPath(messageObject.uploadingStory.firstFramePath), imageFilter, null, null, parentObject, 0);
         } else if (messageObject.isVideo()) {
-            showVideoLayout = true;
-            if (parentColumnsCount != 9) {
+            showVideoLayout = !messageObject.isLivePhoto();
+            showLivePhoto = messageObject.isLivePhoto();
+            if (parentColumnsCount != 9 && !messageObject.isLivePhoto()) {
                 videoText = AndroidUtilities.formatShortDuration((int) messageObject.getDuration());
             }
             if (messageObject.mediaThumb != null) {
@@ -499,6 +503,7 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
     public void setVideoText(String videoText, boolean drawVideoIcon) {
         this.videoText = videoText;
         showVideoLayout = videoText != null;
+        showLivePhoto = false;
         if (showVideoLayout && videoInfoLayot != null && !videoInfoLayot.getText().toString().equals(videoText)) {
             videoInfoLayot = null;
         }
@@ -727,6 +732,15 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         }
 
         bounds.set(imageReceiver.getImageX(), imageReceiver.getImageY(), imageReceiver.getImageX2(), imageReceiver.getImageY2());
+        if (showLivePhoto && Theme.chat_livePhoto != null) {
+            Theme.chat_livePhoto.setBounds(
+                (int) (bounds.left + dp(8)),
+                (int) (bounds.top  + dp(8)),
+                (int) (bounds.left + dp(8) + Theme.chat_livePhoto.getIntrinsicWidth() * 0.75f),
+                (int) (bounds.top  + dp(8) + Theme.chat_livePhoto.getIntrinsicHeight() * 0.75f)
+            );
+            Theme.chat_livePhoto.draw(canvas);
+        }
         drawDuration(canvas, bounds, customsAlpha);
         drawViews(canvas, bounds, customsAlpha);
         if (!isSearchingHashtag) {

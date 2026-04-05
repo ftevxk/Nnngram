@@ -127,7 +127,7 @@ public class TL_stats {
         public void readParams(InputSerializedData stream, boolean exception) {
             flags = stream.readInt32(exception);
             json = TLRPC.TL_dataJSON.TLdeserialize(stream, stream.readInt32(exception), exception);
-            if ((flags & 1) != 0) {
+            if (hasFlag(flags, 1)) {
                 zoom_token = stream.readString(exception);
             }
         }
@@ -136,7 +136,7 @@ public class TL_stats {
             stream.writeInt32(constructor);
             stream.writeInt32(flags);
             json.serializeToStream(stream);
-            if ((flags & 1) != 0) {
+            if (hasFlag(flags, 1)) {
                 stream.writeString(zoom_token);
             }
         }
@@ -425,7 +425,7 @@ public class TL_stats {
             stream.writeInt32(constructor);
             stream.writeInt32(flags);
             stream.writeString(token);
-            if ((flags & 1) != 0) {
+            if (hasFlag(flags, 1)) {
                 stream.writeInt64(x);
             }
         }
@@ -532,7 +532,7 @@ public class TL_stats {
             flags = stream.readInt32(exception);
             count = stream.readInt32(exception);
             forwards = Vector.deserialize(stream, PublicForward::TLdeserialize, exception);
-            if ((flags & 1) != 0) {
+            if (hasFlag(flags, 1)) {
                 next_offset = stream.readString(exception);
             }
             chats = Vector.deserialize(stream, TLRPC.Chat::TLdeserialize, exception);
@@ -544,7 +544,7 @@ public class TL_stats {
             stream.writeInt32(flags);
             stream.writeInt32(count);
             Vector.serialize(stream, forwards);
-            if ((flags & 1) != 0) {
+            if (hasFlag(flags, 1)) {
                 stream.writeString(next_offset);
             }
             Vector.serialize(stream, chats);
@@ -693,12 +693,12 @@ public class TL_stats {
         @Override
         public void readParams(InputSerializedData stream, boolean exception) {
             flags = stream.readInt32(exception);
-            pending = (flags & 1) != 0;
-            failed = (flags & 4) != 0;
+            pending = hasFlag(flags, 1);
+            failed = hasFlag(flags, 4);
             amount = stream.readInt64(exception);
             date = stream.readInt32(exception);
             provider = stream.readString(exception);
-            if ((flags & 2) != 0) {
+            if (hasFlag(flags, 2)) {
                 transaction_date = stream.readInt32(exception);
                 transaction_url = stream.readString(exception);
             }
@@ -712,7 +712,7 @@ public class TL_stats {
             stream.writeInt64(amount);
             stream.writeInt32(date);
             stream.writeString(provider);
-            if ((flags & 2) != 0) {
+            if (hasFlag(flags, 2)) {
                 stream.writeInt32(transaction_date);
                 stream.writeString(transaction_url);
             }

@@ -426,4 +426,12 @@
     <string name="LLMModelNameNotice">输入模型名称（例如：gpt-4o-mini）</string>
     <string name="LLMSystemPromptNotice">自定义翻译系统提示词。留空则使用默认提示词。</string>
     <string name="mentionReadIndicator">提及已读指示器</string>
+    <!-- AI Editor Tone Styles -->
+    <string name="AIEditorToneFormal">正式</string>
+    <string name="AIEditorToneShort">简短</string>
+    <string name="AIEditorToneTribal">部落风</string>
+    <string name="AIEditorToneCorp">商务</string>
+    <string name="AIEditorToneBiblical">圣经体</string>
+    <string name="AIEditorToneViking">维京风</string>
+    <string name="AIEditorToneZen">禅意</string>
 </resources>

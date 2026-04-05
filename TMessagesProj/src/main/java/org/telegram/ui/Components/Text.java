@@ -210,6 +210,11 @@ public class Text {
         return this;
     }
 
+    public Text setAlpha(int alpha) {
+        paint.setAlpha(alpha);
+        return this;
+    }
+
     private float ellipsizeWidth = -1;
     public Text ellipsize(float width) {
         ellipsizeWidth = width;
