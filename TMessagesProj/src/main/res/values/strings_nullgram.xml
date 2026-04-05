@@ -409,6 +409,11 @@
     <string name="LLMProviderDeepSeek">DeepSeek</string>
     <string name="LLMProviderXAI">xAI</string>
     <string name="LLMProviderZhipuAI">Zhipu AI</string>
+    <string name="LLMProviderMistral">Mistral AI</string>
+    <string name="LLMProviderOpenRouter">OpenRouter</string>
+    <string name="LLMProviderQwen">Alibaba Qwen</string>
+    <string name="LLMProviderMoonshot">Moonshot / Kimi</string>
+    <string name="LLMProviderSiliconFlow">SiliconFlow</string>
     <string name="LLMApiUrl">API URL</string>
     <string name="LLMApiKey">API Key</string>
     <string name="LLMModelName">Model Name</string>
@@ -418,6 +423,15 @@
     <string name="LLMApiUrlNotice">Enter the API base URL (e.g., https://api.openai.com/v1)</string>
     <string name="LLMModelNameNotice">Enter the model name (e.g., gpt-4o-mini)</string>
     <string name="LLMSystemPromptNotice">Custom system prompt for translation. Leave empty to use default.</string>
+    <string name="LLMApiFormat">API Format</string>
+    <string name="LLMApiFormatOpenAIChat">OpenAI (Chat)</string>
+    <string name="LLMApiFormatOpenAIResponse">OpenAI (Response)</string>
+    <string name="LLMApiFormatAnthropic">Anthropic</string>
+    <string name="LLMApiFormatCustom">Custom</string>
+    <string name="LLMApiFormatOpenAIChatDesc">POST {baseUrl}/chat/completions — Standard OpenAI Chat Completions API format. Compatible with most OpenAI-compatible providers.</string>
+    <string name="LLMApiFormatOpenAIResponseDesc">POST {baseUrl}/responses — OpenAI Responses API format. Uses input + instructions fields.</string>
+    <string name="LLMApiFormatAnthropicDesc">POST {baseUrl}/messages — Anthropic Messages API format. Uses x-api-key header and system field.</string>
+    <string name="LLMApiFormatCustomDesc">POST to the exact API URL as configured — no endpoint path appended. Request body uses OpenAI Chat format.</string>
     <string name="disableRepeatInChannel">Disable repeat in channel</string>
     <string name="disableRepeatInChannelError">Repeat is disabled in channel</string>
     <string name="disableDoubleTapWhenSelecting">Double tap is disabled when selecting</string>

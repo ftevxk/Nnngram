@@ -98,6 +98,8 @@ public class GeneralSettingActivity extends BaseActivity {
 
     private int llmSettingsRow;
     private int llmProviderRow;
+    private int llmApiFormatRow;
+    private int llmApiFormatDescRow;
     private int llmApiKeyRow;
     private int llmApiUrlRow;
     private int llmModelNameRow;
@@ -467,6 +469,16 @@ public class GeneralSettingActivity extends BaseActivity {
             types.add(5);
             arrayList.add(LocaleController.getString("LLMProviderZhipuAI", R.string.LLMProviderZhipuAI));
             types.add(6);
+            arrayList.add(LocaleController.getString("LLMProviderMistral", R.string.LLMProviderMistral));
+            types.add(7);
+            arrayList.add(LocaleController.getString("LLMProviderOpenRouter", R.string.LLMProviderOpenRouter));
+            types.add(8);
+            arrayList.add(LocaleController.getString("LLMProviderQwen", R.string.LLMProviderQwen));
+            types.add(9);
+            arrayList.add(LocaleController.getString("LLMProviderMoonshot", R.string.LLMProviderMoonshot));
+            types.add(10);
+            arrayList.add(LocaleController.getString("LLMProviderSiliconFlow", R.string.LLMProviderSiliconFlow));
+            types.add(11);
             PopupBuilder.show(arrayList, LocaleController.getString("LLMProvider", R.string.LLMProvider), types.indexOf(ConfigManager.getIntOrDefault(Defines.llmProvider, 0)), getParentActivity(), view, i -> {
                 int newProvider = types.get(i);
                 int oldProvider = ConfigManager.getIntOrDefault(Defines.llmProvider, 0);
@@ -480,6 +492,11 @@ public class GeneralSettingActivity extends BaseActivity {
                     case 4 -> Defines.llmDeepSeekModel;
                     case 5 -> Defines.llmXAIModel;
                     case 6 -> Defines.llmZhipuAIModel;
+                    case 7 -> Defines.llmMistralModel;
+                    case 8 -> Defines.llmOpenRouterModel;
+                    case 9 -> Defines.llmQwenModel;
+                    case 10 -> Defines.llmMoonshotModel;
+                    case 11 -> Defines.llmSiliconFlowModel;
                     default -> null;
                 };
 
@@ -487,12 +504,17 @@ public class GeneralSettingActivity extends BaseActivity {
                     String currentModel = ConfigManager.getStringOrDefault(modelKey, "");
                     if (currentModel == null || currentModel.isEmpty()) {
                         String defaultModel = switch (newProvider) {
-                            case 1 -> "gpt-4o-mini";
-                            case 2 -> "gemini-2.0-flash";
+                            case 1 -> "gpt-4.1-mini";
+                            case 2 -> "gemini-2.5-flash";
                             case 3 -> "llama-3.3-70b-versatile";
                             case 4 -> "deepseek-chat";
-                            case 5 -> "grok-2-latest";
+                            case 5 -> "grok-3-mini-fast";
                             case 6 -> "GLM-4-Flash";
+                            case 7 -> "mistral-small-latest";
+                            case 8 -> "meta-llama/llama-3.3-70b-instruct";
+                            case 9 -> "qwen-turbo-latest";
+                            case 10 -> "moonshot-v1-8k";
+                            case 11 -> "Qwen/Qwen2.5-7B-Instruct";
                             default -> "";
                         };
                         ConfigManager.putString(modelKey, defaultModel);
@@ -500,6 +522,21 @@ public class GeneralSettingActivity extends BaseActivity {
                 }
 
                 updateRows();
+                listAdapter.notifyDataSetChanged();
+            });
+        } else if (position == llmApiFormatRow) {
+            ArrayList<String> arrayList = new ArrayList<>();
+            ArrayList<Integer> types = new ArrayList<>();
+            arrayList.add(LocaleController.getString("LLMApiFormatOpenAIChat", R.string.LLMApiFormatOpenAIChat));
+            types.add(0);
+            arrayList.add(LocaleController.getString("LLMApiFormatOpenAIResponse", R.string.LLMApiFormatOpenAIResponse));
+            types.add(1);
+            arrayList.add(LocaleController.getString("LLMApiFormatAnthropic", R.string.LLMApiFormatAnthropic));
+            types.add(2);
+            arrayList.add(LocaleController.getString("LLMApiFormatCustom", R.string.LLMApiFormatCustom));
+            types.add(3);
+            PopupBuilder.show(arrayList, LocaleController.getString("LLMApiFormat", R.string.LLMApiFormat), types.indexOf(ConfigManager.getIntOrDefault(Defines.llmApiFormat, 0)), getParentActivity(), view, i -> {
+                ConfigManager.putInt(Defines.llmApiFormat, types.get(i));
                 listAdapter.notifyDataSetChanged();
             });
         } else if (position == llmApiKeyRow) {
@@ -559,12 +596,15 @@ public class GeneralSettingActivity extends BaseActivity {
         if (TranslateHelper.getCurrentProviderType().equals(ProviderType.LLMTranslator)) {
             llmSettingsRow = addRow();
             llmProviderRow = addRow("llmProvider");
-            llmApiKeyRow = addRow("llmApiKey");
             int llmProvider = ConfigManager.getIntOrDefault(Defines.llmProvider, 0);
             if (llmProvider == 0) {
-                // Custom provider - show API URL
+                // Custom provider - show API format and API URL
+                llmApiFormatRow = addRow("llmApiFormat");
+                llmApiFormatDescRow = addRow();
                 llmApiUrlRow = addRow("llmApiUrl");
             } else {
+                llmApiFormatRow = -1;
+                llmApiFormatDescRow = -1;
                 llmApiUrlRow = -1;
             }
             // All providers can configure model name
@@ -575,6 +615,8 @@ public class GeneralSettingActivity extends BaseActivity {
         } else {
             llmSettingsRow = -1;
             llmProviderRow = -1;
+            llmApiFormatRow = -1;
+            llmApiFormatDescRow = -1;
             llmApiKeyRow = -1;
             llmApiUrlRow = -1;
             llmModelNameRow = -1;
@@ -772,9 +814,23 @@ public class GeneralSettingActivity extends BaseActivity {
                             case 4 -> LocaleController.getString("LLMProviderDeepSeek", R.string.LLMProviderDeepSeek);
                             case 5 -> LocaleController.getString("LLMProviderXAI", R.string.LLMProviderXAI);
                             case 6 -> LocaleController.getString("LLMProviderZhipuAI", R.string.LLMProviderZhipuAI);
+                            case 7 -> LocaleController.getString("LLMProviderMistral", R.string.LLMProviderMistral);
+                            case 8 -> LocaleController.getString("LLMProviderOpenRouter", R.string.LLMProviderOpenRouter);
+                            case 9 -> LocaleController.getString("LLMProviderQwen", R.string.LLMProviderQwen);
+                            case 10 -> LocaleController.getString("LLMProviderMoonshot", R.string.LLMProviderMoonshot);
+                            case 11 -> LocaleController.getString("LLMProviderSiliconFlow", R.string.LLMProviderSiliconFlow);
                             default -> LocaleController.getString("LLMProviderCustom", R.string.LLMProviderCustom);
                         };
                         textCell.setTextAndValue(LocaleController.getString("LLMProvider", R.string.LLMProvider), value, payload, true);
+                    } else if (position == llmApiFormatRow) {
+                        int llmApiFormat = ConfigManager.getIntOrDefault(Defines.llmApiFormat, 0);
+                        String value = switch (llmApiFormat) {
+                            case 1 -> LocaleController.getString("LLMApiFormatOpenAIResponse", R.string.LLMApiFormatOpenAIResponse);
+                            case 2 -> LocaleController.getString("LLMApiFormatAnthropic", R.string.LLMApiFormatAnthropic);
+                            case 3 -> LocaleController.getString("LLMApiFormatCustom", R.string.LLMApiFormatCustom);
+                            default -> LocaleController.getString("LLMApiFormatOpenAIChat", R.string.LLMApiFormatOpenAIChat);
+                        };
+                        textCell.setTextAndValue(LocaleController.getString("LLMApiFormat", R.string.LLMApiFormat), value, payload, true);
                     } else if (position == llmApiKeyRow) {
                         int llmProvider = ConfigManager.getIntOrDefault(Defines.llmProvider, 0);
                         String key = switch (llmProvider) {
@@ -784,6 +840,11 @@ public class GeneralSettingActivity extends BaseActivity {
                             case 4 -> Defines.llmDeepSeekKey;
                             case 5 -> Defines.llmXAIKey;
                             case 6 -> Defines.llmZhipuAIKey;
+                            case 7 -> Defines.llmMistralKey;
+                            case 8 -> Defines.llmOpenRouterKey;
+                            case 9 -> Defines.llmQwenKey;
+                            case 10 -> Defines.llmMoonshotKey;
+                            case 11 -> Defines.llmSiliconFlowKey;
                             default -> Defines.llmApiKey;
                         };
                         String value = ConfigManager.getStringOrDefault(key, "");
@@ -806,6 +867,11 @@ public class GeneralSettingActivity extends BaseActivity {
                             case 4 -> Defines.llmDeepSeekModel;
                             case 5 -> Defines.llmXAIModel;
                             case 6 -> Defines.llmZhipuAIModel;
+                            case 7 -> Defines.llmMistralModel;
+                            case 8 -> Defines.llmOpenRouterModel;
+                            case 9 -> Defines.llmQwenModel;
+                            case 10 -> Defines.llmMoonshotModel;
+                            case 11 -> Defines.llmSiliconFlowModel;
                             default -> Defines.llmModelName;
                         };
                         String value = ConfigManager.getStringOrDefault(modelKey, "");
@@ -921,6 +987,15 @@ public class GeneralSettingActivity extends BaseActivity {
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == overrideDevicePerformanceDescRow) {
                         cell.setText(LocaleController.getString("OverrideDevicePerformanceDesc", R.string.OverrideDevicePerformanceDesc));
+                    } else if (position == llmApiFormatDescRow) {
+                        int llmApiFormat = ConfigManager.getIntOrDefault(Defines.llmApiFormat, 0);
+                        String desc = switch (llmApiFormat) {
+                            case 1 -> LocaleController.getString("LLMApiFormatOpenAIResponseDesc", R.string.LLMApiFormatOpenAIResponseDesc);
+                            case 2 -> LocaleController.getString("LLMApiFormatAnthropicDesc", R.string.LLMApiFormatAnthropicDesc);
+                            case 3 -> LocaleController.getString("LLMApiFormatCustomDesc", R.string.LLMApiFormatCustomDesc);
+                            default -> LocaleController.getString("LLMApiFormatOpenAIChatDesc", R.string.LLMApiFormatOpenAIChatDesc);
+                        };
+                        cell.setText(desc);
                     }
                     break;
                 }
@@ -978,12 +1053,12 @@ public class GeneralSettingActivity extends BaseActivity {
             } else if (position == tabsTitleTypeRow || position == translationProviderRow || position == deepLFormalityRow || position == translationTargetRow ||
                 position == translatorTypeRow || position == doNotTranslateRow || position == overrideDevicePerformanceRow || position == customTitleRow ||
                 position == deepLxApiRow || position == editTextTranslationTargetRow ||
-                position == llmProviderRow || position == llmApiKeyRow || position == llmApiUrlRow || position == llmModelNameRow ||
+                position == llmProviderRow || position == llmApiFormatRow || position == llmApiKeyRow || position == llmApiUrlRow || position == llmModelNameRow ||
                 position == llmSystemPromptRow || position == llmTemperatureRow) {
                 return 2;
             } else if (position == drawerRow || position == generalRow || position == translatorRow || position == devicesRow || position == storiesRow || position == llmSettingsRow) {
                 return 4;
-            } else if (position == overrideDevicePerformanceDescRow) {
+            } else if (position == overrideDevicePerformanceDescRow || position == llmApiFormatDescRow) {
                 return 7;
             } else if ((position > generalRow && position < general2Row) ||
                     (position > devicesRow && position < devices2Row) ||
@@ -1151,6 +1226,11 @@ public class GeneralSettingActivity extends BaseActivity {
                 case 4 -> Defines.llmDeepSeekKey;
                 case 5 -> Defines.llmXAIKey;
                 case 6 -> Defines.llmZhipuAIKey;
+                case 7 -> Defines.llmMistralKey;
+                case 8 -> Defines.llmOpenRouterKey;
+                case 9 -> Defines.llmQwenKey;
+                case 10 -> Defines.llmMoonshotKey;
+                case 11 -> Defines.llmSiliconFlowKey;
                 default -> Defines.llmApiKey;
             };
         }
@@ -1164,6 +1244,11 @@ public class GeneralSettingActivity extends BaseActivity {
                 case 4 -> Defines.llmDeepSeekModel;
                 case 5 -> Defines.llmXAIModel;
                 case 6 -> Defines.llmZhipuAIModel;
+                case 7 -> Defines.llmMistralModel;
+                case 8 -> Defines.llmOpenRouterModel;
+                case 9 -> Defines.llmQwenModel;
+                case 10 -> Defines.llmMoonshotModel;
+                case 11 -> Defines.llmSiliconFlowModel;
                 default -> Defines.llmModelName;
             };
         }

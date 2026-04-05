@@ -201,6 +201,7 @@ object Defines {
 
     // LLM Translate
     @IntConfig(0) const val llmProvider = "llmProvider"
+    @IntConfig(0) const val llmApiFormat = "llmApiFormat"
     @StringConfig("") const val llmApiUrl = "llmApiUrl"
     @StringConfig("") const val llmApiKey = "llmApiKey"
     @StringConfig("") const val llmModelName = "llmModelName"
@@ -217,6 +218,16 @@ object Defines {
     @StringConfig("") const val llmXAIModel = "llmXAIModel"
     @StringConfig("") const val llmZhipuAIKey = "llmZhipuAIKey"
     @StringConfig("") const val llmZhipuAIModel = "llmZhipuAIModel"
+    @StringConfig("") const val llmMistralKey = "llmMistralKey"
+    @StringConfig("") const val llmMistralModel = "llmMistralModel"
+    @StringConfig("") const val llmOpenRouterKey = "llmOpenRouterKey"
+    @StringConfig("") const val llmOpenRouterModel = "llmOpenRouterModel"
+    @StringConfig("") const val llmQwenKey = "llmQwenKey"
+    @StringConfig("") const val llmQwenModel = "llmQwenModel"
+    @StringConfig("") const val llmMoonshotKey = "llmMoonshotKey"
+    @StringConfig("") const val llmMoonshotModel = "llmMoonshotModel"
+    @StringConfig("") const val llmSiliconFlowKey = "llmSiliconFlowKey"
+    @StringConfig("") const val llmSiliconFlowModel = "llmSiliconFlowModel"
     const val llmTemperature = "llmTemperature"
 
     // Misc
