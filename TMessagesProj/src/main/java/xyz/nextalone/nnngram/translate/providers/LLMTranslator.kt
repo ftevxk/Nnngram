@@ -19,6 +19,7 @@
 
 package xyz.nextalone.nnngram.translate.providers
 
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -41,6 +42,7 @@ import xyz.nextalone.nnngram.utils.Defines
 import xyz.nextalone.nnngram.utils.Log
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.runBlocking
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -429,6 +431,94 @@ object LLMTranslator : BaseTranslator() {
         Out: 你好，<b>世界</b>
         """.trimIndent()
     }
+
+    /**
+     * Fetch available models from the provider's /models endpoint.
+     * Returns a sorted list of model IDs, or empty list on failure.
+     */
+    suspend fun fetchModels(provider: Int, apiKey: String, customBaseUrl: String? = null): List<String> {
+        val baseUrl = if (provider == 0) {
+            customBaseUrl?.removeSuffix("/")?.removeSuffix("/chat/completions")
+                ?.removeSuffix("/messages")?.removeSuffix("/responses")
+                ?: return emptyList()
+        } else {
+            providerUrls[provider]?.removeSuffix("/") ?: return emptyList()
+        }
+
+        return try {
+            val response = client.get("$baseUrl/models") {
+                if (provider == 2) {
+                    // Gemini uses query parameter for API key
+                    url { parameters.append("key", apiKey) }
+                } else {
+                    header("Authorization", "Bearer $apiKey")
+                }
+            }
+
+            if (response.status.value !in 200..299) {
+                Log.w("LLMTranslator", "Failed to fetch models: HTTP ${response.status.value}")
+                return emptyList()
+            }
+
+            val body = response.bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+            val data = json["data"]?.jsonArray ?: json["models"]?.jsonArray ?: return emptyList()
+
+            data.mapNotNull { element ->
+                element.jsonObject["id"]?.jsonPrimitive?.content
+            }.sorted()
+        } catch (e: Exception) {
+            Log.e("Failed to fetch models", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Blocking wrapper for fetchModels(), safe to call from a background thread in Java.
+     */
+    fun fetchModelsBlocking(provider: Int, apiKey: String, customBaseUrl: String? = null): List<String> {
+        return runBlocking { fetchModels(provider, apiKey, customBaseUrl) }
+    }
+
+    /**
+     * Test the LLM configuration by sending a minimal translation request.
+     * Returns null on success, or an error message on failure.
+     */
+    fun testConnectionBlocking(
+        provider: Int, apiKey: String, model: String,
+        customBaseUrl: String? = null, apiFormat: Int = API_FORMAT_OPENAI_CHAT
+    ): String? {
+        return runBlocking {
+            try {
+                val format = if (provider != 0) API_FORMAT_OPENAI_CHAT else apiFormat
+                val rawUrl = if (provider == 0) {
+                    customBaseUrl?.ifEmpty { null } ?: return@runBlocking "API URL is empty"
+                } else {
+                    providerUrls[provider] ?: return@runBlocking "Unknown provider"
+                }.removeSuffix("/")
+
+                val baseUrl = if (format == API_FORMAT_CUSTOM) rawUrl
+                else rawUrl.removeSuffix("/chat/completions").removeSuffix("/messages").removeSuffix("/responses")
+
+                val systemPrompt = "You are a translator. Translate the text to English."
+                val userPrompt = "Translate to English: <TEXT>测试</TEXT>"
+
+                when (format) {
+                    API_FORMAT_OPENAI_RESPONSE -> doOpenAIResponseTranslate(baseUrl, apiKey, model, systemPrompt, userPrompt)
+                    API_FORMAT_ANTHROPIC -> doAnthropicTranslate(baseUrl, apiKey, model, systemPrompt, userPrompt)
+                    API_FORMAT_CUSTOM -> doCustomTranslate(baseUrl, apiKey, model, systemPrompt, userPrompt)
+                    else -> doOpenAIChatTranslate(baseUrl, apiKey, model, systemPrompt, userPrompt)
+                }
+                null // success
+            } catch (e: Exception) {
+                e.message ?: "Unknown error"
+            }
+        }
+    }
+
+    fun getProviderUrl(provider: Int): String? = providerUrls[provider]
+
+    fun getDefaultModel(provider: Int): String? = providerModels[provider]
 
     override fun getTargetLanguages(): List<String> = GoogleTranslator.getTargetLanguages()
 

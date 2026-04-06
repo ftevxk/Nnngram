@@ -418,6 +418,15 @@
     <string name="LLMApiFormatOpenAIResponseDesc">POST {baseUrl}/responses — OpenAI Responses API 格式，使用 input + instructions 欄位。</string>
     <string name="LLMApiFormatAnthropicDesc">POST {baseUrl}/messages — Anthropic Messages API 格式，使用 x-api-key 標頭和 system 欄位。</string>
     <string name="LLMApiFormatCustomDesc">直接 POST 到設定的完整 API URL，不追加端點路徑。請求體使用 OpenAI Chat 格式。</string>
+    <string name="LLMFetchModels">取得可用模型</string>
+    <string name="LLMFetchingModels">正在取得模型…</string>
+    <string name="LLMSelectModel">選擇模型</string>
+    <string name="LLMNoModelsFound">未找到模型，請檢查 API 金鑰和網址。</string>
+    <string name="LLMConfigSummary">點擊設定大型語言模型翻譯</string>
+    <string name="LLMTestConnection">測試連線</string>
+    <string name="LLMTestSuccess">連線成功！</string>
+    <string name="LLMTestFailed">連線失敗：%s</string>
+    <string name="LLMTesting">測試中…</string>
     <!-- AI Editor Tone Styles -->
     <string name="AIEditorToneFormal">正式</string>
     <string name="AIEditorToneShort">簡短</string>
