@@ -109,6 +109,7 @@ public class GeneralSettingActivity extends BaseActivity {
     private int skipOpenLinkConfirmRow;
     private int tabsTitleTypeRow;
     private int openArchiveOnPullRow;
+    private int disablePullDownSearchRow;
     private int hideAllTabRow;
     private int ignoreMutedCountRow;
     private int disableSharePhoneWithContactByDefaultRow;
@@ -234,6 +235,11 @@ public class GeneralSettingActivity extends BaseActivity {
             Config.toggleOpenArchiveOnPull();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.openArchiveOnPull);
+            }
+        } else if (position == disablePullDownSearchRow) {
+            Config.toggleDisablePullDownSearch();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.disablePullDownSearch);
             }
         } else if (position == hideAllTabRow) {
             Config.toggleHideAllTab();
@@ -509,6 +515,7 @@ public class GeneralSettingActivity extends BaseActivity {
         disableUndoRow = addRow("disableUndo");
         skipOpenLinkConfirmRow = addRow("skipOpenLinkConfirm");
         openArchiveOnPullRow = addRow("openArchiveOnPull");
+        disablePullDownSearchRow = addRow("disablePullDownSearch");
         hideAllTabRow = addRow("hideAllTab");
         ignoreMutedCountRow = addRow("ignoreMutedCount");
         disableSharePhoneWithContactByDefaultRow = addRow("disableSharePhoneWithContactByDefault");
@@ -730,6 +737,8 @@ public class GeneralSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString("DisableVibration", R.string.disableVibration), Config.disableVibration, true);
                     } else if (position == openArchiveOnPullRow) {
                         textCell.setTextAndCheck(LocaleController.getString("openArchiveOnPull", R.string.openArchiveOnPull), Config.openArchiveOnPull, true);
+                    } else if (position == disablePullDownSearchRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("disablePullDownSearch", R.string.disablePullDownSearch), Config.disablePullDownSearch, true);
                     } else if (position == hideAllTabRow) {
                         textCell.setTextAndCheck(LocaleController.getString("hideAllTab", R.string.hideAllTab), Config.hideAllTab, true);
                     } else if (position == ignoreMutedCountRow) {

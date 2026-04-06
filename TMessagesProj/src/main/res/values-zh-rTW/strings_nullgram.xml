@@ -227,6 +227,7 @@
     <string name="SwitchToAnonymously">切換至匿名模式</string>
     <string name="SwitchToPersonalAccount">切換至個人帳戶</string>
     <string name="openArchiveOnPull">下拉時開啟封存</string>
+    <string name="disablePullDownSearch">禁止下拉展開搜尋框</string>
     <string name="hideAllTab">隱藏「所有對話」分頁</string>
     <string name="ignoreMutedCount">忽略分頁中已靜音的數量</string>
     <string name="disableSharePhoneWithContactByDefault">無法分享電話號碼添加聯絡人</string>

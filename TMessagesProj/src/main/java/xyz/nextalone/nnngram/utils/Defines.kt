@@ -47,6 +47,7 @@ object Defines {
     @BooleanConfig const val overrideChannelAlias = "overrideChannelAlias"
     @BooleanConfig const val hidePhone = "hidePhone"
     @BooleanConfig const val openArchiveOnPull = "openArchiveOnPull"
+    @BooleanConfig const val disablePullDownSearch = "disablePullDownSearch"
     @BooleanConfig const val disableJumpToNextChannel = "disableJumpToNextChannel"
     @BooleanConfig const val verifyLinkTip = "verifyLinkTip"
     @BooleanConfig const val showExactNumber = "showExactNumber"
