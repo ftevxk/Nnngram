@@ -15464,7 +15464,6 @@ if (myProfile && bottomButton != null) {
                                 index = title.indexOf(" " + searchString);
                             }
                             if (index >= 0) {
-                                index -= 1;
                                 if (stringBuilder == null) {
                                     stringBuilder = new SpannableStringBuilder(result.searchTitle);
                                 }
