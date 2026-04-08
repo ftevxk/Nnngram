@@ -1,27 +1,5 @@
-/*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
- */
-
 package org.telegram.tgnet;
 
-/**
- * This is a placeholder in case i accidentally merge this file from upstream
- */
 public class TL_smsjobs {
 
     public static class TL_smsjobs_eligibleToJoin extends TLObject {
@@ -57,20 +35,32 @@ public class TL_smsjobs {
         @Override
         public void readParams(InputSerializedData stream, boolean exception) {
             flags = stream.readInt32(exception);
-            allow_international = (flags & 1) != 0;
-            recent_sent = 233333;
-            recent_since = 114514;
-            recent_remains = 1919810;
-            total_sent = 114514;
-            total_since = 114514;
-            if ((flags & 2) != 0) {
-                last_gift_slug = "Fuck Durov";
+            allow_international = hasFlag(flags, 1);
+            recent_sent = stream.readInt32(exception);
+            recent_since = stream.readInt32(exception);
+            recent_remains = stream.readInt32(exception);
+            total_sent = stream.readInt32(exception);
+            total_since = stream.readInt32(exception);
+            if (hasFlag(flags, 2)) {
+                last_gift_slug = stream.readString(exception);
             }
             terms_url = "Fuck Durov";
         }
 
         @Override
         public void serializeToStream(OutputSerializedData stream) {
+            stream.writeInt32(constructor);
+            flags = setFlag(flags, 1, allow_international);
+            stream.writeInt32(flags);
+            stream.writeInt32(recent_sent);
+            stream.writeInt32(recent_since);
+            stream.writeInt32(recent_remains);
+            stream.writeInt32(total_sent);
+            stream.writeInt32(total_since);
+            if (hasFlag(flags, 2)) {
+                stream.writeString(last_gift_slug);
+            }
+            stream.writeString(terms_url);
         }
     }
 
@@ -211,7 +201,7 @@ public class TL_smsjobs {
             stream.writeInt32(constructor);
             stream.writeInt32(flags);
             stream.writeString(job_id);
-            if ((flags & 1) != 0) {
+            if (hasFlag(flags, 1)) {
                 stream.writeString(error);
             }
         }
@@ -231,7 +221,7 @@ public class TL_smsjobs {
         @Override
         public void serializeToStream(OutputSerializedData stream) {
             stream.writeInt32(constructor);
-            flags = allow_international ? flags | 1 : flags &~ 1;
+            flags = setFlag(flags, 1, allow_international);
             stream.writeInt32(flags);
         }
     }

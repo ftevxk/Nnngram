@@ -183,14 +183,25 @@ public class Vector<T extends TLObject> extends TLObject {
     public static void serializeString(OutputSerializedData stream, final ArrayList<String> objects) {
         serialize(stream, stream::writeString, objects);
     }
+    public static void serializeByteArray(OutputSerializedData stream, final ArrayList<byte[]> objects) {
+        serialize(stream, stream::writeByteArray, objects);
+    }
 
-    public static <T> ArrayList<T> deserialize(InputSerializedData stream, Utilities.CallbackReturn<Boolean, T> read, boolean exception) {
+    public static boolean validateSize(int count, int bytesPerItem, int remaining) {
+        return (count >= 0) && (bytesPerItem > 0) && (((long) count) * bytesPerItem <= remaining);
+    }
+
+    private static <T> ArrayList<T> deserialize(InputSerializedData stream, Utilities.CallbackReturn<Boolean, T> read, boolean exception) {
         final int magic = stream.readInt32(exception);
         if (magic != Vector.constructor) {
             TLParseException.doThrowOrLog(stream, "Vector", magic, exception);
             return new ArrayList<>();
         }
         final int size = stream.readInt32(exception);
+        if (!validateSize(size, 1, stream.remaining())) {
+            TLParseException.doThrowOrLog(stream, "VectorWrongSize", magic, exception);
+            return new ArrayList<>();
+        }
         final ArrayList<T> result = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
             result.add(read.run(exception));
@@ -217,6 +228,11 @@ public class Vector<T extends TLObject> extends TLObject {
         }
 
         final int size = stream.readInt32(exception);
+        if (!validateSize(size, 4, stream.remaining())) {
+            TLParseException.doThrowOrLog(stream, "VectorWrongSize", magic, exception);
+            return new ArrayList<>();
+        }
+
         final ArrayList<T> result = new ArrayList<>(size);
         for (int i = 0; i < size; ++i) {
             T o = deserializer.deserialize(stream, stream.readInt32(exception), exception);
