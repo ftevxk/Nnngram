@@ -225,6 +225,7 @@
     <string name="SwitchToAnonymously">匿名に切り替える</string>
     <string name="SwitchToPersonalAccount">個人アカウントに切り替える</string>
     <string name="openArchiveOnPull">引っ張ってアーカイブを開く</string>
+    <string name="disablePullDownSearch">プルダウンで検索バーを展開しない</string>
     <string name="hideAllTab">「すべてのチャット」タブを非表示</string>
     <string name="ignoreMutedCount">タブ内のミュート数を無視</string>
     <string name="disableSharePhoneWithContactByDefault">連絡先の追加時に電話番号を共有しない</string>

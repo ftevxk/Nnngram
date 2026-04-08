@@ -60,6 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.helpers.PasscodeHelper;
 import xyz.nextalone.nnngram.utils.StringUtils;
 
@@ -1082,6 +1083,7 @@ public class ContactsController extends BaseController {
             int alreadyImportedContacts = contactHashMap.size();
 
             ArrayList<TLRPC.TL_inputPhoneContact> toImport = new ArrayList<>();
+            boolean keepNickname = Config.keepContactNickname;
             if (!contactHashMap.isEmpty()) {
                 for (HashMap.Entry<String, Contact> pair : contactsMap.entrySet()) {
                     String id = pair.getKey();
@@ -1102,6 +1104,10 @@ public class ContactsController extends BaseController {
                     }
 
                     boolean nameChanged = existing != null && (!TextUtils.isEmpty(value.first_name) && !existing.first_name.equals(value.first_name) || !TextUtils.isEmpty(value.last_name) && !existing.last_name.equals(value.last_name));
+                    if (keepNickname && nameChanged) {
+                        // Skip name change when keepContactNickname is enabled
+                        nameChanged = false;
+                    }
                     if (existing == null || nameChanged) {
                         for (int a = 0; a < value.phones.size(); a++) {
                             String sphone = value.shortPhones.get(a);
@@ -1129,8 +1135,25 @@ public class ContactsController extends BaseController {
                                 TLRPC.TL_inputPhoneContact imp = new TLRPC.TL_inputPhoneContact();
                                 imp.client_id = value.contact_id;
                                 imp.client_id |= ((long) a) << 32;
-                                imp.first_name = value.first_name;
-                                imp.last_name = value.last_name;
+                                if (keepNickname) {
+                                    TLRPC.TL_contact existingContact = contactsByPhone.get(sphone);
+                                    if (existingContact != null) {
+                                        TLRPC.User existingUser = getMessagesController().getUser(existingContact.user_id);
+                                        if (existingUser != null && (!TextUtils.isEmpty(existingUser.first_name) || !TextUtils.isEmpty(existingUser.last_name))) {
+                                            imp.first_name = existingUser.first_name != null ? existingUser.first_name : "";
+                                            imp.last_name = existingUser.last_name != null ? existingUser.last_name : "";
+                                        } else {
+                                            imp.first_name = value.first_name;
+                                            imp.last_name = value.last_name;
+                                        }
+                                    } else {
+                                        imp.first_name = value.first_name;
+                                        imp.last_name = value.last_name;
+                                    }
+                                } else {
+                                    imp.first_name = value.first_name;
+                                    imp.last_name = value.last_name;
+                                }
                                 imp.phone = value.phones.get(a);
                                 toImport.add(imp);
                             }
@@ -1184,8 +1207,25 @@ public class ContactsController extends BaseController {
                                     TLRPC.TL_inputPhoneContact imp = new TLRPC.TL_inputPhoneContact();
                                     imp.client_id = value.contact_id;
                                     imp.client_id |= ((long) a) << 32;
-                                    imp.first_name = value.first_name;
-                                    imp.last_name = value.last_name;
+                                    if (keepNickname) {
+                                        TLRPC.TL_contact existingContact = contactsByPhone.get(sphone);
+                                        if (existingContact != null) {
+                                            TLRPC.User existingUser = getMessagesController().getUser(existingContact.user_id);
+                                            if (existingUser != null && (!TextUtils.isEmpty(existingUser.first_name) || !TextUtils.isEmpty(existingUser.last_name))) {
+                                                imp.first_name = existingUser.first_name != null ? existingUser.first_name : "";
+                                                imp.last_name = existingUser.last_name != null ? existingUser.last_name : "";
+                                            } else {
+                                                imp.first_name = value.first_name;
+                                                imp.last_name = value.last_name;
+                                            }
+                                        } else {
+                                            imp.first_name = value.first_name;
+                                            imp.last_name = value.last_name;
+                                        }
+                                    } else {
+                                        imp.first_name = value.first_name;
+                                        imp.last_name = value.last_name;
+                                    }
                                     imp.phone = value.phones.get(a);
                                     toImport.add(imp);
                                 }
@@ -1293,8 +1333,26 @@ public class ContactsController extends BaseController {
                         TLRPC.TL_inputPhoneContact imp = new TLRPC.TL_inputPhoneContact();
                         imp.client_id = value.contact_id;
                         imp.client_id |= ((long) a) << 32;
-                        imp.first_name = value.first_name;
-                        imp.last_name = value.last_name;
+                        if (keepNickname && !force) {
+                            String sphone = value.shortPhones.get(a);
+                            TLRPC.TL_contact existingContact = contactsByPhone.get(sphone);
+                            if (existingContact != null) {
+                                TLRPC.User existingUser = getMessagesController().getUser(existingContact.user_id);
+                                if (existingUser != null && (!TextUtils.isEmpty(existingUser.first_name) || !TextUtils.isEmpty(existingUser.last_name))) {
+                                    imp.first_name = existingUser.first_name != null ? existingUser.first_name : "";
+                                    imp.last_name = existingUser.last_name != null ? existingUser.last_name : "";
+                                } else {
+                                    imp.first_name = value.first_name;
+                                    imp.last_name = value.last_name;
+                                }
+                            } else {
+                                imp.first_name = value.first_name;
+                                imp.last_name = value.last_name;
+                            }
+                        } else {
+                            imp.first_name = value.first_name;
+                            imp.last_name = value.last_name;
+                        }
                         imp.phone = value.phones.get(a);
                         toImport.add(imp);
                     }
@@ -3138,4 +3196,5 @@ public class ContactsController extends BaseController {
         }
         return null;
     }
+
 }

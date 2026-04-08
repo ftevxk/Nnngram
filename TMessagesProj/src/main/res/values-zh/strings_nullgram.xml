@@ -228,9 +228,12 @@
     <string name="SwitchToAnonymously">切换到匿名模式</string>
     <string name="SwitchToPersonalAccount">切换到个人账户</string>
     <string name="openArchiveOnPull">下拉打开已归档对话</string>
+    <string name="disablePullDownSearch">禁止下拉展开搜索框</string>
     <string name="hideAllTab">隐藏「全部对话」栏</string>
     <string name="ignoreMutedCount">忽略标签中的静音计数</string>
     <string name="disableSharePhoneWithContactByDefault">添加联系人时不分享手机号码</string>
+    <string name="keepContactNickname">同步联系人时保留昵称</string>
+    <string name="keepContactNicknameDesc">同步联系人时不使用手机通讯录名称覆盖 Telegram 联系人昵称</string>
     <string name="disableStickersAutoReorder">禁用贴纸自动重新排列</string>
     <string name="autoDisableBuiltInProxy">自动关闭内置代理</string>
     <string name="autoDisableBuiltInProxyDesc">当 Nullgram 检测到您打开 VPN 时，它将自动关闭内置代理</string>
@@ -414,6 +417,11 @@
     <string name="LLMProviderDeepSeek">DeepSeek</string>
     <string name="LLMProviderXAI">xAI</string>
     <string name="LLMProviderZhipuAI">智谱AI</string>
+    <string name="LLMProviderMistral">Mistral AI</string>
+    <string name="LLMProviderOpenRouter">OpenRouter</string>
+    <string name="LLMProviderQwen">阿里通义千问</string>
+    <string name="LLMProviderMoonshot">月之暗面 / Kimi</string>
+    <string name="LLMProviderSiliconFlow">硅基流动</string>
     <string name="LLMApiUrl">API 地址</string>
     <string name="LLMApiKey">API 密钥</string>
     <string name="LLMModelName">模型名称</string>
@@ -423,5 +431,31 @@
     <string name="LLMApiUrlNotice">输入 API 基础地址（例如：https://api.openai.com/v1）</string>
     <string name="LLMModelNameNotice">输入模型名称（例如：gpt-4o-mini）</string>
     <string name="LLMSystemPromptNotice">自定义翻译系统提示词。留空则使用默认提示词。</string>
+    <string name="LLMApiFormat">API 格式</string>
+    <string name="LLMApiFormatOpenAIChat">OpenAI (Chat)</string>
+    <string name="LLMApiFormatOpenAIResponse">OpenAI (Response)</string>
+    <string name="LLMApiFormatAnthropic">Anthropic</string>
+    <string name="LLMApiFormatCustom">自定义</string>
+    <string name="LLMApiFormatOpenAIChatDesc">POST {baseUrl}/chat/completions — 标准 OpenAI Chat Completions 格式，兼容大多数 OpenAI 兼容服务商。</string>
+    <string name="LLMApiFormatOpenAIResponseDesc">POST {baseUrl}/responses — OpenAI Responses API 格式，使用 input + instructions 字段。</string>
+    <string name="LLMApiFormatAnthropicDesc">POST {baseUrl}/messages — Anthropic Messages API 格式，使用 x-api-key 头和 system 字段。</string>
+    <string name="LLMApiFormatCustomDesc">直接 POST 到配置的完整 API URL，不追加端点路径。请求体使用 OpenAI Chat 格式。</string>
+    <string name="LLMFetchModels">获取可用模型</string>
+    <string name="LLMFetchingModels">正在获取模型…</string>
+    <string name="LLMSelectModel">选择模型</string>
+    <string name="LLMNoModelsFound">未找到模型，请检查 API 密钥和地址。</string>
+    <string name="LLMConfigSummary">点击配置大模型翻译</string>
+    <string name="LLMTestConnection">测试连接</string>
+    <string name="LLMTestSuccess">连接成功！</string>
+    <string name="LLMTestFailed">连接失败：%s</string>
+    <string name="LLMTesting">测试中…</string>
     <string name="mentionReadIndicator">提及已读指示器</string>
+    <!-- AI Editor Tone Styles -->
+    <string name="AIEditorToneFormal">正式</string>
+    <string name="AIEditorToneShort">简短</string>
+    <string name="AIEditorToneTribal">部落风</string>
+    <string name="AIEditorToneCorp">商务</string>
+    <string name="AIEditorToneBiblical">圣经体</string>
+    <string name="AIEditorToneViking">维京风</string>
+    <string name="AIEditorToneZen">禅意</string>
 </resources>

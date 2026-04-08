@@ -273,11 +273,6 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
     }
 
     @Override
-    public int getNavigationBarColor() {
-        return Theme.getColor(Theme.key_dialogBackgroundGray);
-    }
-
-    @Override
     public View createView(Context context) {
         useFillLastLayoutManager = false;
         particlesViewHeight = dp(32 + 190 + 16);
@@ -299,7 +294,6 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(firstViewHeight, MeasureSpec.EXACTLY));
             }
         };
-        emptyLayout.setBackgroundColor(Theme.getColor(Theme.key_dialogBackgroundGray));
 
         super.createView(context);
 
@@ -512,7 +506,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 if (target == listView && transactionsLayout.isAttachedToWindow()) {
                     RecyclerListView innerListView = transactionsLayout.getCurrentListView();
                     int bottom = ((View) transactionsLayout.getParent()).getBottom();
-                    if (listView.getHeight() - bottom >= 0) {
+                    if (listView.getHeight() - listView.getPaddingBottom() - bottom >= 0) {
                         consumed[1] = dyUnconsumed;
                         innerListView.scrollBy(0, dyUnconsumed);
                     }
@@ -550,7 +544,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 int bottom = ((View) transactionsLayout.getParent()).getBottom();
                 if (dy < 0) {
                     boolean scrolledInner = false;
-                    if (listView.getHeight() - bottom >= 0) {
+                    if (listView.getHeight() - listView.getPaddingBottom() - bottom >= 0) {
                         RecyclerListView innerListView = transactionsLayout.getCurrentListView();
                         LinearLayoutManager linearLayoutManager = (LinearLayoutManager) innerListView.getLayoutManager();
                         int pos = linearLayoutManager.findFirstVisibleItemPosition();
@@ -584,7 +578,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                         }
                     } else if (dy > 0) {
                         RecyclerListView innerListView = transactionsLayout.getCurrentListView();
-                        if (listView.getHeight() - bottom >= 0 && innerListView != null && !innerListView.canScrollVertically(1)) {
+                        if (listView.getHeight() - listView.getPaddingBottom() - bottom >= 0 && innerListView != null && !innerListView.canScrollVertically(1)) {
                             consumed[1] = dy;
                             listView.stopScroll();
                         }
@@ -618,7 +612,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         if (transactionsLayout == null || !(transactionsLayout.getParent() instanceof View))
             return false;
         int bottom = ((View) transactionsLayout.getParent()).getBottom();
-        return listView.getHeight() - bottom >= 0;
+        return listView.getHeight() - listView.getPaddingBottom() - bottom >= 0;
     }
 
     @Override
@@ -754,9 +748,9 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         }
 
         if (hadTransactions = c.hasTransactions()) {
-            items.add(UItem.asFullscreenCustom(transactionsLayout, ActionBar.getCurrentActionBarHeight() + AndroidUtilities.statusBarHeight + dp(12)));
+            items.add(UItem.asFullscreenCustom(transactionsLayout, ActionBar.getCurrentActionBarHeight() + AndroidUtilities.statusBarHeight + dp(24) + AndroidUtilities.navigationBarHeight));
         } else {
-            items.add(UItem.asCustom(emptyLayout));
+            items.add(UItem.asCustomShadow(emptyLayout));
         }
     }
 
@@ -804,6 +798,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         private final int currentAccount;
         private final TextView headerTextView;
         private final AnimatedTextView amountTextView;
+        private boolean withTon;
 
         public StarsBalanceView(Context context, int currentAccount, Theme.ResourcesProvider resourcesProvider) {
             super(context);
@@ -827,9 +822,11 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             amountTextView = new AnimatedTextView(context) {
                 @Override
                 protected void dispatchDraw(Canvas canvas) {
-                    int x = (int) (getMeasuredWidth() - getDrawable().getCurrentWidth() - dp(20));
-                    starDrawable.setBounds(x, (getMeasuredHeight() - dp(17)) / 2, x + dp(17), (getMeasuredHeight() + dp(17)) / 2);
-                    starDrawable.draw(canvas);
+                    if (!withTon) {
+                        int x = (int) (getMeasuredWidth() - getDrawable().getCurrentWidth() - dp(20));
+                        starDrawable.setBounds(x, (getMeasuredHeight() - dp(17)) / 2, x + dp(17), (getMeasuredHeight() + dp(17)) / 2);
+                        starDrawable.draw(canvas);
+                    }
                     super.dispatchDraw(canvas);
                 }
             };
@@ -845,6 +842,10 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             updateBalance(false);
 
             setPadding(dp(15), dp(4), dp(15), dp(4));
+        }
+
+        public void withTon() {
+            this.withTon = true;
         }
 
         public void setDialogId(long dialogId) {
@@ -883,15 +884,25 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         private SpannableString loadingString;
         public long lastBalance = -1;
 
+        private final ColoredImageSpan[] ref = new ColoredImageSpan[1];
+        private final ColoredImageSpan[] refTon = new ColoredImageSpan[1];
+
         public void updateBalance(boolean animated) {
             StarsController c = StarsController.getInstance(currentAccount);
+            StarsController tc = withTon ? StarsController.getTonInstance(currentAccount) : null;
 
+            AmountUtils.Amount tonAmount = AmountUtils.Amount.fromNano(0, AmountUtils.Currency.TON);
             amountTextView.cancelAnimation();
             boolean loading;
             long balance;
             if (dialogId == UserConfig.getInstance(currentAccount).getClientUserId()) {
                 loading = !c.balanceAvailable();
                 balance = c.getBalance().amount;
+
+                if (tc != null) {
+                    loading |= !tc.balanceAvailable();
+                    tonAmount = tc.getBalanceAmount();
+                }
             } else {
                 TLRPC.TL_payments_starsRevenueStats stats = BotStarsController.getInstance(currentAccount).getStarsRevenueStats(dialogId);
                 loading = stats == null || stats.status == null;
@@ -908,7 +919,21 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 amountTextView.setText(loadingString, animated);
                 lastBalance = -1;
             } else {
-                amountTextView.setText(LocaleController.formatNumber(balance, ' '));
+                if (withTon) {
+                    SpannableStringBuilder ssb = new SpannableStringBuilder();
+                    if (!tonAmount.isZero()) {
+                        ssb.append(replaceStarsWithPlain(true, "⭐️" + tonAmount.asFormatString(), 0.62f, refTon));
+                        if (refTon[0] != null) {
+                            refTon[0].setColorKey(Theme.key_telegram_color_text);
+                        }
+                        ssb.append("  ");
+                    }
+                    ssb.append(replaceStarsWithPlain("⭐️" + LocaleController.formatNumber(balance, ' '), 0.62f, ref));
+                    amountTextView.setText(ssb);
+                } else {
+                    amountTextView.setText(LocaleController.formatNumber(balance, ' '));
+                }
+
                 lastBalance = balance;
             }
         }

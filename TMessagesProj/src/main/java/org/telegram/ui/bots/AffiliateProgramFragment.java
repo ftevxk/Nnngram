@@ -146,7 +146,7 @@ public class AffiliateProgramFragment extends GradientHeaderActivity implements 
             protected boolean subTextSplitToWords() {
                 return false;
             }
-        };
+        }.setRound();
         button.setText(getString(R.string.AffiliateProgramStart), false);
         button.setOnClickListener(v -> {
             if (!button.isEnabled()) return;
@@ -791,5 +791,6 @@ public class AffiliateProgramFragment extends GradientHeaderActivity implements 
     public void onInsets(int left, int top, int right, int bottom) {
         listView.setPadding(0, 0, 0, dp(10 + 48 + 10 + 16) + bottom);
         listView.setClipToPadding(false);
+        buttonLayout.setPadding(0, 0, 0, bottom);
     }
 }

@@ -35,6 +35,7 @@ object Defines {
     @BooleanConfig const val hideGroupSticker = "hideGroupSticker"
     @BooleanConfig const val allowScreenshotOnNoForwardChat = "allowScreenshotOnNoForwardChat"
     @BooleanConfig(true) const val disableSharePhoneWithContactByDefault = "disableSharePhoneWithContactByDefault"
+    @BooleanConfig const val keepContactNickname = "keepContactNickname"
     @BooleanConfig const val autoDisableBuiltInProxy = "autoDisableBuiltInProxy"
     @BooleanConfig const val labelChannelUser = "labelChannelUser"
     @BooleanConfig const val displaySpoilerMsgDirectly = "displaySpoilerMsgDirectly"
@@ -46,6 +47,7 @@ object Defines {
     @BooleanConfig const val overrideChannelAlias = "overrideChannelAlias"
     @BooleanConfig const val hidePhone = "hidePhone"
     @BooleanConfig const val openArchiveOnPull = "openArchiveOnPull"
+    @BooleanConfig const val disablePullDownSearch = "disablePullDownSearch"
     @BooleanConfig const val disableJumpToNextChannel = "disableJumpToNextChannel"
     @BooleanConfig const val verifyLinkTip = "verifyLinkTip"
     @BooleanConfig const val showExactNumber = "showExactNumber"
@@ -200,6 +202,7 @@ object Defines {
 
     // LLM Translate
     @IntConfig(0) const val llmProvider = "llmProvider"
+    @IntConfig(0) const val llmApiFormat = "llmApiFormat"
     @StringConfig("") const val llmApiUrl = "llmApiUrl"
     @StringConfig("") const val llmApiKey = "llmApiKey"
     @StringConfig("") const val llmModelName = "llmModelName"
@@ -216,6 +219,16 @@ object Defines {
     @StringConfig("") const val llmXAIModel = "llmXAIModel"
     @StringConfig("") const val llmZhipuAIKey = "llmZhipuAIKey"
     @StringConfig("") const val llmZhipuAIModel = "llmZhipuAIModel"
+    @StringConfig("") const val llmMistralKey = "llmMistralKey"
+    @StringConfig("") const val llmMistralModel = "llmMistralModel"
+    @StringConfig("") const val llmOpenRouterKey = "llmOpenRouterKey"
+    @StringConfig("") const val llmOpenRouterModel = "llmOpenRouterModel"
+    @StringConfig("") const val llmQwenKey = "llmQwenKey"
+    @StringConfig("") const val llmQwenModel = "llmQwenModel"
+    @StringConfig("") const val llmMoonshotKey = "llmMoonshotKey"
+    @StringConfig("") const val llmMoonshotModel = "llmMoonshotModel"
+    @StringConfig("") const val llmSiliconFlowKey = "llmSiliconFlowKey"
+    @StringConfig("") const val llmSiliconFlowModel = "llmSiliconFlowModel"
     const val llmTemperature = "llmTemperature"
 
     // Misc
