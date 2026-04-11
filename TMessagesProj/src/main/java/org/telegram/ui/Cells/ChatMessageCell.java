@@ -10536,9 +10536,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 captionHeight = captionLayout.textHeight();
                             }
                             totalHeight += captionHeight + (currentMessageObject.type != MessageObject.TYPE_POLL ? dp(9) : 0);
-                            if (captionLayout != null && (captionLayout.hasCodeAtBottom || captionLayout.hasQuoteAtBottom)) {
-                                captionHeight += dp(10);
-                                totalHeight += dp(10);
+                            if (captionLayout != null && (captionLayout.hasCodeAtBottom || captionLayout.hasQuoteAtBottom) && (reactionsLayoutInBubble.isEmpty || reactionsLayoutInBubble.isSmall)) {
+                                captionHeight += dp(18);
+                                totalHeight += dp(18);
                             }
                             if (currentMessageObject.type != MessageObject.TYPE_POLL && (reactionsLayoutInBubble.isEmpty || reactionsLayoutInBubble.isSmall) && (currentPosition == null || (currentPosition.flags & captionFlag()) != 0)) {
                                 int timeWidthTotal = timeWidth + (messageObject.isOutOwner() ? dp(20) : 0) + getExtraTimeX();
