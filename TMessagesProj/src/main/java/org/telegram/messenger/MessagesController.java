@@ -20493,7 +20493,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
             });
-
         }
     }
 

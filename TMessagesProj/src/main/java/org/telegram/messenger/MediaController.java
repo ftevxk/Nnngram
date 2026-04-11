@@ -203,7 +203,8 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             MediaStore.Images.Media.ORIENTATION,
             MediaStore.Images.Media.WIDTH,
             MediaStore.Images.Media.HEIGHT,
-            MediaStore.Images.Media.SIZE
+            MediaStore.Images.Media.SIZE,
+            MediaStore.Images.ImageColumns.XMP
     };
 
     private static final String[] projectionVideo = {
@@ -5911,7 +5912,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                         video = item;
                                     }
                                 }
-                                if (photo != null && video != null) {
+                                if (photo != null && video != null && video.length > 0) {
                                     try {
                                         final File wholeFile = new File(path);
                                         final long videoStart = wholeFile.length() - video.length;

@@ -145,7 +145,14 @@ import java.util.Set;
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
 
+import kotlin.Unit;
+
 import xyz.nextalone.nnngram.activity.MainSettingActivity;
+import xyz.nextalone.nnngram.config.ConfigManager;
+import xyz.nextalone.nnngram.ui.BottomBuilder;
+import xyz.nextalone.nnngram.utils.AlertUtil;
+import xyz.nextalone.nnngram.utils.Defines;
+import xyz.nextalone.nnngram.utils.Log;
 import xyz.nextalone.nnngram.utils.Utils;
 
 public class SettingsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, ImageUpdater.ImageUpdaterDelegate, MainTabsActivity.TabFragmentDelegate, FactorAnimator.Target {
@@ -468,17 +475,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         versionView.setPadding(dp(21), dp(10), dp(21), dp(10));
         versionView.setGravity(Gravity.CENTER);
         versionView.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), Theme.RIPPLE_MASK_ALL));
-        versionView.setOnClickListener(v -> {
-            versionViewPressCount++;
-            if (versionViewPressCount < 2 && !BuildVars.DEBUG_PRIVATE_VERSION) {
-                try {
-                    Toast.makeText(getParentActivity(), getString(R.string.DebugMenuLongPress), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                return;
-            }
+        versionView.setOnClickListener(v -> showVersionOptions());
+        versionView.setOnLongClickListener(v -> {
             openDebugMenu();
+            return true;
         });
 
         navigationBar = new View(context);
@@ -904,6 +904,64 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         return false;
     }
 
+    private void showVersionOptions() {
+        if (getParentActivity() == null) return;
+        BottomBuilder builder = new BottomBuilder(getParentActivity());
+        String message = versionView.getText() != null ? versionView.getText().toString() : "";
+        builder.addTitle(message);
+        String finalMessage = message;
+        builder.addItem(getString(R.string.Copy), R.drawable.msg_copy, (it) -> {
+            AndroidUtilities.addToClipboard(finalMessage);
+            AlertUtil.showToast(getString(R.string.TextCopied));
+            return Unit.INSTANCE;
+        });
+        builder.addItem(getString(R.string.DebugClearLogs), R.drawable.msg_delete, (it) -> {
+            Log.refreshLog();
+            return Unit.INSTANCE;
+        });
+        builder.addItem(getString(R.string.DebugSendLastLogs), R.drawable.msg_share, (it) -> {
+            Log.shareLog(getContext());
+            return Unit.INSTANCE;
+        });
+        builder.addItem(getString(R.string.CheckUpdate), R.drawable.msg_search, (it) -> {
+            Browser.openUrl(getContext(), "tg://update");
+            return Unit.INSTANCE;
+        });
+
+        String currentChannel = " - ";
+        int currentUpdateChannel;
+        switch (ConfigManager.getIntOrDefault(Defines.updateChannel, -1)) {
+            case Defines.disableAutoUpdate:
+                currentUpdateChannel = Defines.disableAutoUpdate;
+                currentChannel += getString(R.string.AutoCheckUpdateOFF);
+                break;
+            case Defines.stableChannel:
+            default:
+                currentUpdateChannel = Defines.stableChannel;
+                currentChannel += getString(R.string.AutoCheckUpdateStable);
+                break;
+        }
+
+        builder.addItem(getString(R.string.AutoCheckUpdateSwitch) + currentChannel, R.drawable.baseline_system_update_24, (it) -> {
+            BottomBuilder switchBuilder = new BottomBuilder(getParentActivity());
+            switchBuilder.addTitle(getString(R.string.AutoCheckUpdateSwitch));
+            switchBuilder.addRadioItem(getString(R.string.AutoCheckUpdateOFF), currentUpdateChannel == Defines.disableAutoUpdate, (radioButtonCell) -> {
+                ConfigManager.putInt(Defines.updateChannel, Defines.disableAutoUpdate);
+                switchBuilder.doRadioCheck(radioButtonCell);
+                return Unit.INSTANCE;
+            });
+            switchBuilder.addRadioItem(getString(R.string.AutoCheckUpdateStable), currentUpdateChannel == Defines.stableChannel, (radioButtonCell) -> {
+                ConfigManager.putInt(Defines.updateChannel, Defines.stableChannel);
+                switchBuilder.doRadioCheck(radioButtonCell);
+                return Unit.INSTANCE;
+            });
+            showDialog(switchBuilder.create());
+            return Unit.INSTANCE;
+        });
+
+        builder.show();
+    }
+
     public String getVersionName() {
         try {
             PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
@@ -1156,6 +1214,23 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
         private boolean twoLines;
 
+        private static CharSequence stripWhitespace(CharSequence src) {
+            if (src == null || src.length() == 0) return src;
+            int start = 0, end = src.length();
+            while (start < end) {
+                char c = src.charAt(start);
+                if (Character.isWhitespace(c) || Character.isSpaceChar(c)) start++;
+                else break;
+            }
+            while (end > start) {
+                char c = src.charAt(end - 1);
+                if (Character.isWhitespace(c) || Character.isSpaceChar(c)) end--;
+                else break;
+            }
+            if (start == 0 && end == src.length()) return src;
+            return src.subSequence(start, end);
+        }
+
         public void set(
             int iconColorTop, int iconColorBottom, int icon,
             CharSequence title,
@@ -1169,8 +1244,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             iconBackground.setColor(iconColorTop, iconColorBottom);
             iconView.setImageResource(icon);
             titleView.setText(title);
-            subtitleView.setVisibility((twoLines = !TextUtils.isEmpty(subtitle)) ? View.VISIBLE : View.GONE);
-            subtitleView.setText(subtitle);
+            CharSequence trimmedSubtitle = stripWhitespace(subtitle);
+            subtitleView.setVisibility((twoLines = !TextUtils.isEmpty(trimmedSubtitle)) ? View.VISIBLE : View.GONE);
+            subtitleView.setText(trimmedSubtitle);
             valueView.setVisibility(!TextUtils.isEmpty(value) ? View.VISIBLE : View.GONE);
             valueView.setText(value);
         }
@@ -1421,7 +1497,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 (SharedConfig.frameMetricsEnabled ? "hide frame metrics" : "show frame metrics"),
                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.shadowsInSections ? "disable shadows in settings" : "enable shadows in settings") : null,
                 BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.debugViewMetrics ? "disable debug view metrics" : "enable debug view metrics") : null,
-                BuildVars.DEBUG_VERSION ? (SharedConfig.useEightPatch ? "use nine patch" : "use eight patch") : null,
         };
 
         builder.setItems(items, (dialog, which) -> {
@@ -1729,9 +1804,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             } else if (which == 41) {
                 final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
                 prefs.edit().putBoolean("debugViewMetrics", SharedConfig.debugViewMetrics = !SharedConfig.debugViewMetrics).apply();
-            } else if (which == 42) {
-                final SharedPreferences prefs = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-                prefs.edit().putBoolean("useEightPatch", SharedConfig.useEightPatch = !SharedConfig.useEightPatch).apply();
             }
         });
         builder.setNegativeButton(getString(R.string.Cancel), null);

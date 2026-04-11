@@ -143,6 +143,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BotForumHelper;
 import org.telegram.messenger.BotInlineKeyboard;
 import org.telegram.messenger.BotWebViewVibrationEffect;
+import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChannelBoostsController;
 import org.telegram.messenger.ChatMessageSharedResources;
@@ -4341,6 +4342,8 @@ public class ChatActivity extends BaseFragment implements
                             hideTitleItem.setText(LocaleController.getString("HideTitle", R.string.HideTitle));
                         }
                     }
+                } else if (id == 888) {
+                    dumpCanvas();
                 }
             }
         });
@@ -4775,6 +4778,10 @@ public class ChatActivity extends BaseFragment implements
             if (attachItem != null) {
                 attachItem.setAlpha(0.0f);
             }
+        }
+
+        if (BuildConfig.DEBUG && headerItem != null) {
+            headerItem.addSubItem(888, R.drawable.menu_download_round, "Dump Canvas");
         }
 
         actionModeViews.clear();
@@ -7189,7 +7196,7 @@ public class ChatActivity extends BaseFragment implements
                 topicsTabs.selectTopic(topicId, true);
             }
         });
-        floatingTopicSeparator.setAlpha(0.f);
+        floatingTopicSeparator.setVisibility(View.INVISIBLE);
         contentView.addView(floatingTopicSeparator, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 4, 0, 0));
 
         floatingDateView = new ChatActionCell(context, false, themeDelegate) {
@@ -7237,6 +7244,12 @@ public class ChatActivity extends BaseFragment implements
                 } else {
                     super.onDraw(canvas);
                 }
+            }
+
+            @Override
+            public void setAlpha(float alpha) {
+                super.setAlpha(alpha);
+                setVisibility(alpha > 0 ? View.VISIBLE : INVISIBLE);
             }
         };
         floatingDateView.setCustomDate((int) (System.currentTimeMillis() / 1000), false, false);
@@ -12815,7 +12828,7 @@ public class ChatActivity extends BaseFragment implements
                                     info.updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(photoEntry.caption);
                                     info.hasMediaSpoilers = photoEntry.hasSpoiler;
                                     info.stars = photoEntry.starsAmount;
-                                    info.highQuality = photoEntry.editedInfo == null && photoEntry.isHighQuality();
+                                    info.highQuality = photoEntry.isHighQuality();
                                     photos.add(info);
                                     photoEntry.reset();
                                 }
@@ -13869,6 +13882,7 @@ public class ChatActivity extends BaseFragment implements
         floatingTopicSeparator.setTranslationY(chatListView.getTranslationY() + chatListViewPaddingTop + floatingTopicViewOffset - dp(4) + dp(28));
         final float alpha = Utilities.clamp(AndroidUtilities.ilerp(floatingTopicViewOffset, -floatingTopicSeparator.getHeight(), 0f), 1f, 0f);
         floatingTopicSeparator.setAlpha(floatingTopicViewAlpha * alpha);
+        floatingTopicSeparator.setVisibility(floatingTopicViewAlpha * alpha > 0 ? View.VISIBLE : View.INVISIBLE);
         final float scale = lerp(0.5f, 1f, alpha);
         floatingTopicSeparator.setScaleX(scale);
         floatingTopicSeparator.setScaleY(scale);
@@ -14728,6 +14742,15 @@ public class ChatActivity extends BaseFragment implements
                 }
 
                 task = foundItem;
+                return true;
+            } else if (poll) {
+                final TLRPC.PollAnswer answer = MessageObject.findPollItem(message, option_id);
+                if (answer == null) {
+                    FileLog.e("ReplyQuote: poll item is not found");
+                    return false;
+                }
+
+                this.answer = answer;
                 return true;
             } else if (poll) {
                 final TLRPC.PollAnswer answer = MessageObject.findPollItem(message, option_id);
@@ -17885,10 +17908,14 @@ public class ChatActivity extends BaseFragment implements
                     scrimBlurMatrix.postScale(s, s);
                     scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
                     scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
-                    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
+                    if (scrimBlurBitmapPaint.getAlpha() > 0) {
+                        canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
+                    }
                 } else {
                     scrimPaint.setAlpha((int) (0xFF * scrimPaintAlpha * (scrimView != null ? scrimViewAlpha : 1f)));
-                    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
+                    if (scrimPaint.getAlpha() > 0) {
+                        canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
+                    }
                 }
             }
 
@@ -28967,6 +28994,9 @@ public class ChatActivity extends BaseFragment implements
         if (showAddProfilePicture) {
             createAddProfilePictureButton();
         }
+        if (showAddProfilePicture) {
+            createAddProfilePictureButton();
+        }
         if (showBotAd) {
             createBotAdView();
             if (botAdView != null) {
@@ -39259,6 +39289,11 @@ public class ChatActivity extends BaseFragment implements
         }
 
         @Override
+        public boolean allowAddPollOptions() {
+            return chatMode == 0;
+        }
+
+        @Override
         public int getAddPollOptionInputFieldHeight(ChatMessageCell cell) {
             return isInPollAddOptionMode() && pollAddOptionFieldLayout != null && pollAddOptionFieldLayout.cellToWatch == cell && pollAddOptionFieldLayout.textView.getWidth() > 0 ? pollAddOptionFieldLayout.textView.getHeight() : 0;
         }
@@ -46345,6 +46380,22 @@ public class ChatActivity extends BaseFragment implements
                     getMessagesController().markReactionsAsRead(dialog_id, getTopicId());
                 } else {
                     updateReactionsMentionButton(true);
+                    scrollToMessageId(messageId, 0, false, 0, true, 0);
+                }
+            });
+        } else if (buttonId == ChatActivitySideControlsButtonsLayout.BUTTON_POLL_VOTES) {
+            wasManualScroll = true;
+            getMessagesController().getNextPollVotesMention(dialog_id, getTopicId(), pollVotesMentionCount, (messageId) -> {
+                if (messageId == 0) {
+                    pollVotesMentionCount = 0;
+                    updatePollVotesMentionButton(true);
+                    getMessagesController().markPollVotesAsRead(dialog_id, getTopicId());
+                } else {
+                    pollVotesMentionCount--;
+                    if (pollVotesMentionCount <= 0) {
+                        getMessagesController().markPollVotesAsRead(dialog_id, getTopicId());
+                    }
+                    updatePollVotesMentionButton(true);
                     scrollToMessageId(messageId, 0, false, 0, true, 0);
                 }
             });

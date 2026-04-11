@@ -893,6 +893,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         }
 
+        default boolean allowAddPollOptions() {
+            return false;
+        }
+
         default int getAddPollOptionInputFieldHeight(ChatMessageCell cell) {
             return 0;
         }
@@ -937,7 +941,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         public int selectorDrawableColor;
         public Drawable selectorDrawable;
         public PollButtonDrawable pollButtonDrawable;
-        
+
         private AvatarDrawable avatarDrawable;
         private ImageReceiver avatarImageReceiver;
 
@@ -3547,7 +3551,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
 
-        
+
         if (action == MotionEvent.ACTION_DOWN) {
             pollMediaPressedIndex = PollAttachedMediaPack.INDEX_NONE;
             if (pollContentDrawable != null && pollContentDrawable.isHasMedia() && pollContentDrawable.getBounds().contains(x, y)) {
@@ -4524,6 +4528,22 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     int offX = block.isRtl() ? (int) captionLayout.textXOffset : 0;
                     for (SpoilerEffect eff : block.spoilers) {
                         if (eff.getBounds().contains((int) (x - captionX + offX), (int) (y - captionY - block.textYOffset(captionLayout.textLayoutBlocks, transitionParams)))) {
+                            spoilerPressed = eff;
+                            return true;
+                        }
+                    }
+                }
+            }
+            if (explanationLayout != null && x >= lastDrawExplanationX && y > lastDrawExplanationY && x <= lastDrawExplanationX + explanationLayout.textWidth && y <= lastDrawExplanationY + explanationLayout.textHeight(transitionParams)) {
+                final List<MessageObject.TextLayoutBlock> blocks = explanationLayout.textLayoutBlocks;
+                for (int i = 0; i < blocks.size(); i++) {
+                    if (blocks.get(i).textYOffset(explanationLayout.textLayoutBlocks, transitionParams) > y) {
+                        break;
+                    }
+                    MessageObject.TextLayoutBlock block = blocks.get(i);
+                    int offX = block.isRtl() ? (int) explanationLayout.textXOffset : 0;
+                    for (SpoilerEffect eff : block.spoilers) {
+                        if (eff.getBounds().contains((int) (x - lastDrawExplanationX + offX), (int) (y - lastDrawExplanationY - block.textYOffset(explanationLayout.textLayoutBlocks, transitionParams)))) {
                             spoilerPressed = eff;
                             return true;
                         }
@@ -25451,6 +25471,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 if (button.answer != null && button.answer.option != null && Arrays.equals(button.answer.option, doNotDrawPollId)) {
                     continue;
                 }
+                if (drawOnlyPollId != null && !Arrays.equals(button.answer.option, drawOnlyPollId)) {
+                    continue;
+                }
+                if (button.answer != null && button.answer.option != null && Arrays.equals(button.answer.option, doNotDrawPollId)) {
+                    continue;
+                }
                 canvas.save();
                 int selectorColor = Theme.multAlpha(color2, 0.12f);
                 if (button.selectorDrawableColor != selectorColor) {
@@ -25778,6 +25804,19 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     animatedInfoLayout.draw(canvas);
                     canvas.restore();
                 }
+            }
+            if (!todo && animatedInfoLayout2 != null) {
+                final float lvy = lastVoteY + dp(13 + 6 + 6 + 16) + dp(6) * (1f - timerVisibility) + (dp(3) * instantViewVisibility);
+                canvas.save();
+                if (transitionParams.animateBackgroundBoundsInner) {
+                    canvas.translate(((getBackgroundDrawableLeft() + transitionParams.deltaLeft) + (getBackgroundDrawableRight() + transitionParams.deltaRight)) / 2.0f, lvy);
+                } else {
+                    canvas.translate((pollButtonLeft + pollButtonRight) / 2.0f, lvy);
+                }
+                animatedInfoLayout2.setBounds(-1, -1, 1, 1);
+                animatedInfoLayout2.setTextColor((lastPoll != null && !lastPoll.public_voters && !lastPoll.multiple_choice ? Theme.chat_livePaint : Theme.chat_locationAddressPaint).getColor());
+                DrawableUtils.drawWithScale(canvas, animatedInfoLayout2, 1f - progressVisibility);
+                canvas.restore();
             }
             if (!todo && animatedInfoLayout2 != null) {
                 final float lvy = lastVoteY + dp(13 + 6 + 6 + 16) + dp(6) * (1f - timerVisibility) + (dp(3) * instantViewVisibility);
@@ -28490,6 +28529,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 changed = true;
             }
 
+            if (lastDrawingExpandedExplanation != (currentMessageObject != null && currentMessageObject.expandedExplanation)) {
+                animateExpandedExplanation = true;
+                expandedExplanationFrom = lastDrawingExpandedExplanation;
+                changed = true;
+            }
+
             if (currentMessageObject != null && lastDrawnForwardedName != currentMessageObject.needDrawForwarded()) {
                 animateForwardedLayout = true;
                 animatingForwardedNameLayout[0] = lastDrawnForwardedNameLayout[0];
@@ -29004,8 +29049,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private TL_stars.StarGift instantViewTypeIsGiftAuction;
 
-    
-    
+
+
     private static boolean isSmallImageLinkPreviewType(String type) {
         return "app".equals(type) || "profile".equals(type) ||
                 "article".equals(type) || "telegram_bot".equals(type) ||
@@ -29013,7 +29058,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 "telegram_megagroup".equals(type) || "telegram_voicechat".equals(type) || "telegram_videochat".equals(type) ||
                 "telegram_livestream".equals(type) || "telegram_channel_boost".equals(type) || "telegram_group_boost".equals(type);
     }
-    
+
     private static void normalizePollPercents(boolean hasDifferent, int restPercent, ArrayList<PollButton> sortedPollButtons) {
         if (!hasDifferent || restPercent == 0 || sortedPollButtons == null || sortedPollButtons.isEmpty()) {
             return;

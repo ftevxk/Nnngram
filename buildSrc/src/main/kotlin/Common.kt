@@ -1,5 +1,3 @@
-import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.internal.storage.file.FileRepository
 import org.gradle.api.Project
 import java.io.File
 
