@@ -10291,7 +10291,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         }
                     }
                 } else {
-                    if (Config.sendMp4DocumentAsVideo && info.path != null) {
+                    if (Config.sendMp4DocumentAsVideo && info.path != null && !info.isLivePhoto) {
                         info.isVideo = info.path.endsWith("mp4");
                         info.doNotCompress = info.isVideo;
                     }
@@ -10680,8 +10680,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             }
                             TLRPC.TL_photo photo = null;
                             String parentObject = null;
-                            if (workers != null) {
-                                MediaSendPrepareWorker worker = workers.get(info);
+                            MediaSendPrepareWorker worker = workers != null ? workers.get(info) : null;
+                            if (worker != null) {
                                 photo = worker.photo;
                                 parentObject = worker.parentObject;
                                 if (photo == null) {
