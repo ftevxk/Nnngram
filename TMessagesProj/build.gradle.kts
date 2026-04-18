@@ -212,6 +212,8 @@ android {
             }
         }
         buildConfigField("String", "BUILD_TIME", "\"${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())}\"")
+        buildConfigField("String", "OFFICIAL_APP_VERSION_NAME", "\"${properties["APP_VERSION_NAME"]}\"")
+        buildConfigField("int", "OFFICIAL_APP_VERSION_CODE", "${properties["APP_VERSION_CODE"]}")
     }
 
     tasks.withType<JavaCompile> {

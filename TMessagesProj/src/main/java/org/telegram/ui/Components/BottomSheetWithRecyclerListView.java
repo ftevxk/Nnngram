@@ -1,22 +1,3 @@
-/*
- * Copyright (C) 2019-2024 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
- */
-
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
@@ -24,6 +5,7 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
@@ -696,6 +678,7 @@ public abstract class BottomSheetWithRecyclerListView extends BottomSheet {
                 } else {
                     shadowDrawable.setBounds(-AndroidUtilities.dp(6), top, parent.getMeasuredWidth() + AndroidUtilities.dp(6), parent.getMeasuredHeight());
                 }
+                checkBackDrawableInsets();
                 shadowDrawable.draw(canvas);
 
                 if (showHandle && handleAlpha > 0) {
@@ -713,11 +696,25 @@ public abstract class BottomSheetWithRecyclerListView extends BottomSheet {
         }
     }
 
+    private void checkBackDrawableInsets() {
+        if (backDrawable == null || containerView == null || shadowDrawable == null || !shouldDrawBackground() || hasFixedSize) {
+            return;
+        }
+
+        final Rect sBounds = shadowDrawable.getBounds();
+        if (containerView.getMeasuredWidth() >= container.getMeasuredWidth()) {
+            backDrawable.setBackgroundInsets(0, 0, 0, containerView.getMeasuredHeight() - sBounds.top - dp(30) - (int) containerView.getTranslationY());
+        } else {
+            backDrawable.setBackgroundInsets(0, 0, 0, 0);
+        }
+    }
+
     protected void onActionBarAlpha(float alpha) {}
 
     @Override
     protected void onContainerViewTranslation() {
         onSheetTop(lastTop);
+        checkBackDrawableInsets();
     }
 
     private float lastTop;

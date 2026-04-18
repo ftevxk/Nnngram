@@ -6206,6 +6206,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         final TLRPC.TL_messages_addPollAnswer req = (TLRPC.TL_messages_addPollAnswer) message.sendRequest;
                         media = req.answer.input_media;
                         peer = req.peer;
+                    } else if (message.sendRequest instanceof TLRPC.TL_messages_addPollAnswer) {
+                        final TLRPC.TL_messages_addPollAnswer req = (TLRPC.TL_messages_addPollAnswer) message.sendRequest;
+                        media = req.answer.input_media;
+                        peer = req.peer;
                     } else {
                         final TLRPC.TL_messages_editMessage req = (TLRPC.TL_messages_editMessage) message.sendRequest;
                         media = req.media;
@@ -6435,6 +6439,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) MessageObject.getMedia(messageObject);
                     TLRPC.MessageExtendedMedia emedia = index >= paidMedia.extended_media.size() ? null : paidMedia.extended_media.get(index);
                     TLRPC.MessageMedia media = emedia instanceof TLRPC.TL_messageExtendedMedia ? ((TLRPC.TL_messageExtendedMedia) emedia).media : null;
+                    document = media == null ? null : media.document;
+                }
+                if (document == null && MessageObject.getMedia(messageObject) instanceof TLRPC.TL_messageMediaPoll) {
+                    TLRPC.TL_messageMediaPoll pollMedia = (TLRPC.TL_messageMediaPoll) MessageObject.getMedia(messageObject);
+                    TLRPC.MessageMedia media = PollAttachedMediaPack.getMedia(pollMedia, message.pollIndexes.get(index));
                     document = media == null ? null : media.document;
                 }
                 if (document == null && MessageObject.getMedia(messageObject) instanceof TLRPC.TL_messageMediaPoll) {
@@ -6854,6 +6863,29 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         return;
                     }
                 }
+            }
+
+            if (check) {
+                DelayedMessage maxDelayedMessage = findMaxDelayedMessageForMessageId(message.finalGroupMessage, message.peer);
+                if (maxDelayedMessage != null) {
+                    maxDelayedMessage.addDelayedRequest(message.sendRequest, message.messageObjects, message.originalPaths, message.parentObjects, message, message.scheduled);
+                    if (message.requests != null) {
+                        maxDelayedMessage.requests.addAll(message.requests);
+                    }
+                    if (BuildVars.DEBUG_VERSION) {
+                        FileLog.d("has maxDelayedMessage, delay");
+                    }
+                    return;
+                }
+            }
+        } else if (message.sendRequest instanceof TLRPC.TL_messages_sendMedia && ((TLRPC.TL_messages_sendMedia) message.sendRequest).media instanceof TLRPC.TL_inputMediaPoll) {
+            TLRPC.TL_messages_sendMedia request = (TLRPC.TL_messages_sendMedia) message.sendRequest;
+            TLRPC.TL_inputMediaPoll media = (TLRPC.TL_inputMediaPoll) request.media;
+            if (PollAttachedMediaPack.hasWrongInputMediaTypes(media)) {
+                if (BuildVars.DEBUG_VERSION) {
+                    FileLog.d("multi media not ready");
+                }
+                return;
             }
 
             if (check) {
@@ -10259,7 +10291,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         }
                     }
                 } else {
-                    if (Config.sendMp4DocumentAsVideo && info.path != null) {
+                    if (Config.sendMp4DocumentAsVideo && info.path != null && !info.isLivePhoto) {
                         info.isVideo = info.path.endsWith("mp4");
                         info.doNotCompress = info.isVideo;
                     }
@@ -10648,8 +10680,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             }
                             TLRPC.TL_photo photo = null;
                             String parentObject = null;
-                            if (workers != null) {
-                                MediaSendPrepareWorker worker = workers.get(info);
+                            MediaSendPrepareWorker worker = workers != null ? workers.get(info) : null;
+                            if (worker != null) {
                                 photo = worker.photo;
                                 parentObject = worker.parentObject;
                                 if (photo == null) {
