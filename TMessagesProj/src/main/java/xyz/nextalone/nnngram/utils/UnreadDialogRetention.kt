@@ -19,16 +19,34 @@
 package xyz.nextalone.nnngram.utils
 
 import org.telegram.messenger.AndroidUtilities
+import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.NotificationCenter
 import org.telegram.messenger.UserConfig
+import org.telegram.tgnet.ConnectionsManager
+import org.telegram.tgnet.TLRPC
 import xyz.nextalone.gen.Config
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
+/**
+ * Keeps "recently conversed" chats visible inside dialog filters that
+ * exclude read messages. A dialog is considered recent if its
+ * `last_message_date` is within the configured retention window
+ * (measured against the server-synced time, not device wall clock).
+ *
+ * Scheduling is event-driven: each `isRecent` hit reports its earliest
+ * expiration; a single pending UI-thread runnable fires exactly at that
+ * point so expired dialogs drop even without any other activity. The
+ * scheduler quiesces when no dialogs are retained and pauses work while
+ * the main interface is backgrounded.
+ */
 object UnreadDialogRetention {
 
-    private val expireAtByAccount = ConcurrentHashMap<Int, ConcurrentHashMap<Long, Long>>()
+    private val earliestExpireAt = AtomicLong(Long.MAX_VALUE)
 
-    private var pendingExpireRunnable: Runnable? = null
+    @Volatile private var reconcileQueued = false
+    @Volatile private var pendingExpireAt = Long.MAX_VALUE
+
+    private var pendingRunnable: Runnable? = null
 
     @JvmStatic
     fun isEnabled(): Boolean = Config.unreadDialogRetention > 0
@@ -37,106 +55,85 @@ object UnreadDialogRetention {
     fun getRetentionMillis(): Long = Config.unreadDialogRetention * 1000L
 
     @JvmStatic
-    fun onDialogOpened(account: Int, dialogId: Long) {
-        val retentionMillis = getRetentionMillis()
-        if (retentionMillis <= 0) {
-            return
-        }
-        mapFor(account)[dialogId] = System.currentTimeMillis() + retentionMillis
-        scheduleNextExpiration()
-    }
-
-    @JvmStatic
-    fun shouldRetain(account: Int, dialogId: Long): Boolean {
-        if (!isEnabled()) {
-            return false
-        }
-        val map = expireAtByAccount[account] ?: return false
-        val expireAt = map[dialogId] ?: return false
-        if (System.currentTimeMillis() >= expireAt) {
-            map.remove(dialogId)
-            return false
-        }
+    fun isRecent(account: Int, dialog: TLRPC.Dialog?): Boolean {
+        if (dialog == null) return false
+        val retention = getRetentionMillis()
+        if (retention <= 0) return false
+        val lastSec = dialog.last_message_date
+        if (lastSec <= 0) return false
+        val nowSec = ConnectionsManager.getInstance(account).currentTime
+        val ageSec = (nowSec - lastSec).toLong()
+        if (ageSec < 0) return true // clock skew: treat future timestamps as just now
+        val ageMillis = ageSec * 1000L
+        if (ageMillis > retention) return false
+        val expireAt = System.currentTimeMillis() + (retention - ageMillis)
+        atomicMin(earliestExpireAt, expireAt)
+        requestReconcile()
         return true
     }
 
+    /**
+     * Re-evaluate scheduling after a setting change: cancel any pending
+     * work and fire one reload so the new duration takes effect.
+     */
     @JvmStatic
-    fun clearAndReload() {
-        val accounts = expireAtByAccount.keys.toList()
-        expireAtByAccount.clear()
-        cancelPending()
-        for (account in accounts) {
-            notifyDialogsReload(account)
-        }
-    }
-
-    private fun mapFor(account: Int): ConcurrentHashMap<Long, Long> =
-        expireAtByAccount.computeIfAbsent(account) { ConcurrentHashMap() }
-
-    private fun scheduleNextExpiration() {
+    fun onSettingChanged() {
         AndroidUtilities.runOnUIThread {
             cancelPending()
-            val now = System.currentTimeMillis()
-            var earliest = Long.MAX_VALUE
-            for ((_, map) in expireAtByAccount) {
-                val it = map.entries.iterator()
-                while (it.hasNext()) {
-                    val entry = it.next()
-                    if (entry.value <= now) {
-                        it.remove()
-                    } else if (entry.value < earliest) {
-                        earliest = entry.value
-                    }
-                }
-            }
-            if (earliest == Long.MAX_VALUE) {
-                return@runOnUIThread
-            }
-            val delay = (earliest - now).coerceAtLeast(50L)
-            val runnable = Runnable {
-                pendingExpireRunnable = null
-                fireExpiredAndReload()
-                scheduleNextExpiration()
-            }
-            pendingExpireRunnable = runnable
-            AndroidUtilities.runOnUIThread(runnable, delay)
+            earliestExpireAt.set(Long.MAX_VALUE)
+            pendingExpireAt = Long.MAX_VALUE
+            reloadAllAccounts()
         }
     }
 
-    private fun fireExpiredAndReload() {
-        val now = System.currentTimeMillis()
-        val accountsToReload = mutableSetOf<Int>()
-        for ((account, map) in expireAtByAccount) {
-            val it = map.entries.iterator()
-            var changed = false
-            while (it.hasNext()) {
-                if (it.next().value <= now) {
-                    it.remove()
-                    changed = true
-                }
-            }
-            if (changed) {
-                accountsToReload.add(account)
-            }
+    private fun requestReconcile() {
+        if (reconcileQueued) return
+        reconcileQueued = true
+        AndroidUtilities.runOnUIThread {
+            reconcileQueued = false
+            reconcile()
         }
-        for (account in accountsToReload) {
-            notifyDialogsReload(account)
+    }
+
+    private fun reconcile() {
+        val candidate = earliestExpireAt.getAndSet(Long.MAX_VALUE)
+        if (candidate == Long.MAX_VALUE) return
+        if (!isEnabled()) return
+        if (ApplicationLoader.mainInterfacePaused) return
+        if (candidate >= pendingExpireAt) return
+        cancelPending()
+        pendingExpireAt = candidate
+        val delay = (candidate - System.currentTimeMillis()).coerceAtLeast(50L)
+        val runnable = Runnable {
+            pendingRunnable = null
+            pendingExpireAt = Long.MAX_VALUE
+            if (!isEnabled()) return@Runnable
+            if (ApplicationLoader.mainInterfacePaused) return@Runnable
+            reloadAllAccounts()
         }
+        pendingRunnable = runnable
+        AndroidUtilities.runOnUIThread(runnable, delay)
     }
 
     private fun cancelPending() {
-        pendingExpireRunnable?.let { AndroidUtilities.cancelRunOnUIThread(it) }
-        pendingExpireRunnable = null
+        pendingRunnable?.let { AndroidUtilities.cancelRunOnUIThread(it) }
+        pendingRunnable = null
+        pendingExpireAt = Long.MAX_VALUE
     }
 
-    private fun notifyDialogsReload(account: Int) {
-        if (account < 0 || account >= UserConfig.MAX_ACCOUNT_COUNT) {
-            return
+    private fun reloadAllAccounts() {
+        for (account in 0 until UserConfig.MAX_ACCOUNT_COUNT) {
+            if (!UserConfig.getInstance(account).isClientActivated) continue
+            NotificationCenter.getInstance(account)
+                .postNotificationName(NotificationCenter.dialogsNeedReload)
         }
-        if (!UserConfig.getInstance(account).isClientActivated) {
-            return
+    }
+
+    private fun atomicMin(ref: AtomicLong, candidate: Long) {
+        while (true) {
+            val cur = ref.get()
+            if (candidate >= cur) return
+            if (ref.compareAndSet(cur, candidate)) return
         }
-        NotificationCenter.getInstance(account)
-            .postNotificationName(NotificationCenter.dialogsNeedReload)
     }
 }
