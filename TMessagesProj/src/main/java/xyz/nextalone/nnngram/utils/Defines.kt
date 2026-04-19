@@ -72,6 +72,8 @@ object Defines {
     @BooleanConfig const val hideTimeForSticker = "hideTimeForSticker"
     @BooleanConfig const val showMessageID = "showMessageID"
     @BooleanConfig const val hideQuickSendMediaBottom = "hideQuickSendMediaButtom"
+    @BooleanConfig(true) const val quickSendMediaPopup = "quickSendMediaPopup"
+    const val quickSendMediaLastDismissedId = "quickSendMediaLastDismissedId"
     @BooleanConfig const val largeAvatarAsBackground = "largeAvatarAsBackground"
     @BooleanConfig const val useSystemEmoji = "useSystemEmoji"
     const val customQuickMessage = "customQuickCommand"
