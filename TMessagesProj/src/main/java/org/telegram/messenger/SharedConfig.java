@@ -1,20 +1,9 @@
 /*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
+ * This is the source code of Telegram for Android v. 5.x.x.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
+ * Copyright Nikolai Kudashov, 2013-2018.
  */
 
 package org.telegram.messenger;
@@ -345,7 +334,6 @@ public class SharedConfig {
     public static int callEncryptionHintDisplayedCount;
     public static boolean shadowsInSections;
     public static boolean debugViewMetrics;
-    public static boolean useEightPatch;
     public static boolean photoHighQualityDefault;
 
     public static TLRPC.TL_help_appUpdate pendingAppUpdate;
@@ -949,7 +937,6 @@ public class SharedConfig {
             debugVideoQualities = preferences.getBoolean("debugVideoQualities", false);
             shadowsInSections = preferences.getBoolean("shadowsInSections", false);
             debugViewMetrics = preferences.getBoolean("debugViewMetrics", false);
-            useEightPatch = preferences.getBoolean("useEightPatch", false);
             photoHighQualityDefault = preferences.getBoolean("photoHighQualityDefault", false);
 
             loadDebugConfig(preferences);

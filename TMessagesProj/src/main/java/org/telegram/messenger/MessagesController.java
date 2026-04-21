@@ -141,6 +141,9 @@ import xyz.nextalone.nnngram.utils.Defines;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.utils.UnreadDialogRetention;
+
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     public int lastKnownSessionsCount;
@@ -1308,9 +1311,13 @@ public class MessagesController extends BaseController implements NotificationCe
             ContactsController contactsController = accountInstance.getContactsController();
             boolean skip = false;
 
-            if ((flags & DIALOG_FILTER_FLAG_EXCLUDE_MUTED) != 0 && messagesController.isDialogMuted(d.id, 0) && d.unread_mentions_count == 0 ||
-                    (flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0 && messagesController.getDialogUnreadCount(d) == 0 && !d.unread_mark && d.unread_mentions_count == 0) {
+            if ((flags & DIALOG_FILTER_FLAG_EXCLUDE_MUTED) != 0 && messagesController.isDialogMuted(d.id, 0) && d.unread_mentions_count == 0) {
                 return false;
+            }
+            if ((flags & DIALOG_FILTER_FLAG_EXCLUDE_READ) != 0 && messagesController.getDialogUnreadCount(d) == 0 && !d.unread_mark && d.unread_mentions_count == 0) {
+                if (!UnreadDialogRetention.isRecent(accountInstance.getCurrentAccount(), d)) {
+                    return false;
+                }
             }
             if (dialogId > 0) {
                 TLRPC.User user = messagesController.getUser(dialogId);
@@ -20570,7 +20577,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
             });
-
         }
     }
 

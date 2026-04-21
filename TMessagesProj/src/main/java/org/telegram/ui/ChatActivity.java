@@ -144,6 +144,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BotForumHelper;
 import org.telegram.messenger.BotInlineKeyboard;
 import org.telegram.messenger.BotWebViewVibrationEffect;
+import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChannelBoostsController;
 import org.telegram.messenger.ChatMessageSharedResources;
@@ -365,6 +366,7 @@ import xyz.nextalone.nnngram.helpers.TranslateHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper.Status;
 import xyz.nextalone.nnngram.translate.LanguageDetectorTimeout;
 import xyz.nextalone.nnngram.ui.BackButtonRecentMenu;
+import xyz.nextalone.nnngram.ui.QuickSendMediaPopup;
 import xyz.nextalone.nnngram.ui.TranslatorSettingsPopupWrapper;
 import xyz.nextalone.nnngram.ui.sortList.items.TextStyleItems;
 import xyz.nextalone.nnngram.utils.Defines;
@@ -513,6 +515,9 @@ public class ChatActivity extends BaseFragment implements
     private ChatNotificationsPopupWrapper chatNotificationsPopupWrapper;
     // private ChatActivitySideControlsButtonsLayout topButtonsLayout;
     private ChatActivitySideControlsButtonsLayout sideControlsButtonsLayout;
+    private QuickSendMediaPopup quickSendMediaPopup;
+    private long quickSendPauseTimeSec;
+    private final java.util.HashSet<Long> quickSendDismissedIds = new java.util.HashSet<>();
     private ActionBarMenuItem.Item hideTitleItem;
     /* private float pagedownButtonEnterProgress;
     private float searchUpDownEnterProgress;
@@ -3013,6 +3018,7 @@ public class ChatActivity extends BaseFragment implements
         getNotificationCenter().addObserver(this, NotificationCenter.loadingMessagesFailed);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.invalidateMotionBackground);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.messageFilterRulesChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.didUpdateConnectionState);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().addObserver(this, NotificationCenter.updateDefaultSendAsPeer);
@@ -3500,6 +3506,7 @@ public class ChatActivity extends BaseFragment implements
         getNotificationCenter().removeObserver(this, NotificationCenter.updatedChatRanks);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.invalidateMotionBackground);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.messageFilterRulesChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateConnectionState);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateDefaultSendAsPeer);
@@ -4380,6 +4387,8 @@ public class ChatActivity extends BaseFragment implements
                             hideTitleItem.setText(LocaleController.getString("HideTitle", R.string.HideTitle));
                         }
                     }
+                } else if (id == 888) {
+                    dumpCanvas();
                 }
                 //wd 更多菜单增加AI广告关键词编辑器入口
                 else if (id == message_filter) {
@@ -4842,6 +4851,10 @@ public class ChatActivity extends BaseFragment implements
             if (attachItem != null) {
                 attachItem.setAlpha(0.0f);
             }
+        }
+
+        if (BuildConfig.DEBUG && headerItem != null) {
+            headerItem.addSubItem(888, R.drawable.menu_download_round, "Dump Canvas");
         }
 
         actionModeViews.clear();
@@ -7256,7 +7269,7 @@ public class ChatActivity extends BaseFragment implements
                 topicsTabs.selectTopic(topicId, true);
             }
         });
-        floatingTopicSeparator.setAlpha(0.f);
+        floatingTopicSeparator.setVisibility(View.INVISIBLE);
         contentView.addView(floatingTopicSeparator, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 4, 0, 0));
 
         floatingDateView = new ChatActionCell(context, false, themeDelegate) {
@@ -7304,6 +7317,12 @@ public class ChatActivity extends BaseFragment implements
                 } else {
                     super.onDraw(canvas);
                 }
+            }
+
+            @Override
+            public void setAlpha(float alpha) {
+                super.setAlpha(alpha);
+                setVisibility(alpha > 0 ? View.VISIBLE : INVISIBLE);
             }
         };
         floatingDateView.setCustomDate((int) (System.currentTimeMillis() / 1000), false, false);
@@ -7404,6 +7423,12 @@ public class ChatActivity extends BaseFragment implements
         sideControlsButtonsLayout.setOnClickListener(this::onSideControlButtonOnClick);
         sideControlsButtonsLayout.setOnLongClickListener(this::onSideControlButtonOnLongClick);
         contentView.addView(sideControlsButtonsLayout, LayoutHelper.createFrame(57, 300, Gravity.RIGHT | Gravity.BOTTOM));
+
+        quickSendMediaPopup = new QuickSendMediaPopup(context);
+        // Sits at the bottom-right of the chat, right-aligned with the
+        // scroll-to-bottom button and just above it, so it reads as a
+        // proper bottom-right affordance above the input bar.
+        contentView.addView(quickSendMediaPopup, LayoutHelper.createFrame(72, 72, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 6, 60));
 
         contentView.addView(topPanelLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
 
@@ -11162,6 +11187,9 @@ public class ChatActivity extends BaseFragment implements
                 - getTopicTabsSideSize(TopicsTabsView.Position.BOTTOM)
                 - dp(ChatInputViewsContainer.INPUT_BUBBLE_BOTTOM + 4);
             sideControlsButtonsLayout.setTranslationY(baseTranslationY2);
+            if (quickSendMediaPopup != null) {
+                quickSendMediaPopup.setTranslationY(baseTranslationY2);
+            }
         }
 
         if (suggestEmojiPanel != null) {
@@ -12883,7 +12911,7 @@ public class ChatActivity extends BaseFragment implements
                                     info.updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(photoEntry.caption);
                                     info.hasMediaSpoilers = photoEntry.hasSpoiler;
                                     info.stars = photoEntry.starsAmount;
-                                    info.highQuality = photoEntry.editedInfo == null && photoEntry.isHighQuality();
+                                    info.highQuality = photoEntry.isHighQuality();
                                     photos.add(info);
                                     photoEntry.reset();
                                 }
@@ -13937,6 +13965,7 @@ public class ChatActivity extends BaseFragment implements
         floatingTopicSeparator.setTranslationY(chatListView.getTranslationY() + chatListViewPaddingTop + floatingTopicViewOffset - dp(4) + dp(28));
         final float alpha = Utilities.clamp(AndroidUtilities.ilerp(floatingTopicViewOffset, -floatingTopicSeparator.getHeight(), 0f), 1f, 0f);
         floatingTopicSeparator.setAlpha(floatingTopicViewAlpha * alpha);
+        floatingTopicSeparator.setVisibility(floatingTopicViewAlpha * alpha > 0 ? View.VISIBLE : View.INVISIBLE);
         final float scale = lerp(0.5f, 1f, alpha);
         floatingTopicSeparator.setScaleX(scale);
         floatingTopicSeparator.setScaleY(scale);
@@ -14796,6 +14825,15 @@ public class ChatActivity extends BaseFragment implements
                 }
 
                 task = foundItem;
+                return true;
+            } else if (poll) {
+                final TLRPC.PollAnswer answer = MessageObject.findPollItem(message, option_id);
+                if (answer == null) {
+                    FileLog.e("ReplyQuote: poll item is not found");
+                    return false;
+                }
+
+                this.answer = answer;
                 return true;
             } else if (poll) {
                 final TLRPC.PollAnswer answer = MessageObject.findPollItem(message, option_id);
@@ -17953,10 +17991,14 @@ public class ChatActivity extends BaseFragment implements
                     scrimBlurMatrix.postScale(s, s);
                     scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
                     scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
-                    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
+                    if (scrimBlurBitmapPaint.getAlpha() > 0) {
+                        canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
+                    }
                 } else {
                     scrimPaint.setAlpha((int) (0xFF * scrimPaintAlpha * (scrimView != null ? scrimViewAlpha : 1f)));
-                    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
+                    if (scrimPaint.getAlpha() > 0) {
+                        canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
+                    }
                 }
             }
 
@@ -20606,6 +20648,17 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
+        if (id == NotificationCenter.messageFilterRulesChanged) {
+            for (MessageObject m : messages) m.reapplyFilterAction();
+            if (chatAdapter != null && chatAdapter.filteredMessages != null) {
+                for (MessageObject m : chatAdapter.filteredMessages) m.reapplyFilterAction();
+            }
+            if (chatAdapter != null && chatAdapter.frozenMessages != null) {
+                for (MessageObject m : chatAdapter.frozenMessages) m.reapplyFilterAction();
+            }
+            if (chatAdapter != null) chatAdapter.notifyDataSetChanged();
+            return;
+        }
         if (id == NotificationCenter.mediaCountsDidLoad) {
             //wd 媒体数据加载完成，标记需要直接打开媒体页面（在onTransitionAnimationStart中处理）
             FileLog.d("wd ChatActivity.didReceivedNotification: 收到媒体计数加载通知，需要直接打开媒体=" + needOpenMediaDirectly);
@@ -29090,6 +29143,9 @@ public class ChatActivity extends BaseFragment implements
         if (showAddProfilePicture) {
             createAddProfilePictureButton();
         }
+        if (showAddProfilePicture) {
+            createAddProfilePictureButton();
+        }
         if (showBotAd) {
             createBotAdView();
             if (botAdView != null) {
@@ -29838,6 +29894,8 @@ public class ChatActivity extends BaseFragment implements
         if (starReactionsOverlay != null) {
             starReactionsOverlay.bringToFront();
         }
+
+        checkQuickSendMediaPopup();
     }
 
     public float getPullingDownOffset() {
@@ -29851,6 +29909,157 @@ public class ChatActivity extends BaseFragment implements
         } else {
             AndroidUtilities.requestAdjustResize(getParentActivity(), classGuid);
         }
+    }
+
+    private void checkQuickSendMediaPopup() {
+        if (!Config.quickSendMediaPopup || quickSendMediaPopup == null) {
+            return;
+        }
+        if (chatMode != 0 || inPreviewMode || inBubbleMode || isReport() || isInsideContainer) {
+            return;
+        }
+        if (getParentActivity() == null || currentEncryptedChat != null) {
+            // Skip secret chats to avoid surprising users with a separate send path.
+            return;
+        }
+        if (currentChat != null && !ChatObject.canSendPhoto(currentChat)) {
+            return;
+        }
+        if (!xyz.nextalone.nnngram.utils.PermissionUtils.isImagesPermissionGranted()) {
+            return;
+        }
+        final long sinceSec;
+        if (quickSendPauseTimeSec > 0) {
+            // Only show photos added while we were away from this chat.
+            sinceSec = quickSendPauseTimeSec;
+        } else {
+            // First time entering: look back 3 minutes for a freshly taken shot.
+            sinceSec = System.currentTimeMillis() / 1000L - 180L;
+        }
+        final long persistedDismissedId = xyz.nextalone.nnngram.config.ConfigManager
+            .getLongOrDefault(xyz.nextalone.nnngram.utils.Defines.quickSendMediaLastDismissedId, 0L);
+        QuickSendMediaPopup.queryLatestImage(sinceSec, entry -> {
+            if (entry == null || quickSendMediaPopup == null || paused) {
+                return;
+            }
+            if (entry.id <= persistedDismissedId) {
+                // Previously dismissed across sessions - MediaStore imageIds increase
+                // monotonically, so anything at or below the watermark is old news.
+                return;
+            }
+            if (quickSendDismissedIds.contains(entry.id)) {
+                return;
+            }
+            if (quickSendMediaPopup.isShowingFor(entry.id)) {
+                return;
+            }
+            // The photo is about to be surfaced once; persist the dismissal
+            // watermark immediately so that *any* exit path (send, cancel
+            // from the preview, 10s timeout, leaving the chat, process
+            // restart) counts as "already seen" and the same image is not
+            // surfaced a second time.
+            rememberQuickSendDismissed(entry);
+            quickSendMediaPopup.show(entry, new QuickSendMediaPopup.Delegate() {
+                @Override
+                public void onSend(QuickSendMediaPopup.QuickSendMediaEntry e) {
+                    openQuickSendPreview(e);
+                }
+
+                @Override
+                public void onUserDismiss(QuickSendMediaPopup.QuickSendMediaEntry e) {
+                    // Already persisted on show(); nothing extra to do.
+                }
+            });
+        });
+    }
+
+    private void rememberQuickSendDismissed(QuickSendMediaPopup.QuickSendMediaEntry e) {
+        if (e == null) return;
+        quickSendDismissedIds.add(e.id);
+        if (e.dateAdded > 0) {
+            quickSendPauseTimeSec = Math.max(quickSendPauseTimeSec, e.dateAdded);
+        }
+        long prev = xyz.nextalone.nnngram.config.ConfigManager
+            .getLongOrDefault(xyz.nextalone.nnngram.utils.Defines.quickSendMediaLastDismissedId, 0L);
+        if (e.id > prev) {
+            xyz.nextalone.nnngram.config.ConfigManager
+                .putLong(xyz.nextalone.nnngram.utils.Defines.quickSendMediaLastDismissedId, e.id);
+        }
+    }
+
+    private void openQuickSendPreview(QuickSendMediaPopup.QuickSendMediaEntry e) {
+        if (e == null || getParentActivity() == null) {
+            return;
+        }
+        if (!checkSlowModeAlert()) {
+            return;
+        }
+        final String path = e.path;
+        if (path == null) {
+            // No file path (rare, scoped-storage edge case) - fall back to direct send via URI.
+            sendQuickMediaEntry(e);
+            return;
+        }
+        Pair<Integer, Integer> orientation = AndroidUtilities.getImageOrientation(path);
+        final MediaController.PhotoEntry photoEntry =
+            new MediaController.PhotoEntry(0, 0, 0, path, orientation.first, false, 0, 0, 0)
+                .setOrientation(orientation);
+        final ArrayList<Object> list = new ArrayList<>();
+        list.add(photoEntry);
+
+        PhotoViewer.getInstance().setParentActivity(this, themeDelegate);
+        if (PhotoViewer.getInstance().isVisible()) {
+            PhotoViewer.getInstance().closePhoto(false, false);
+        }
+        PhotoViewer.getInstance().openPhotoForSelect(list, 0, 0, false, new PhotoViewer.EmptyPhotoViewerProvider() {
+            @Override
+            public void sendButtonPressed(int index, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument) {
+                // User confirmed from the preview: persist dismissal and send.
+                rememberQuickSendDismissed(e);
+                sendMedia(photoEntry, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, 0);
+            }
+
+            @Override
+            public boolean canScrollAway() {
+                return false;
+            }
+
+            @Override
+            public boolean canCaptureMorePhotos() {
+                return false;
+            }
+        }, this);
+    }
+
+    private void sendQuickMediaEntry(QuickSendMediaPopup.QuickSendMediaEntry e) {
+        if (e == null || (e.path == null && e.uri == null)) {
+            return;
+        }
+        if (!checkSlowModeAlert()) {
+            return;
+        }
+        rememberQuickSendDismissed(e);
+        SendMessagesHelper.prepareSendingPhoto(
+            getAccountInstance(),
+            e.path,
+            e.uri,
+            dialog_id,
+            replyingMessageObject,
+            getThreadMessage(),
+            replyingQuote,
+            null,
+            null,
+            null,
+            null,
+            0,
+            null,
+            true,
+            0,
+            chatMode,
+            quickReplyShortcut,
+            getQuickReplyId()
+        );
+        afterMessageSend();
     }
 
     @Override
@@ -29921,6 +30130,10 @@ public class ChatActivity extends BaseFragment implements
         if (contentView != null) {
             contentView.onPause();
         }
+        if (quickSendMediaPopup != null) {
+            quickSendMediaPopup.dismiss(false);
+        }
+        quickSendPauseTimeSec = System.currentTimeMillis() / 1000L;
         if (chatMode == 0 || chatMode == MODE_SAVED && getUserConfig().getClientUserId() == getSavedDialogId() || chatMode == MODE_SUGGESTIONS && ChatObject.isMonoForum(currentChat)) {
             saveDraft();
             getMessagesController().cancelTyping(0, dialog_id, threadMessageId);
@@ -39426,6 +39639,11 @@ public class ChatActivity extends BaseFragment implements
         }
 
         @Override
+        public boolean allowAddPollOptions() {
+            return chatMode == 0;
+        }
+
+        @Override
         public int getAddPollOptionInputFieldHeight(ChatMessageCell cell) {
             return isInPollAddOptionMode() && pollAddOptionFieldLayout != null && pollAddOptionFieldLayout.cellToWatch == cell && pollAddOptionFieldLayout.textView.getWidth() > 0 ? pollAddOptionFieldLayout.textView.getHeight() : 0;
         }
@@ -46516,6 +46734,22 @@ public class ChatActivity extends BaseFragment implements
                     getMessagesController().markReactionsAsRead(dialog_id, getTopicId());
                 } else {
                     updateReactionsMentionButton(true);
+                    scrollToMessageId(messageId, 0, false, 0, true, 0);
+                }
+            });
+        } else if (buttonId == ChatActivitySideControlsButtonsLayout.BUTTON_POLL_VOTES) {
+            wasManualScroll = true;
+            getMessagesController().getNextPollVotesMention(dialog_id, getTopicId(), pollVotesMentionCount, (messageId) -> {
+                if (messageId == 0) {
+                    pollVotesMentionCount = 0;
+                    updatePollVotesMentionButton(true);
+                    getMessagesController().markPollVotesAsRead(dialog_id, getTopicId());
+                } else {
+                    pollVotesMentionCount--;
+                    if (pollVotesMentionCount <= 0) {
+                        getMessagesController().markPollVotesAsRead(dialog_id, getTopicId());
+                    }
+                    updatePollVotesMentionButton(true);
                     scrollToMessageId(messageId, 0, false, 0, true, 0);
                 }
             });

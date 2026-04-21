@@ -17,3 +17,5 @@ apks
 dprint.json
 libtmessages.*.so
 android-sdk/
+.DS_Store
+**/.DS_Store

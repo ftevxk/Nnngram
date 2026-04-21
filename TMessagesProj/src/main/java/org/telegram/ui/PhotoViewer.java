@@ -15941,6 +15941,20 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
     }
 
     private void updateCaptionTranslated() {
+        if (!imagesArr.isEmpty()) {
+            if (switchingToIndex < 0 || switchingToIndex >= imagesArr.size()) {
+                return;
+            }
+            MessageObject messageObject = imagesArr.get(switchingToIndex);
+            if (messageObject == null) {
+                return;
+            }
+            if (captionTranslated && messageObject.messageOwner != null && messageObject.messageOwner.translatedText != null && TextUtils.equals(messageObject.messageOwner.translatedToLanguage, TranslateAlert2.getToLanguage())) {
+                setCurrentCaption(messageObject, postProcessTranslated(messageObject), false, true);
+            } else {
+                setCurrentCaption(messageObject, messageObject.caption, captionTranslated, true);
+            }
+        }
     }
 
     private CharSequence postProcessTranslated(MessageObject messageObject) {

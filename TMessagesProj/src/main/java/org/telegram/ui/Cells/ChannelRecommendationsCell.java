@@ -152,7 +152,7 @@ public class ChannelRecommendationsCell {
             channels.get(i).detach();
         }
         channels.clear();
-        MessagesController.ChannelRecommendations rec = MessagesController.getInstance(currentAccount).getChannelRecommendations(-dialogId);
+        MessagesController.ChannelRecommendations rec = MessagesController.getInstance(currentAccount).getChannelRecommendations(dialogId);
         ArrayList<TLObject> chats = rec == null || rec.chats == null ? new ArrayList<>() : new ArrayList<>(rec.chats);
         for (int i = 0; i < chats.size(); ++i) {
             final TLObject obj = chats.get(i);

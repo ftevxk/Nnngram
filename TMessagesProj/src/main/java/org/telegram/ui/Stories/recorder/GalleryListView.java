@@ -1,22 +1,3 @@
-/*
- * Copyright (C) 2019-2025 qwq233 <qwq233@qwq2333.top>
- * https://github.com/qwq233/Nullgram
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with this software.
- *  If not, see
- * <https://www.gnu.org/licenses/>
- */
-
 package org.telegram.ui.Stories.recorder;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
@@ -260,7 +241,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                     AndroidUtilities.updateVisibleRows(listView);
                     updateSelectButtonVisible();
                 } else {
-                    onSelectListener.run(entry, entry.isVideo ? prepareBlurredThumb(cell) : null);
+                    onSelectListener.run(entry, entry.isVideo && !entry.isLivePhoto ? prepareBlurredThumb(cell) : null);
                 }
             }
         });
@@ -651,7 +632,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
         ArrayList<MediaController.PhotoEntry> photos = new ArrayList<>();
         for (int i = 0; i < album.photos.size(); ++i) {
             MediaController.PhotoEntry entry = album.photos.get(i);
-            if ((!onlyPhotos || !entry.isVideo) && !entry.isLivePhoto) {
+            if (!onlyPhotos || !entry.isVideo) {
                 photos.add(entry);
             }
         }
@@ -686,7 +667,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
         }
         final ArrayList<Bitmap> blurredBitmaps = new ArrayList<>();
         for (MediaController.PhotoEntry entry : selectedPhotos) {
-            blurredBitmaps.add(entry.isVideo ? prepareBlurredThumb(findCell(entry)) : null);
+            blurredBitmaps.add(entry.isVideo && !entry.isLivePhoto ? prepareBlurredThumb(findCell(entry)) : null);
         }
         onSelectMultipleListener.run(collage, new ArrayList<>(selectedPhotos), blurredBitmaps);
         selectedPhotos.clear();
@@ -1009,7 +990,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
 
         public void set(MediaController.PhotoEntry photoEntry) {
             currentObject = photoEntry;
-            setDuration(photoEntry != null && photoEntry.isVideo ? AndroidUtilities.formatShortDuration(photoEntry.duration) : null);
+            setDuration(photoEntry != null && photoEntry.isVideo && !photoEntry.isLivePhoto ? AndroidUtilities.formatShortDuration(photoEntry.duration) : null);
             setDraft(false);
             loadBitmap(photoEntry);
             invalidate();
@@ -1284,7 +1265,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
 
             if (photoEntry.thumbPath != null) {
                 return BitmapFactory.decodeFile(photoEntry.thumbPath, options);
-            } else if (photoEntry.isVideo) {
+            } else if (photoEntry.isVideo && !photoEntry.isLivePhoto) {
                 return MediaStore.Video.Thumbnails.getThumbnail(getContext().getContentResolver(), photoEntry.imageId, MediaStore.Video.Thumbnails.MINI_KIND, options);
             } else {
 //                Uri uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, photoEntry.imageId);
@@ -1318,7 +1299,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             }
             if (photoEntry.thumbPath != null) {
                 return photoEntry.thumbPath;
-            } else if (photoEntry.isVideo) {
+            } else if (photoEntry.isVideo && !photoEntry.isLivePhoto) {
                 return "" + photoEntry.imageId;
             } else {
                 return photoEntry.path;

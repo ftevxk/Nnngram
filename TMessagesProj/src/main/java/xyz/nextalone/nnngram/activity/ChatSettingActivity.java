@@ -124,11 +124,14 @@ public class ChatSettingActivity extends BaseActivity {
     private int hideTimeForStickerRow;
     private int showMessageIDRow;
     private int hideQuickSendMediaBottomRow;
+    private int quickSendMediaPopupRow;
     private int customQuickMessageRow;
     private int scrollableChatPreviewRow;
     private int showTabsOnForwardRow;
     private int disableStickersAutoReorderRow;
     private int hideTitleRow;
+    private int messageFiltersRow;
+    private int filterRulesRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
@@ -342,6 +345,11 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.hideQuickSendMediaBottom);
             }
+        } else if (position == quickSendMediaPopupRow) {
+            Config.toggleQuickSendMediaPopup();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.quickSendMediaPopup);
+            }
         } else if (position == customQuickMessageRow) {
             setCustomQuickMessage();
             listAdapter.notifyItemChanged(position, PARTIAL);
@@ -418,6 +426,10 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
+        } else if (position == messageFiltersRow) {
+            createMessageFilterSetter(this, getContext(), resourcesProvider);
+        } else if (position == filterRulesRow) {
+            presentFragment(new FilterRulesActivity());
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
             if (view instanceof TextCheckCell) {
@@ -577,11 +589,14 @@ public class ChatSettingActivity extends BaseActivity {
         quickToggleAnonymous = addRow("quickToggleAnonymous");
         hideSendAsButtonRow = addRow("hideSendAsButton");
         hideQuickSendMediaBottomRow = addRow("hideQuickSendMediaBottom");
+        quickSendMediaPopupRow = addRow("quickSendMediaPopup");
         customQuickMessageRow = addRow("customQuickMessage");
         scrollableChatPreviewRow = addRow("scrollableChatPreview");
         showTabsOnForwardRow = addRow("showTabsOnForward");
         disableStickersAutoReorderRow = addRow("disableStickersAutoReorder");
         hideTitleRow = addRow("showHideTitle");
+        messageFiltersRow = addRow("messageFilters");
+        filterRulesRow = addRow("filterRules");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
@@ -694,6 +709,10 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == markdownParserRow) {
                         textCell.setTextAndValue(LocaleController.getString("MarkdownParser", R.string.MarkdownParser), Config.newMarkdownParser ? "Nnngram" : "Telegram", payload,
                             position + 1 != markdown2Row);
+                    } else if (position == messageFiltersRow) {
+                        textCell.setText(LocaleController.getString("MessageFilter", R.string.MessageFilter), payload);
+                    } else if (position == filterRulesRow) {
+                        textCell.setText(LocaleController.getString("FilterRulesTitle", R.string.FilterRulesTitle), payload);
                     }
                     break;
                 }
@@ -736,6 +755,11 @@ public class ChatSettingActivity extends BaseActivity {
                     } else if (position == hideQuickSendMediaBottomRow) {
                         textCell.setTextAndCheck(LocaleController.getString("DisableQuickSendMediaBottom", R.string.DisableQuickSendMediaBottom),
                             Config.hideQuickSendMediaBottom, true);
+                    } else if (position == quickSendMediaPopupRow) {
+                        textCell.setTextAndValueAndCheck(
+                            LocaleController.getString("quickSendMediaPopup", R.string.quickSendMediaPopup),
+                            LocaleController.getString("quickSendMediaPopupInfo", R.string.quickSendMediaPopupInfo),
+                            Config.quickSendMediaPopup, true, true);
                     } else if (position == scrollableChatPreviewRow) {
                         textCell.setTextAndCheck(LocaleController.getString("scrollableChatPreview", R.string.scrollableChatPreview), Config.scrollableChatPreview, true);
                     } else if (position == showTabsOnForwardRow) {
@@ -889,7 +913,7 @@ public class ChatSettingActivity extends BaseActivity {
             if (position == chat2Row || position == stickerSize2Row) {
                 return TYPE_SHADOW;
             } else if (position == messageMenuRow || position == customDoubleClickTapRow || position == maxRecentStickerRow || position == customQuickMessageRow || position == markdownParserRow
-                || position == textStyleSettingsRow) {
+                || position == messageFiltersRow || position == filterRulesRow || position == textStyleSettingsRow) {
                 return TYPE_SETTINGS;
             } else if (position == chatRow || position == stickerSizeHeaderRow || position == markdownRow || position == gifSizeHeaderRow) {
                 return TYPE_HEADER;
