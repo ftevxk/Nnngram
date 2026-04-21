@@ -2560,15 +2560,12 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
     }
 
     public void loadGalleryPhotos() {
-        MediaController.AlbumEntry albumEntry;
-        if (shouldLoadAllMedia()) {
-            albumEntry = MediaController.allMediaAlbumEntry;
-        } else {
-            albumEntry = MediaController.allPhotosAlbumEntry;
-        }
-        if (albumEntry == null) {
-            MediaController.loadGalleryPhotosAlbums(0);
-        }
+        // Fast path: if we already have a cached album, prepend just-taken photos
+        // into it (~100ms) so the grid shows them immediately instead of waiting
+        // for the full rescan. The full rescan still runs right after at normal
+        // priority so bucket counts and album lists stay accurate.
+        MediaController.quickRefreshLatestPhotos(0, 30);
+        MediaController.loadGalleryPhotosAlbums(0, true);
     }
 
     private boolean shouldLoadAllMedia() {
