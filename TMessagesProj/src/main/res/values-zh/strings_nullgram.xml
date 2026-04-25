@@ -491,6 +491,13 @@
     <string name="AdKeywordsMultiThreshold">多关键词阈值</string>
     <string name="AdKeywordsRepeatThreshold">重复关键词阈值</string>
     <string name="ChatAdFilter">广告过滤</string>
+    <string name="AntiRecall">防撤回</string>
+    <string name="AntiRecallDesc">启用后，他人撤回的消息将保留在本地</string>
+    <string name="NoForwardsBypass">绕过转发限制</string>
+    <string name="NoForwardsBypassDesc">允许在设置了禁止转发的对话中复制和保存消息</string>
+    <string name="MessageLocked">消息已锁定</string>
+    <string name="MessageLockedDeleteConfirm">此消息已锁定，确定要删除吗？</string>
+    <string name="MessageLockedForwardConfirm">此消息已锁定，确定要转发吗？</string>
     <!-- AI Editor Tone Styles -->
     <string name="AIEditorToneFormal">正式</string>
     <string name="AIEditorToneShort">简短</string>

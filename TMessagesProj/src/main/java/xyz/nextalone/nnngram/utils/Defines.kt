@@ -333,6 +333,11 @@ object Defines {
     @BooleanConfig(true) const val showTextDate = "showTextDate"
     @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
+    //wd 消息防撤回
+    @BooleanConfig(true) const val antiRecallEnabled = "antiRecallEnabled"
+    //wd 绕过转发限制
+    @BooleanConfig(true) const val noForwardsBypass = "noForwardsBypass"
+
     // Ad Filter
     @BooleanConfig const val adFilterEnabled = "adFilterEnabled"
     @IntConfig(2) const val adFilterMultiKeywordThreshold = "adFilterMultiKeywordThreshold"

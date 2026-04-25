@@ -127,7 +127,7 @@ public class MediaDataController extends BaseController {
         SPOILER_PATTERN = Pattern.compile("\\|\\|(.+?)\\|\\|"),
         STRIKE_PATTERN = Pattern.compile("~~(.+?)~~");
     
-    //wd 模糊匹配工具方法，支持中英文混合搜索
+    //wd 模糊匹配实际实现在 TLRPC.Message.fuzzyMatch(String query)
 
 
     public static String SHORTCUT_CATEGORY = "org.telegram.messenger.SHORTCUT_SHARE";
@@ -3664,12 +3664,13 @@ public class MediaDataController extends BaseController {
         
         //wd 如果本地数据库和已加载消息都没有找到结果，尝试加载更多历史消息
         //wd 注意：数据库搜索是异步的，不要在这里立即判断，需要等待数据库回调完成
-        if (searchLocalResultMessages.isEmpty() && loadedMessages != null && loadedMessages.size() <= 1 && !loadingSearchLocal) {
-            FileLog.d("wd 本地搜索结果为空且不在加载中，尝试加载更多历史消息");
+        //wd 搜索优化：本地结果为空时，若服务器已有结果则继续展示，不再提前返回
+        if (searchLocalResultMessages.isEmpty() && loadedMessages != null && loadedMessages.size() <= 1 && !loadingSearchLocal && searchServerResultMessages.isEmpty()) {
+            FileLog.d("wd 搜索优化：本地搜索结果为空且服务器无结果，尝试加载更多历史消息");
             loadMoreHistoryForSearch();
             return;
-        } else if (searchLocalResultMessages.isEmpty() && loadingSearchLocal) {
-            FileLog.d("wd 本地数据库搜索进行中，等待搜索结果...");
+        } else if (searchLocalResultMessages.isEmpty() && loadingSearchLocal && searchServerResultMessages.isEmpty()) {
+            FileLog.d("wd 搜索优化：本地数据库搜索进行中且服务器无结果，等待搜索结果...");
             return;
         }
         FileLog.d("wd 本地搜索结果消息数量: " + searchLocalResultMessages.size());
@@ -3777,11 +3778,24 @@ public class MediaDataController extends BaseController {
         }
         FileLog.d("wd 服务器搜索结果添加数量: " + serverAddedCount);
         
+        //wd 搜索优化：使用HashSet替代ArrayList.contains()，将O(n)查找降为O(1)
+        HashSet<Long> localIds = new HashSet<>();
+        for (int i = 0; i < searchLocalResultMessages.size(); i++) {
+            localIds.add(searchLocalResultMessages.get(i).getMessageOwner().id);
+        }
+        HashSet<Long> loadedIds = new HashSet<>();
+        if (loadedMessages != null) {
+            for (int i = 0; i < loadedMessages.size(); i++) {
+                loadedIds.add(loadedMessages.get(i).getMessageOwner().id);
+            }
+        }
+        FileLog.d("wd 搜索优化：构建HashSet完成，localIds大小=" + localIds.size() + ", loadedIds大小=" + loadedIds.size());
+        
         //wd 优化搜索性能：对搜索结果进行相关性排序
         Collections.sort(searchResultMessages, (m1, m2) -> {
             //wd 优先展示本地搜索结果（包括已加载消息列表中的本地消息）
-            boolean isLocal1 = searchLocalResultMessages.contains(m1) || (loadedMessages != null && loadedMessages.contains(m1));
-            boolean isLocal2 = searchLocalResultMessages.contains(m2) || (loadedMessages != null && loadedMessages.contains(m2));
+            boolean isLocal1 = localIds.contains(m1.getMessageOwner().id) || loadedIds.contains(m1.getMessageOwner().id);
+            boolean isLocal2 = localIds.contains(m2.getMessageOwner().id) || loadedIds.contains(m2.getMessageOwner().id);
             if (isLocal1 != isLocal2) {
                 return isLocal1 ? -1 : 1;
             }
@@ -4455,23 +4469,26 @@ public class MediaDataController extends BaseController {
         
         //wd 根据不同的过滤类型检查消息
         if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterPhotoVideo) {
-            //wd 检查是否为照片或视频
-            return message.media != null && (message.media.photo != null || message.media.video);
+            //wd 检查是否为照片或视频，使用 MessageObject 标准方法替代不安全的布尔检查
+            return message.media != null && (message.media.photo != null || MessageObject.isVideoMessage(message));
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterPhotos) {
-            //wd 检查是否为照片
+            //wd 检查是否为照片，photo 是 Photo 对象类型，使用 != null 检查
             return message.media != null && message.media.photo != null;
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterVideo) {
-            //wd 检查是否为视频
-            return message.media != null && message.media.video;
+            //wd 检查是否为视频，使用 MessageObject.isVideoMessage 替代 media.video 布尔标志
+            //wd media.video 是 boolean 类型，仅在 TL_messageMediaDocument 中通过 flag 设置，
+            //wd 旧版 TL_messageMediaVideo_layer45 使用 video_unused 对象字段不会设置该标志，
+            //wd 因此 media.video 布尔检查不可靠，应使用 isVideoMessage 统一判断
+            return message.media != null && MessageObject.isVideoMessage(message);
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterDocument) {
             //wd 检查是否为文档
             return message.media != null && message.media.document != null;
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterRoundVoice) {
-            //wd 检查是否为语音消息
+            //wd 检查是否为语音消息，voice 是 boolean 类型，布尔检查合法
             return message.media != null && message.media.voice;
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterUrl) {
-            //wd 检查是否包含URL
-            return message.message != null && (message.message.contains("http://") || message.message.contains("https://"));
+            //wd 检查是否包含URL，增加 tg:// 协议链接检查
+            return message.message != null && (message.message.contains("http://") || message.message.contains("https://") || message.message.contains("tg://"));
         } else if (lastSearchFilter instanceof TLRPC.TL_inputMessagesFilterMusic) {
             //wd 检查是否为音乐文件
             return message.media != null && message.media.document != null && message.media.document.mime_type != null && message.media.document.mime_type.startsWith("audio/");
@@ -6505,6 +6522,19 @@ public class MediaDataController extends BaseController {
         });
     }
 
+    //wd 置顶消息广告过滤辅助方法，供sync/async分支复用
+    private boolean shouldFilterPinnedAd(MessageObject messageObject) {
+        AdFilter adFilter = AdFilter.getInstance();
+        if (adFilter == null && ApplicationLoader.applicationContext != null) {
+            adFilter = AdFilter.getInstance(ApplicationLoader.applicationContext);
+        }
+        if (adFilter != null && adFilter.shouldFilter(messageObject)) {
+            FileLog.d("wd 置顶消息广告过滤器: 拦截消息 id=" + messageObject.getId());
+            return true;
+        }
+        return false;
+    }
+
     private ArrayList<MessageObject> broadcastPinnedMessage(ArrayList<TLRPC.Message> results, ArrayList<TLRPC.User> users, ArrayList<TLRPC.Chat> chats, boolean isCache, boolean returnValue) {
         if (results.isEmpty()) {
             return null;
@@ -6532,13 +6562,7 @@ public class MediaDataController extends BaseController {
                     checkedCount++;
                 }
                 MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, false, checkedCount < 30);
-                //wd 置顶消息广告过滤
-                AdFilter adFilter = AdFilter.getInstance();
-                if (adFilter == null && ApplicationLoader.applicationContext != null) {
-                    adFilter = AdFilter.getInstance(ApplicationLoader.applicationContext);
-                }
-                if (adFilter != null && adFilter.shouldFilter(messageObject)) {
-                    FileLog.d("wd 置顶消息广告过滤器: 拦截消息 id=" + messageObject.getId());
+                if (shouldFilterPinnedAd(messageObject)) {
                     continue;
                 }
                 messageObjects.add(messageObject);
@@ -6555,13 +6579,7 @@ public class MediaDataController extends BaseController {
                         checkedCount++;
                     }
                     MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, false, checkedCount < 30);
-                    //wd 置顶消息广告过滤
-                    AdFilter adFilter = AdFilter.getInstance();
-                    if (adFilter == null && ApplicationLoader.applicationContext != null) {
-                        adFilter = AdFilter.getInstance(ApplicationLoader.applicationContext);
-                    }
-                    if (adFilter != null && adFilter.shouldFilter(messageObject)) {
-                        FileLog.d("wd 置顶消息广告过滤器: 拦截消息 id=" + messageObject.getId());
+                    if (shouldFilterPinnedAd(messageObject)) {
                         continue;
                     }
                     messageObjects.add(messageObject);

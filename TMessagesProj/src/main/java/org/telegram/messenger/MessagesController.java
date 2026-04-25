@@ -6638,18 +6638,20 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwards(TLRPC.Chat chat) {
-//        if (chat == null) {
-//            return false;
-//        }
-//        if (chat.migrated_to != null) {
-//            TLRPC.Chat migratedTo = getChat(chat.migrated_to.channel_id);
-//            if (migratedTo != null) {
-//                return migratedTo.noforwards;
-//            }
-//        }
-//        return chat.noforwards;
-        //wd 去除复制保存消息限制
-        return false;
+        //wd 去除复制保存消息限制，增加开关控制
+        if (ConfigManager.getBooleanOrDefault(Defines.noForwardsBypass, true)) {
+            return false;
+        }
+        if (chat == null) {
+            return false;
+        }
+        if (chat.migrated_to != null) {
+            TLRPC.Chat migratedTo = getChat(chat.migrated_to.channel_id);
+            if (migratedTo != null) {
+                return migratedTo.noforwards;
+            }
+        }
+        return chat.noforwards;
     }
 
     public boolean isChatNoForwards(long chatId) {
@@ -6665,6 +6667,10 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isUserNoForwards(TLRPC.UserFull userFull) {
+        //wd 去除复制保存消息限制，增加开关控制
+        if (ConfigManager.getBooleanOrDefault(Defines.noForwardsBypass, true)) {
+            return false;
+        }
         if (userFull == null) {
             return false;
         }
@@ -17699,15 +17705,19 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public boolean processUpdateArray(ArrayList<TLRPC.Update> updates, ArrayList<TLRPC.User> usersArr, ArrayList<TLRPC.Chat> chatsArr, boolean fromGetDifference, int date) {
         //wd 消息防撤回
-        ArrayList<TLRPC.Update> newUpdates = new ArrayList<>();
-        for (TLRPC.Update update : updates) {
-            if (!(update instanceof TLRPC.TL_updateDeleteChannelMessages) &&
-                !(update instanceof TLRPC.TL_updateDeleteMessages)) {
-                newUpdates.add(update);
+        if (ConfigManager.getBooleanOrDefault(Defines.antiRecallEnabled, true)) {
+            int originalSize = updates.size();
+            ArrayList<TLRPC.Update> newUpdates = new ArrayList<>();
+            for (TLRPC.Update update : updates) {
+                if (!(update instanceof TLRPC.TL_updateDeleteChannelMessages) &&
+                    !(update instanceof TLRPC.TL_updateDeleteMessages)) {
+                    newUpdates.add(update);
+                }
             }
+            updates.clear();
+            updates.addAll(newUpdates);
+            FileLog.d("wd 防撤回：拦截删除更新，过滤数量=" + (originalSize - newUpdates.size()));
         }
-        updates.clear();
-        updates.addAll(newUpdates);
 
         if (updates.isEmpty()) {
             if (usersArr != null || chatsArr != null) {

@@ -344,8 +344,9 @@ public class ExperimentSettingActivity extends BaseActivity {
             fastSpeedUploadRow = addRow("fastSpeedUpload");
             modifyDownloadSpeedRow = addRow("modifyDownloadSpeed");
             premium2Row = addRow();
-            ignoreChatStrictRow = addRow("ignoreChatStrict");
         }
+        //wd 绕过转发限制，始终可见
+        ignoreChatStrictRow = addRow("ignoreChatStrict");
 
         if (listAdapter != null) {
             listAdapter.notifyDataSetChanged();
@@ -472,7 +473,8 @@ public class ExperimentSettingActivity extends BaseActivity {
                     } else if (position == enablePanguOnReceivingRow) {
                         textCell.setTextAndCheck(LocaleController.getString("enablePanguOnReceiving", R.string.enablePanguOnReceiving), Config.enablePanguOnReceiving, true);
                     } else if (position == ignoreChatStrictRow) {
-                        textCell.setTextAndCheck("", Config.ignoreChatStrict, true);
+                        //wd 绕过转发限制，显示正确文本和描述
+                        textCell.setTextAndValueAndCheck(LocaleController.getString("NoForwardsBypass", R.string.NoForwardsBypass), LocaleController.getString("NoForwardsBypassDesc", R.string.NoForwardsBypassDesc), Config.ignoreChatStrict, true, true);
                     } else if (position == enableXiaomiHyperAiRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.enableXiaomiHyperAi), Config.enableXiaomiHyperAi, true);
                     } else if (position == disableSecondAddressRow) {

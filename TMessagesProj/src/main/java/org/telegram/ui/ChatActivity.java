@@ -33320,6 +33320,20 @@ public class ChatActivity extends BaseFragment implements
                     selectedObjectGroup = null;
                     return;
                 }
+                //wd 消息锁定防护：锁定消息删除需二次确认
+                if (selectedObject != null && selectedObject.isLocked) {
+                    FileLog.d("wd 消息锁定防护：阻止删除，消息ID=" + selectedObject.getId());
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                    builder.setTitle(LocaleController.getString("MessageLocked", R.string.MessageLocked));
+                    builder.setMessage(LocaleController.getString("MessageLockedDeleteConfirm", R.string.MessageLockedDeleteConfirm));
+                    builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                        preserveDim = true;
+                        createDeleteMessagesAlert(selectedObject, selectedObjectGroup, true);
+                    });
+                    builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                    builder.show();
+                    break;
+                }
                 preserveDim = true;
                 createDeleteMessagesAlert(selectedObject, selectedObjectGroup, true);
                 break;
@@ -33332,6 +33346,34 @@ public class ChatActivity extends BaseFragment implements
                     selectedObjectToEditCaption = null;
                     selectedObjectGroup = null;
                     return;
+                }
+                //wd 消息锁定防护：锁定消息转发需确认
+                if (selectedObject != null && selectedObject.isLocked) {
+                    FileLog.d("wd 消息锁定防护：阻止转发，消息ID=" + selectedObject.getId());
+                    AlertDialog.Builder lockBuilder = new AlertDialog.Builder(getParentActivity());
+                    lockBuilder.setTitle(LocaleController.getString("MessageLocked", R.string.MessageLocked));
+                    lockBuilder.setMessage(LocaleController.getString("MessageLockedForwardConfirm", R.string.MessageLockedForwardConfirm));
+                    lockBuilder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                        setForwardParams(option == OPTION_NOQUOTE_FORWARD);
+                        forwardingMessage = selectedObject;
+                        forwardingMessageGroup = selectedObjectGroup;
+                        Bundle fwdArgs = new Bundle();
+                        fwdArgs.putBoolean("onlySelect", true);
+                        fwdArgs.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
+                        fwdArgs.putInt("messagesCount", 1);
+                        fwdArgs.putInt("hasPoll", forwardingMessage.isTodo() ? 3 : forwardingMessage.isPoll() ? (forwardingMessage.isPublicPoll() ? 2 : 1) : 0);
+                        if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat) && currentChat.linked_monoforum_id != 0) {
+                            fwdArgs.putLong("forward_into_channel", -currentChat.linked_monoforum_id);
+                        }
+                        fwdArgs.putBoolean("hasInvoice", forwardingMessage.isInvoice());
+                        fwdArgs.putBoolean("canSelectTopics", true);
+                        DialogsActivity fragment = new DialogsActivity(fwdArgs);
+                        fragment.setDelegate(this);
+                        presentFragment(fragment);
+                    });
+                    lockBuilder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                    lockBuilder.show();
+                    break;
                 }
                 setForwardParams(option == OPTION_NOQUOTE_FORWARD);
                 forwardingMessage = selectedObject;

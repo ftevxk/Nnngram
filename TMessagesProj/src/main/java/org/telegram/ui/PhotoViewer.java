@@ -19646,8 +19646,8 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
             }
             if (ev.getActionMasked() == MotionEvent.ACTION_DOWN) {
                 longPressX = ev.getX();
-                //wd 禁用长按倍速播放
-//                AndroidUtilities.runOnUIThread(longPressRunnable, 300);
+                //wd 恢复长按倍速播放，与左右滑动进度调节共存（滑动时取消长按）
+                AndroidUtilities.runOnUIThread(longPressRunnable, 300);
 
                 //wd 记录视频进度
                 double current = getCurrentVideoPosition();
@@ -19662,9 +19662,12 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         } else if (ev.getActionMasked() == MotionEvent.ACTION_MOVE) {
             //wd 视频左右滑动为调整视频进度
             if (currentMessageObject.isVideo()) {
-                if (Math.abs(ev.getY() - moveStartY) > AndroidUtilities.dp(20)) {
+                //wd 垂直滑动阈值从dp(20)增大到dp(40)，防止误触
+                if (Math.abs(ev.getY() - moveStartY) > AndroidUtilities.dp(40)) {
                     return rawMoveEvent(ev);
                 } else {
+                    //wd 左右滑动时取消长按倍速，避免进度调节与倍速播放冲突
+                    AndroidUtilities.cancelRunOnUIThread(longPressRunnable);
                     double total = getVideoDuration();
                     double x = ev.getX();
                     double width = getContainerViewWidth();

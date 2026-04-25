@@ -5333,8 +5333,14 @@ public class MessagesStorage extends BaseController {
                         }
                         messageObjects.add(messageObject);
                         matchedCount++;
+                        //wd 已找到足够结果，提前退出扫描
+                        if (matchedCount >= limit) {
+                            FileLog.d("wd 数据库搜索：已扫描=" + scannedCount + ", 匹配=" + matchedCount + "，达到limit提前退出");
+                            break;
+                        }
                     }
                 }
+                FileLog.d("wd 数据库搜索：已扫描=" + scannedCount + ", 匹配=" + matchedCount);
                 cursor.dispose();
 
                 if (!usersToLoad.isEmpty()) {

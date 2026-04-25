@@ -132,6 +132,8 @@ public class ChatSettingActivity extends BaseActivity {
     private int hideTitleRow;
     private int messageFiltersRow;
     private int filterRulesRow;
+    private int antiRecallRow;
+    private int adFilterRow;
     private int sendLargePhotoRow;
     private int doNotUnarchiveBySwipeRow;
     private int hideInputFieldBotButtonRow;
@@ -430,6 +432,16 @@ public class ChatSettingActivity extends BaseActivity {
             createMessageFilterSetter(this, getContext(), resourcesProvider);
         } else if (position == filterRulesRow) {
             presentFragment(new FilterRulesActivity());
+        } else if (position == antiRecallRow) {
+            Config.toggleAntiRecallEnabled();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.antiRecallEnabled);
+            }
+        } else if (position == adFilterRow) {
+            Config.toggleAdFilterEnabled();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.adFilterEnabled);
+            }
         } else if (position == sendLargePhotoRow) {
             Config.toggleSendLargePhoto();
             if (view instanceof TextCheckCell) {
@@ -597,6 +609,8 @@ public class ChatSettingActivity extends BaseActivity {
         hideTitleRow = addRow("showHideTitle");
         messageFiltersRow = addRow("messageFilters");
         filterRulesRow = addRow("filterRules");
+        antiRecallRow = addRow("antiRecall");
+        adFilterRow = addRow("adFilter");
         sendLargePhotoRow = addRow("sendLargePhoto");
         doNotUnarchiveBySwipeRow = addRow("doNotUnarchiveBySwipe");
         hideInputFieldBotButtonRow = addRow("hideInputFieldBotButton");
@@ -725,6 +739,12 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString("hideGroupSticker", R.string.hideGroupSticker), Config.hideGroupSticker, true);
                     } else if (position == disablePremiumStickerRow) {
                         textCell.setTextAndCheck(LocaleController.getString("disablePremiumSticker", R.string.disablePremiumSticker), Config.disablePremiumSticker, true);
+                    //wd 防撤回开关
+                    } else if (position == antiRecallRow) {
+                        textCell.setTextAndValueAndCheck(LocaleController.getString("AntiRecall", R.string.AntiRecall), LocaleController.getString("AntiRecallDesc", R.string.AntiRecallDesc), Config.antiRecallEnabled, true, true);
+                    //wd 广告过滤全局开关
+                    } else if (position == adFilterRow) {
+                        textCell.setTextAndCheck(LocaleController.getString("ChatAdFilter", R.string.ChatAdFilter), Config.adFilterEnabled, true);
                     } else if (position == allowScreenshotOnNoForwardChatRow) {
                         textCell.setTextAndValueAndCheck(LocaleController.getString("allowScreenshotOnNoForwardChat", R.string.allowScreenshotOnNoForwardChat), LocaleController.getString("allowScreenshotOnNoForwardChatWarning", R.string.allowScreenshotOnNoForwardChatWarning), Config.allowScreenshotOnNoForwardChat, true, true);
                     } else if (position == labelChannelUserRow) {

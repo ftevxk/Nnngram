@@ -312,27 +312,27 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         fragmentView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
 
         ActionBarMenu menu2 = actionBar.createMenu();
+        //wd 创建三点菜单按钮，所有类型下都显示
+        FrameLayout menu = new FrameLayout(context);
+        actionBar.addView(menu, LayoutHelper.createFrame(56, 56, Gravity.RIGHT | Gravity.BOTTOM));
+
         if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
-            FrameLayout menu = new FrameLayout(context);
-            actionBar.addView(menu, LayoutHelper.createFrame(56, 56, Gravity.RIGHT | Gravity.BOTTOM));
+            deleteItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+            deleteItem.setIcon(R.drawable.msg_delete);
+            deleteItem.setVisibility(View.GONE);
+            deleteItem.setAlpha(0f);
+            deleteItem.setOnClickListener(v -> menu2.onItemClick(2));
+            menu.addView(deleteItem);
+        }
 
-            if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
-                deleteItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
-                deleteItem.setIcon(R.drawable.msg_delete);
-                deleteItem.setVisibility(View.GONE);
-                deleteItem.setAlpha(0f);
-                deleteItem.setOnClickListener(v -> menu2.onItemClick(2));
-                menu.addView(deleteItem);
-            }
+        optionsItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+        optionsItem.setIcon(R.drawable.ic_ab_other);
+        optionsItem.setOnClickListener(v -> optionsItem.toggleSubMenu());
+        optionsItem.setVisibility(View.VISIBLE);
+        optionsItem.setAlpha(1f);
+        menu.addView(optionsItem);
 
-            optionsItem = new ActionBarMenuItem(context, menu2, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
-            optionsItem.setIcon(R.drawable.ic_ab_other);
-            optionsItem.setOnClickListener(v -> optionsItem.toggleSubMenu());
-            optionsItem.setVisibility(View.VISIBLE);
-            optionsItem.setAlpha(1f);
-            menu.addView(optionsItem);
-
-            if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
+        if (type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES) {
                 zoomInItem = optionsItem.addSubItem(8, R.drawable.msg_zoomin, LocaleController.getString(R.string.MediaZoomIn));
                 zoomInItem.setOnClickListener(v -> {
                     boolean canZoomOut, canZoomIn;
@@ -365,57 +365,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 calendarItem.setEnabled(false);
                 calendarItem.setAlpha(.5f);
 
-                //wd 添加直接打开媒体对话设置选项
-                ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(
-                    92, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
-                //wd 检查当前对话是否已设置直接打开媒体对话
-                String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
-                FileLog.d("wd MediaActivity: 初始化直接打开媒体项，打开媒体配置=" + openMediaConfig + ", 对话ID=" + dialogId + ", 启用=" + isEnabled);
-                openMediaDirectlyItem.setChecked(isEnabled);
-                openMediaDirectlyItem.setOnClickListener(e -> {
-                    //wd 切换直接打开媒体对话设置
-                    String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
-                    FileLog.d("wd MediaActivity: 点击直接打开媒体项，当前配置=" + currentConfig + ", 对话ID=" + dialogId);
-                    StringBuilder newConfig = new StringBuilder();
-                    boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialogId + ",");
-                    FileLog.d("wd MediaActivity: 之前启用=" + wasEnabled);
-
-                    if (wasEnabled) {
-                        //wd 移除当前对话ID
-                        FileLog.d("wd MediaActivity: 移除对话ID=" + dialogId);
-                        if (currentConfig.equals(String.valueOf(dialogId))) {
-                            newConfig.append("");
-                        } else {
-                            newConfig.append(currentConfig.replace("," + dialogId + ",", ","));
-                            //wd 处理开头和结尾的逗号
-                            if (newConfig.toString().startsWith(",")) {
-                                newConfig.deleteCharAt(0);
-                            }
-                            if (newConfig.toString().endsWith(",")) {
-                                newConfig.deleteCharAt(newConfig.length() - 1);
-                            }
-                        }
-                    } else {
-                        //wd 添加当前对话ID
-                        FileLog.d("wd MediaActivity: 添加对话ID=" + dialogId);
-                        if (currentConfig.isEmpty()) {
-                            newConfig.append(dialogId);
-                        } else {
-                            newConfig.append(currentConfig).append(",").append(dialogId);
-                        }
-                    }
-
-                    //wd 保存更新后的配置
-                    String finalConfig = newConfig.toString();
-                    FileLog.d("wd MediaActivity: 保存配置，最终配置=" + finalConfig);
-                    ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
-                    //wd 更新菜单项状态
-                    openMediaDirectlyItem.setChecked(!wasEnabled);
-                    //wd 关闭菜单
-                    optionsItem.closeSubMenu();
-                });
-
                 optionsItem.addColoredGap();
 
                 showPhotosItem = optionsItem.addSubItem(6, 0, LocaleController.getString(R.string.MediaShowPhotos), true);
@@ -445,46 +394,83 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             }
         }
 
-        if (optionsItem != null) {
-            //wd 添加视频最小时长设置选项，在所有类型下都显示
-            ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
-                93, R.drawable.ic_filter_list, LocaleController.getString(R.string.SearchVideoMinDuration), true);
-            videoMinDurationItem.setOnClickListener(e -> {
-                optionsItem.closeSubMenu();
-                //wd 弹出对话框设置视频最小时长
-                final EditText editText = new EditTextBoldCursor(getContext());
-                editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
-                editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
-                editText.setHint(LocaleController.getString(R.string.Second));
-                editText.setSingleLine(true);
-                editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-                editText.setPadding(dp(16), dp(8), dp(16), dp(8));
-                AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
-                builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
-                builder.setView(editText);
-                builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
-                    String text = editText.getText().toString();
-                    int duration;
-                    try {
-                        duration = Integer.parseInt(text);
-                    } catch (NumberFormatException ex) {
-                        duration = 0;
-                    }
-                    Config.setSearchVideoMinDuration(duration);
-                    videoMinDurationItem.setChecked(duration > 0);
-                    //wd 最小时长改变时重新加载数据
-                    if (sharedMediaLayout != null) {
-                        // 清除现有数据并重新加载以应用最小时长过滤
-                        sharedMediaLayout.clearMediaData();
-                        sharedMediaLayout.changeMediaFilterType();
-                    }
-                });
-                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-                builder.show();
-            });
+        //wd 添加直接打开媒体对话设置选项，所有类型下都显示
+        ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(
+            92, 0, LocaleController.getString("OpenTheMediaConversationDirectly", R.string.OpenTheMediaConversationDirectly), true);
+        String openMediaConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+        boolean isEnabled = ("," + openMediaConfig + ",").contains("," + dialogId + ",");
+        FileLog.d("wd MediaActivity: 初始化直接打开媒体项，对话ID=" + dialogId + ", 启用=" + isEnabled);
+        openMediaDirectlyItem.setChecked(isEnabled);
+        openMediaDirectlyItem.setOnClickListener(e -> {
+            String currentConfig = ConfigManager.getStringOrDefault(Defines.openTheMediaConversationDirectly, "");
+            FileLog.d("wd MediaActivity: 点击直接打开媒体项，当前配置=" + currentConfig + ", 对话ID=" + dialogId);
+            StringBuilder newConfig = new StringBuilder();
+            boolean wasEnabled = ("," + currentConfig + ",").contains("," + dialogId + ",");
 
-            optionsItem.addColoredGap();
-        }
+            if (wasEnabled) {
+                if (currentConfig.equals(String.valueOf(dialogId))) {
+                    newConfig.append("");
+                } else {
+                    newConfig.append(currentConfig.replace("," + dialogId + ",", ","));
+                    if (newConfig.toString().startsWith(",")) {
+                        newConfig.deleteCharAt(0);
+                    }
+                    if (newConfig.toString().endsWith(",")) {
+                        newConfig.deleteCharAt(newConfig.length() - 1);
+                    }
+                }
+            } else {
+                if (currentConfig.isEmpty()) {
+                    newConfig.append(dialogId);
+                } else {
+                    newConfig.append(currentConfig).append(",").append(dialogId);
+                }
+            }
+
+            String finalConfig = newConfig.toString();
+            FileLog.d("wd MediaActivity: 保存配置，最终配置=" + finalConfig);
+            ConfigManager.putString(Defines.openTheMediaConversationDirectly, finalConfig);
+            openMediaDirectlyItem.setChecked(!wasEnabled);
+            optionsItem.closeSubMenu();
+        });
+
+        optionsItem.addColoredGap();
+
+        //wd 添加视频最小时长设置选项，所有类型下都显示
+        ActionBarMenuSubItem videoMinDurationItem = optionsItem.addSubItem(
+            93, R.drawable.ic_filter_list, LocaleController.getString(R.string.SearchVideoMinDuration), true);
+        videoMinDurationItem.setOnClickListener(e -> {
+            optionsItem.closeSubMenu();
+            final EditText editText = new EditTextBoldCursor(getContext());
+            editText.setInputType(EditorInfo.TYPE_CLASS_NUMBER);
+            editText.setText(String.valueOf(Config.getSearchVideoMinDuration()));
+            editText.setHint(LocaleController.getString(R.string.Second));
+            editText.setSingleLine(true);
+            editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+            editText.setPadding(dp(16), dp(8), dp(16), dp(8));
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourceProvider());
+            builder.setTitle(LocaleController.getString(R.string.SearchVideoMinDuration));
+            builder.setView(editText);
+            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
+                String text = editText.getText().toString();
+                int duration;
+                try {
+                    duration = Integer.parseInt(text);
+                } catch (NumberFormatException ex) {
+                    duration = 0;
+                }
+                Config.setSearchVideoMinDuration(duration);
+                videoMinDurationItem.setChecked(duration > 0);
+                if (sharedMediaLayout != null) {
+                    sharedMediaLayout.clearMediaData();
+                    sharedMediaLayout.changeMediaFilterType();
+                }
+            });
+            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            builder.show();
+        });
+
+        optionsItem.addColoredGap();
 
         boolean hasAvatar = type == TYPE_MEDIA;
 

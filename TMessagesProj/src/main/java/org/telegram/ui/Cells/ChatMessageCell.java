@@ -1156,6 +1156,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private LinkSpanDrawable pressedFactCheckLink;
     private boolean factCheckTextLayoutLastLineEnd;
     private Drawable factCheckArrow;
+    //wd 锁定图标缓存，避免onDraw中重复获取
+    private Drawable lockIconDrawable;
     private int factCheckArrowColor;
     private boolean factCheckLarge;
     private GradientClip clip;
@@ -24151,7 +24153,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         
         //wd 如果消息被锁定则绘制锁定图标
         if (currentMessageObject.isLocked) {
-            Drawable lockIcon = ContextCompat.getDrawable(getContext(), R.drawable.msg_filled_lockedrecord);
+            if (lockIconDrawable == null) {
+                lockIconDrawable = ContextCompat.getDrawable(getContext(), R.drawable.msg_filled_lockedrecord);
+            }
+            Drawable lockIcon = lockIconDrawable;
             if (lockIcon != null) {
                 float lockX, lockY;
                 //wd 根据文字大小调整锁定图标大小

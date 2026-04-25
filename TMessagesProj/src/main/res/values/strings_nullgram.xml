@@ -504,6 +504,13 @@
     <string name="AdKeywordsMultiThreshold">Multi-Keyword Threshold</string>
     <string name="AdKeywordsRepeatThreshold">Repeat Keyword Threshold</string>
     <string name="ChatAdFilter">Ad Filter</string>
+    <string name="AntiRecall">Anti Recall</string>
+    <string name="AntiRecallDesc">When enabled, messages recalled by others will be kept locally</string>
+    <string name="NoForwardsBypass">Bypass Forward Restriction</string>
+    <string name="NoForwardsBypassDesc">Allow copying and saving messages in conversations with forward restrictions</string>
+    <string name="MessageLocked">Message Locked</string>
+    <string name="MessageLockedDeleteConfirm">This message is locked. Are you sure you want to delete it?</string>
+    <string name="MessageLockedForwardConfirm">This message is locked. Are you sure you want to forward it?</string>
     <string name="FilterRulesTitle">Message filter rules</string>
     <string name="FilterRulesHint">Rules are evaluated top-to-bottom. When a message matches multiple rules, the strongest action wins: Hide &gt; Collapse &gt; Spoiler.</string>
     <string name="FilterRulesAdd">Add rule</string>

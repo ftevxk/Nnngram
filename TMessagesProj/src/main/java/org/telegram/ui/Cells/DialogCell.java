@@ -1153,7 +1153,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
         }
 
-        if (useForceThreeLines || SharedConfig.useThreeLinesLayout || true) {
+        if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
             Theme.dialogs_namePaint[0].setTextSize(dp(17));
             Theme.dialogs_nameEncryptedPaint[0].setTextSize(dp(17));
             Theme.dialogs_messagePaint[0].setTextSize(dp(16));
@@ -5650,7 +5650,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
         if (smallThumb != null) {
             hasVideoThumb = hasVideoThumb || isVideo;
-            if (thumbsCount < 3) {
+            //wd 图片/视频缩略图仅显示一张，与主setThumb方法保持一致
+            if (thumbsCount < 1) {
                 thumbsCount++;
                 drawPlay[index] = isVideo;
                 drawSpoiler[index] = false;
@@ -5667,7 +5668,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (index >= 3) return;
         if (thumb != null) {
             hasVideoThumb = false;
-            if (thumbsCount < 3) {
+            //wd 图片/视频缩略图仅显示一张，与主setThumb方法保持一致
+            if (thumbsCount < 1) {
                 thumbsCount++;
                 drawPlay[index] = false;
                 drawSpoiler[index] = true;
