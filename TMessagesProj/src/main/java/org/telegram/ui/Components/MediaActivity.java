@@ -392,7 +392,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
                 optionsItem.addColoredGap();
             }
-        }
 
         //wd 添加直接打开媒体对话设置选项，所有类型下都显示
         ActionBarMenuSubItem openMediaDirectlyItem = optionsItem.addSubItem(
