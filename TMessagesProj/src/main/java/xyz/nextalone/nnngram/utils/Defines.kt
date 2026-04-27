@@ -145,6 +145,11 @@ object Defines {
     @BooleanConfig(true) const val showReport = "showReport"
     @BooleanConfig(true) const val showReactions = "showReactions"
 
+    // Compact (icon-only) message menu — CSV of OPTION_* ints rendered as icon
+    @StringConfig("") const val compactMessageOptions = "compactMessageOptions"
+    // Hidden message menu options — CSV of OPTION_* ints stripped from the popup
+    @StringConfig("") const val hiddenMessageOptions = "hiddenMessageOptions"
+
     // custom double tap
     @IntConfig(doubleTabReaction)
     const val doubleTab = "doubleTab"
