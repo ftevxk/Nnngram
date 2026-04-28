@@ -401,7 +401,7 @@ public class ApplicationLoader extends Application {
         }
     }
 
-    private static void saveFolderVisibilityOnBackground() {
+    public static void saveFolderVisibilityOnBackground() {
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
             MessagesController messagesController = MessagesController.getInstance(i);
             if (messagesController != null) {

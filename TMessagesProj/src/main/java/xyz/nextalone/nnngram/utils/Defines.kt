@@ -316,6 +316,7 @@ object Defines {
     @BooleanConfig const val showArchivedChats = "showArchivedChats"
     @BooleanConfig(true) const val showChangeEmojiStatus = "showChangeEmojiStatus"
     @BooleanConfig(true) const val showProfileMyStories = "showProfileMyStories"
+    @BooleanConfig(true) const val showChatFolders = "showChatFolders"
 
     // Text Style
     @BooleanConfig(true) const val showTextSpoiler = "showTextSpoiler"

@@ -1226,6 +1226,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
         updateCurrentConnectionState(currentAccount);
 
+        ApplicationLoader.saveFolderVisibilityOnBackground();
+        NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.dialogFiltersUpdated);
+
         switchingAccount = false;
     }
 

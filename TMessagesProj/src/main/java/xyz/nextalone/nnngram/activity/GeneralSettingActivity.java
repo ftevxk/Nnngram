@@ -992,7 +992,7 @@ public class GeneralSettingActivity extends BaseActivity {
         linearLayout.addView(linearLayoutInviteContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         boolean isPremium = UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
-        int count = isPremium ? 8 : 6;
+        int count = isPremium ? 9 : 7;
         for (int a = 0; a < count; a++) {
             if (a == 3) {
                 continue;
@@ -1007,6 +1007,7 @@ public class GeneralSettingActivity extends BaseActivity {
                 case 5 -> textCell.setTextAndCheck(LocaleController.getString("ArchivedChats", R.string.ArchivedChats), Config.showArchivedChats, false);
                 case 6 -> textCell.setTextAndCheck(LocaleController.getString("ChangeEmojiStatus", R.string.ChangeEmojiStatus), Config.showChangeEmojiStatus,  false);
                 case 7 -> textCell.setTextAndCheck(LocaleController.getString("MyProfile", R.string.MyProfile), Config.showProfileMyStories,  false);
+                case 8 -> textCell.setTextAndCheck(LocaleController.getString("Filters", R.string.Filters), Config.showChatFolders,  false);
             }
             textCell.setTag(a);
             textCell.setBackground(Theme.getSelectorDrawable(false));
@@ -1045,6 +1046,10 @@ public class GeneralSettingActivity extends BaseActivity {
                     case 7 -> {
                         Config.toggleShowProfileMyStories();
                         textCell.setChecked(Config.showProfileMyStories);
+                    }
+                    case 8 -> {
+                        Config.toggleShowChatFolders();
+                        textCell.setChecked(Config.showChatFolders);
                     }
                 }
             });
