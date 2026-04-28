@@ -52,6 +52,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -429,7 +430,7 @@ public class ChatSettingActivity extends BaseActivity {
                 ((TextCheckCell) view).setChecked(Config.showHideTitle);
             }
         } else if (position == messageFiltersRow) {
-            createMessageFilterSetter(this, getContext(), resourcesProvider);
+            createMessageFilterSetter(getContext(), resourcesProvider);
         } else if (position == filterRulesRow) {
             presentFragment(new FilterRulesActivity());
         } else if (position == antiRecallRow) {

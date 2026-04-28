@@ -3779,11 +3779,11 @@ public class MediaDataController extends BaseController {
         FileLog.d("wd 服务器搜索结果添加数量: " + serverAddedCount);
         
         //wd 搜索优化：使用HashSet替代ArrayList.contains()，将O(n)查找降为O(1)
-        HashSet<Long> localIds = new HashSet<>();
+        HashSet<Integer> localIds = new HashSet<>();
         for (int i = 0; i < searchLocalResultMessages.size(); i++) {
             localIds.add(searchLocalResultMessages.get(i).messageOwner.id);
         }
-        HashSet<Long> loadedIds = new HashSet<>();
+        HashSet<Integer> loadedIds = new HashSet<>();
         if (loadedMessages != null) {
             for (int i = 0; i < loadedMessages.size(); i++) {
                 loadedIds.add(loadedMessages.get(i).messageOwner.id);
