@@ -3781,21 +3781,21 @@ public class MediaDataController extends BaseController {
         //wd 搜索优化：使用HashSet替代ArrayList.contains()，将O(n)查找降为O(1)
         HashSet<Long> localIds = new HashSet<>();
         for (int i = 0; i < searchLocalResultMessages.size(); i++) {
-            localIds.add(searchLocalResultMessages.get(i).getMessageOwner().id);
+            localIds.add(searchLocalResultMessages.get(i).messageOwner.id);
         }
         HashSet<Long> loadedIds = new HashSet<>();
         if (loadedMessages != null) {
             for (int i = 0; i < loadedMessages.size(); i++) {
-                loadedIds.add(loadedMessages.get(i).getMessageOwner().id);
+                loadedIds.add(loadedMessages.get(i).messageOwner.id);
             }
         }
         FileLog.d("wd 搜索优化：构建HashSet完成，localIds大小=" + localIds.size() + ", loadedIds大小=" + loadedIds.size());
-        
+
         //wd 优化搜索性能：对搜索结果进行相关性排序
         Collections.sort(searchResultMessages, (m1, m2) -> {
             //wd 优先展示本地搜索结果（包括已加载消息列表中的本地消息）
-            boolean isLocal1 = localIds.contains(m1.getMessageOwner().id) || loadedIds.contains(m1.getMessageOwner().id);
-            boolean isLocal2 = localIds.contains(m2.getMessageOwner().id) || loadedIds.contains(m2.getMessageOwner().id);
+            boolean isLocal1 = localIds.contains(m1.messageOwner.id) || loadedIds.contains(m1.messageOwner.id);
+            boolean isLocal2 = localIds.contains(m2.messageOwner.id) || loadedIds.contains(m2.messageOwner.id);
             if (isLocal1 != isLocal2) {
                 return isLocal1 ? -1 : 1;
             }

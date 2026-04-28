@@ -33327,7 +33327,6 @@ public class ChatActivity extends BaseFragment implements
                     builder.setTitle(LocaleController.getString("MessageLocked", R.string.MessageLocked));
                     builder.setMessage(LocaleController.getString("MessageLockedDeleteConfirm", R.string.MessageLockedDeleteConfirm));
                     builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialog, which) -> {
-                        preserveDim = true;
                         createDeleteMessagesAlert(selectedObject, selectedObjectGroup, true);
                     });
                     builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);

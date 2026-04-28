@@ -543,4 +543,6 @@
     <string name="FilterRulesActionSpoiler">Spoiler</string>
     <string name="FilterRulesSenderIdInvalid">Sender ID must be a number</string>
     <string name="filterActionCollapsePlaceholder">💬 Message collapsed by filter rule</string>
+    <string name="MessageFilter">Message Filter</string>
+    <string name="MessageFilterDesc">Use regex to match messages, matched messages will be hidden.\nLeave blank to disable this feature</string>
 </resources>
