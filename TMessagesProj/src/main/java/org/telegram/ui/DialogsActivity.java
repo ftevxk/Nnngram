@@ -220,6 +220,7 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.DialogsItemAnimator;
 import org.telegram.ui.Components.FilterTabsView;
 import org.telegram.ui.Components.FiltersListBottomSheet;
+import org.telegram.ui.FiltersSetupActivity;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
@@ -13252,52 +13253,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             });
             if (Config.showChatFolders) {
                 io.add(R.drawable.msg_addfolder, getString(R.string.Filters), () -> {
-                    ArrayList<MessagesController.DialogFilter> filters = getMessagesController().getDialogFilters();
-                    ArrayList<MessagesController.DialogFilter> filteredFilters = new ArrayList<>();
-                    for (MessagesController.DialogFilter filter : filters) {
-                        boolean isVisible = xyz.nextalone.nnngram.config.ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
-                        if (filter.isDefault()) {
-                            isVisible = !Config.hideAllTab;
-                        }
-                        if (filter.name != null && !filter.name.isEmpty() && isVisible) {
-                            filteredFilters.add(filter);
-                        }
-                    }
-                    if (filteredFilters.isEmpty()) {
-                        return;
-                    }
-                    if (filteredFilters.size() == 1) {
-                        MessagesController.DialogFilter selectedFilter = filteredFilters.get(0);
-                        MessagesController messagesController = getMessagesController();
-                        int filterIndex = 0;
-                        if (messagesController.selectedDialogFilter[0] != null) {
-                            filterIndex = 1;
-                        }
-                        messagesController.selectedDialogFilter[filterIndex] = selectedFilter;
-                        Bundle args = new Bundle();
-                        args.putInt("dialogsType", 7 + filterIndex);
-                        presentFragment(new DialogsActivity(args));
-                        return;
-                    }
-                    String[] folderNames = new String[filteredFilters.size()];
-                    for (int i = 0; i < filteredFilters.size(); i++) {
-                        folderNames[i] = filteredFilters.get(i).name;
-                    }
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                    builder.setTitle(getString(R.string.FilterChoose));
-                    builder.setItems(folderNames, (dialog, which) -> {
-                        MessagesController.DialogFilter selectedFilter = filteredFilters.get(which);
-                        MessagesController messagesController = getMessagesController();
-                        int filterIndex = 0;
-                        if (messagesController.selectedDialogFilter[0] != null) {
-                            filterIndex = 1;
-                        }
-                        messagesController.selectedDialogFilter[filterIndex] = selectedFilter;
-                        Bundle args = new Bundle();
-                        args.putInt("dialogsType", 7 + filterIndex);
-                        presentFragment(new DialogsActivity(args));
-                    });
-                    showDialog(builder.create());
+                    presentFragment(new FiltersSetupActivity());
                 });
             }
             if (ApplicationLoader.applicationLoaderInstance != null) {
