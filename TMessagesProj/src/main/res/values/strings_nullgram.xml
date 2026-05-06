@@ -503,4 +503,8 @@
     <string name="FilterRulesActionSpoiler">Spoiler</string>
     <string name="FilterRulesSenderIdInvalid">Sender ID must be a number</string>
     <string name="filterActionCollapsePlaceholder">💬 Message collapsed by filter rule</string>
+    <string name="SegHide">Hide</string>
+    <string name="SegText">Text</string>
+    <string name="SegIcon">Icon</string>
+    <string name="CustomQuickMessage">Custom quick message</string>
 </resources>

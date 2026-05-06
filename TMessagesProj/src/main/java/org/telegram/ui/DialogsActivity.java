@@ -4397,6 +4397,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         return usedDy;
                     }
 
+                    if (Config.disablePullDownSearch && !hasStories && measuredDy > 0) {
+                        int contentH = 0;
+                        for (int ci = 0; ci < viewPage.layoutManager.getItemCount(); ci++) {
+                            contentH += viewPage.dialogsAdapter.getItemHeight(ci);
+                        }
+                        if (contentH + pTop + viewPage.listView.getPaddingBottom() <= viewPage.listView.getHeight()) {
+                            View firstV = viewPage.layoutManager.findViewByPosition(viewPage.layoutManager.findFirstVisibleItemPosition());
+                            if (firstV != null && firstV.getTop() <= pTop + dp(1)) {
+                                measuredDy = 0;
+                            }
+                        }
+                    }
                     int scrolled = super.scrollVerticallyBy(measuredDy, recycler, state);
                     if (scrolled == 0 && dy < 0 && isDragging && !rightSlidingDialogContainer.hasFragment() && hasStories && progressToActionMode == 0) {
                         float newOverScroll = storiesOverscroll - dy * dialogStoriesCell.getOverScrollCoef();
