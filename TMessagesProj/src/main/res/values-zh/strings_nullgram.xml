@@ -538,4 +538,8 @@
     <string name="FilterRulesActionSpoiler">遮罩</string>
     <string name="FilterRulesSenderIdInvalid">发送者 ID 必须为数字</string>
     <string name="filterActionCollapsePlaceholder">💬 消息已被过滤规则折叠</string>
+    <string name="SegHide">隐藏</string>
+    <string name="SegText">文本</string>
+    <string name="SegIcon">图标</string>
+    <string name="CustomQuickMessage">自定义快速消息</string>
 </resources>

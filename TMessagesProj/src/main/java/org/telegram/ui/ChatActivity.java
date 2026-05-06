@@ -104,6 +104,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -360,6 +361,7 @@ import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.config.DialogConfig;
 import xyz.nextalone.nnngram.config.ForwardContext;
 import xyz.nextalone.nnngram.helpers.MessageHelper;
+import xyz.nextalone.nnngram.helpers.MessageMenuCompact;
 import xyz.nextalone.nnngram.helpers.MentionReadHelper;
 import xyz.nextalone.nnngram.helpers.QrHelper;
 import xyz.nextalone.nnngram.helpers.TranslateHelper;
@@ -31879,9 +31881,80 @@ public class ChatActivity extends BaseFragment implements
                         popupLayout.addView(new ActionBarPopupWindow.GapView(contentView.getContext(), themeDelegate), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
                     }
                 }
+                // === Strip hidden options before building popup (Nnngram) ===
+                for (int a = items.size() - 1; a >= 0; a--) {
+                    if (MessageMenuCompact.isHidden(options.get(a))) {
+                        items.remove(a);
+                        options.remove(a);
+                        icons.remove(a);
+                    }
+                }
+                // === Compact icon bar pre-pass (Nnngram) ===
+                final HashSet<Integer> compactIndices = new HashSet<>();
+                for (int a = 0, N = items.size(); a < N; a++) {
+                    if (MessageMenuCompact.isCompact(options.get(a))) {
+                        compactIndices.add(a);
+                    }
+                }
+                GridLayout compactIconBar = null;
+                if (!compactIndices.isEmpty()) {
+                    int n = compactIndices.size();
+                    int cols = MessageMenuCompact.pickCols(n);
+                    GridLayout grid = new GridLayout(getParentActivity());
+                    grid.setColumnCount(cols);
+                    grid.setUseDefaultMargins(false);
+                    grid.setMinimumWidth(AndroidUtilities.dp(200));
+                    int cellSize = AndroidUtilities.dp(44);
+                    int iconPad = AndroidUtilities.dp(10);
+                    for (int a = 0, N = items.size(); a < N; a++) {
+                        if (!compactIndices.contains(a)) continue;
+                        ImageView iv = new ImageView(getParentActivity());
+                        iv.setImageResource(icons.get(a));
+                        iv.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon), PorterDuff.Mode.MULTIPLY));
+                        iv.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_dialogButtonSelector), Theme.RIPPLE_MASK_CIRCLE_AUTO));
+                        iv.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+                        iv.setPadding(iconPad, iconPad, iconPad, iconPad);
+                        iv.setContentDescription(items.get(a));
+                        final int idx = a;
+                        iv.setOnClickListener(v1 -> {
+                            if (selectedObject == null || idx >= options.size()) return;
+                            processSelectedOption(options.get(idx));
+                        });
+                        iv.setOnLongClickListener(v2 -> {
+                            if (selectedObject == null || idx >= options.size()) return false;
+                            processLongClickSelectedOption(options.get(idx));
+                            return true;
+                        });
+                        GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+                        lp.width = 0;
+                        lp.height = cellSize;
+                        lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1, GridLayout.FILL, 1f);
+                        lp.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1);
+                        grid.addView(iv, lp);
+                    }
+                    compactIconBar = grid;
+                }
+                int firstVisibleIndex = -1, lastVisibleIndex = -1;
+                for (int a = 0, N = items.size(); a < N; a++) {
+                    if (compactIndices.contains(a)) continue;
+                    if (firstVisibleIndex == -1) firstVisibleIndex = a;
+                    lastVisibleIndex = a;
+                }
+                final boolean compactBarTop = false;
+                final boolean hasTextItems = firstVisibleIndex != -1;
+                if (compactIconBar != null && compactBarTop) {
+                    popupLayout.addView(compactIconBar, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+                    if (hasTextItems) {
+                        popupLayout.addView(new ActionBarPopupWindow.GapView(contentView.getContext(), themeDelegate), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
+                    }
+                }
                 scrimPopupWindowItems = new ActionBarMenuSubItem[items.size()];
                 for (int a = 0, N = items.size(); a < N; a++) {
-                    ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getParentActivity(), a == 0, a == N - 1, themeDelegate);
+                    if (compactIndices.contains(a)) {
+                        scrimPopupWindowItems[a] = null;
+                        continue;
+                    }
+                    ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getParentActivity(), a == firstVisibleIndex, a == lastVisibleIndex, themeDelegate);
                     cell.setMinimumWidth(AndroidUtilities.dp(200));
                     cell.setTextAndIcon(items.get(a), icons.get(a));
                     Integer option = options.get(a);
@@ -31976,6 +32049,12 @@ public class ChatActivity extends BaseFragment implements
                             }
                         }, waitForQr, onQrDetectionDone);
                     }
+                }
+                if (compactIconBar != null && !compactBarTop) {
+                    if (hasTextItems) {
+                        popupLayout.addView(new ActionBarPopupWindow.GapView(contentView.getContext(), themeDelegate), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
+                    }
+                    popupLayout.addView(compactIconBar, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
                 }
                 if (selectedObject != null && selectedObject.messageOwner != null && selectedObject.messageOwner.video_processing_pending) {
                     popupLayout.addView(new ActionBarPopupWindow.GapView(contentView.getContext(), themeDelegate), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
@@ -42546,6 +42625,7 @@ public class ChatActivity extends BaseFragment implements
             }
             if (scrimPopupWindowItems != null) {
                 for (int a = 0; a < scrimPopupWindowItems.length; a++) {
+                    if (scrimPopupWindowItems[a] == null) continue;
                     scrimPopupWindowItems[a].setColors(getThemedColor(Theme.key_actionBarDefaultSubmenuItem), getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon));
                     scrimPopupWindowItems[a].setSelectorColor(getThemedColor(Theme.key_dialogButtonSelector));
                 }

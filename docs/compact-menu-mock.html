@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Nnngram Compact Menu Mock</title>
+<style>
+  :root {
+    --bg: #0d1320;
+    --popup: #1c2438;
+    --popup-2: #232c44;
+    --text: #e8edf7;
+    --muted: #8a93a8;
+    --accent: #ffb8b8;
+    --danger: #f06a6a;
+    --gap: rgba(0,0,0,.35);
+    --hover: rgba(255,255,255,.06);
+    --shadow: 0 16px 36px rgba(0,0,0,.5);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: linear-gradient(180deg,#1f1430 0%, #0d1320 60%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .layout { display: grid; grid-template-columns: 360px 1fr; gap: 32px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  h2 { font-size: 13px; margin: 16px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 16px; }
+  .row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 8px 4px; }
+  .row + .row { border-top: 1px solid rgba(255,255,255,.05); }
+  .row .name { font-size: 14px; }
+  .row .desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .seg { display: inline-flex; background: rgba(255,255,255,.05); border-radius: 8px; padding: 2px; }
+  .seg button { all: unset; padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; color: var(--muted); }
+  .seg button.active { background: var(--popup-2); color: var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+  .seg button:hover:not(.active) { color: var(--text); }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+  .toggle input { accent-color: #6aa1ff; }
+
+  /* Phone mock */
+  .phone {
+    width: 380px;
+    height: 760px;
+    margin: 0 auto;
+    background: url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=60') center/cover;
+    border-radius: 36px;
+    border: 8px solid #111;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+  .popup-stack {
+    position: absolute;
+    left: 28px;
+    top: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 260px;
+  }
+  .popup {
+    background: var(--popup);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    min-width: 220px;
+  }
+  .popup .item {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    align-items: center;
+    padding: 12px 14px;
+    cursor: pointer;
+    color: var(--accent);
+  }
+  .popup .item:hover { background: var(--hover); }
+  .popup .item .icn {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--accent);
+  }
+  .popup .item .label { color: var(--text); font-size: 14.5px; }
+  .popup .gap { height: 8px; background: var(--gap); }
+
+  .iconbar {
+    background: var(--popup);
+    border-radius: 12px;
+    padding: 8px 6px;
+    display: grid;
+    gap: 4px;
+    box-shadow: var(--shadow);
+    min-width: 220px;
+    justify-items: center;
+  }
+  .iconbar .ib-btn {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    cursor: pointer;
+    position: relative;
+  }
+  .iconbar .ib-btn:hover { background: var(--hover); }
+  .iconbar .ib-btn[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #000; color: #fff; padding: 4px 8px; border-radius: 6px;
+    font-size: 11px; white-space: nowrap;
+  }
+
+  /* fake message bubble under popup so anchor visible */
+  .bubble {
+    position: absolute;
+    left: 30px;
+    top: 70px;
+    width: 230px;
+    background: linear-gradient(180deg,#5a3d8a,#3a2660);
+    color: #fff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+    opacity: .85;
+  }
+  .empty-hint {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px;
+  }
+  .preset-row { display: flex; gap: 8px; margin-top: 8px; }
+  .preset-row button {
+    all: unset; cursor: pointer;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 6px; padding: 4px 10px; font-size: 12px;
+  }
+  .preset-row button:hover { background: rgba(255,255,255,.1); }
+  small.code { font-family: ui-monospace, monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Left: settings -->
+  <div class="panel" id="settings">
+    <h1>聊天活动菜单 · 紧凑模式</h1>
+    <small class="code">三态: 隐藏 / 文本 / 图标</small>
+
+    <h2>菜单项</h2>
+    <div id="rows"></div>
+
+    <h2>紧凑栏位置</h2>
+    <div class="row">
+      <div>
+        <div class="name">Icon bar position</div>
+        <div class="desc">在文本菜单的上方或下方</div>
+      </div>
+      <div class="seg" id="pos-seg">
+        <button data-pos="top">上方</button>
+        <button data-pos="bottom" class="active">下方</button>
+      </div>
+    </div>
+
+    <h2>预设</h2>
+    <div class="preset-row">
+      <button data-preset="all-text">全部文本</button>
+      <button data-preset="image-like">图片所示风格</button>
+      <button data-preset="all-compact">全部紧凑</button>
+    </div>
+  </div>
+
+  <!-- Right: phone preview -->
+  <div>
+    <div class="phone">
+      <div class="scrim"></div>
+      <div class="popup-stack" id="stack"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 候选项: id, 中文名, 英文名 (tooltip), svg path / 字符
+const OPTIONS = [
+  { id: 'view_replies',  zh: '查看回复',     en: 'View replies',     icon: 'reply',     forceFull: false },
+  { id: 'add_sticker',   zh: '添加贴纸包',   en: 'Add sticker pack', icon: 'sticker',   forceFull: false },
+  { id: 'add_fav',       zh: '添加到收藏',   en: 'Add to favorites', icon: 'star',      forceFull: false },
+  { id: 'save_gallery',  zh: '存到相册',     en: 'Save to gallery',  icon: 'download',  forceFull: false },
+  { id: 'save',          zh: '保存',         en: 'Save',             icon: 'bookmark',  forceFull: false },
+  { id: 'repeat',        zh: '复读',         en: 'Repeat',           icon: 'plus1',     forceFull: false },
+  { id: 'history',       zh: '消息历史',     en: 'Message history',  icon: 'clock',     forceFull: false },
+  // 永远只能 full (黑名单 compact): translate / delete-with-ttl / remove-ads
+  { id: 'translate',     zh: '翻译',         en: 'Translate',        icon: 'translate', forceFull: false, hasSubPopup: true, desc: '图标态: 点击弹译语种 sub-popup' },
+  { id: 'delete',        zh: '删除',         en: 'Delete',           icon: 'trash',     forceFull: false, hasSubPopup: true, desc: '图标态: 点击弹确认 sub-popup, TTL subtext 仅文本态显示' },
+];
+
+// state: per option mode 'hide' | 'full' | 'icon'
+const state = {
+  modes: Object.fromEntries(OPTIONS.map(o => [o.id, o.forceFull ? 'full' : 'full'])),
+  pos: 'bottom',
+};
+
+// SVG 简化图标
+const ICON = {
+  reply:    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14l-5-5 5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>',
+  sticker:  '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9 14c1 1 5 1 6 0"/></svg>',
+  star:     '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9"/></svg>',
+  download: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+  bookmark: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
+  plus1:    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><text x="12" y="15" font-size="8" text-anchor="middle" fill="currentColor" stroke="none">+1</text></svg>',
+  clock:    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  translate:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h12"/><path d="M9 4v2"/><path d="M11 6c-1 5-5 9-8 10"/><path d="M5 11c2 3 6 5 9 5"/><path d="M13 21l4-9 4 9"/><path d="M14.5 18h5"/></svg>',
+  trash:    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>',
+};
+
+function renderRows() {
+  const rows = document.getElementById('rows');
+  rows.innerHTML = '';
+  OPTIONS.forEach(opt => {
+    const cur = state.modes[opt.id];
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.innerHTML = `
+      <div>
+        <div class="name">${opt.zh} <small class="code">· ${opt.en}</small></div>
+        <div class="desc">${opt.desc || ('option_' + opt.id)}</div>
+      </div>
+      <div class="seg" data-id="${opt.id}">
+        <button data-mode="hide" ${cur==='hide'?'class="active"':''}>隐藏</button>
+        <button data-mode="full" ${cur==='full'?'class="active"':''}>文本</button>
+        <button data-mode="icon" ${cur==='icon'?'class="active"':''} ${opt.forceFull?'disabled style="opacity:.3;cursor:not-allowed"':''}>图标${opt.hasSubPopup?' ⤴':''}</button>
+      </div>
+    `;
+    rows.appendChild(div);
+  });
+  rows.querySelectorAll('.seg').forEach(seg => {
+    seg.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn || btn.disabled) return;
+      const id = seg.dataset.id;
+      state.modes[id] = btn.dataset.mode;
+      render();
+    });
+  });
+}
+
+function renderPos() {
+  document.querySelectorAll('#pos-seg button').forEach(b => {
+    b.classList.toggle('active', b.dataset.pos === state.pos);
+    b.onclick = () => { state.pos = b.dataset.pos; render(); };
+  });
+}
+
+function renderStack() {
+  const stack = document.getElementById('stack');
+  stack.innerHTML = '';
+
+  const fullItems = OPTIONS.filter(o => state.modes[o.id] === 'full');
+  const iconItems = OPTIONS.filter(o => state.modes[o.id] === 'icon');
+
+  let popupEl = null;
+  if (fullItems.length > 0) {
+    popupEl = document.createElement('div');
+    popupEl.className = 'popup';
+    fullItems.forEach(o => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.innerHTML = `<span class="icn">${ICON[o.icon]||''}</span><span class="label">${o.zh}</span>`;
+      item.onclick = () => flash(`processSelectedOption(${o.id})`);
+      popupEl.appendChild(item);
+    });
+  }
+
+  let iconEl = null;
+  if (iconItems.length > 0) {
+    const n = iconItems.length;
+    const cols = Math.min(n, 4);
+    iconEl = document.createElement('div');
+    iconEl.className = 'iconbar';
+    iconEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    iconItems.forEach(o => {
+      const b = document.createElement('div');
+      b.className = 'ib-btn';
+      b.dataset.tooltip = o.zh + (o.hasSubPopup ? ' (→ sub-popup)' : '');
+      b.innerHTML = ICON[o.icon] || '?';
+      b.onclick = () => {
+        if (o.hasSubPopup) {
+          showSubPopup(o);
+        } else {
+          flash(`processSelectedOption(${o.id})`);
+        }
+      };
+      iconEl.appendChild(b);
+    });
+  }
+
+  if (state.pos === 'top' && iconEl) stack.appendChild(iconEl);
+  if (popupEl) stack.appendChild(popupEl);
+  if (state.pos === 'bottom' && iconEl) stack.appendChild(iconEl);
+}
+
+function showSubPopup(opt) {
+  const old = document.getElementById('subpopup');
+  if (old) old.remove();
+  const sub = document.createElement('div');
+  sub.id = 'subpopup';
+  sub.className = 'popup';
+  Object.assign(sub.style, {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    minWidth: '200px',
+    zIndex: 10,
+  });
+  let entries = [];
+  if (opt.id === 'translate') {
+    entries = [
+      { lbl: '英语', icn: 'translate' },
+      { lbl: '中文', icn: 'translate' },
+      { lbl: '日语', icn: 'translate' },
+      { lbl: '更改目标语言…', icn: 'translate' },
+    ];
+  } else if (opt.id === 'delete') {
+    entries = [
+      { lbl: '仅删除本机', icn: 'trash' },
+      { lbl: '为所有人删除', icn: 'trash' },
+      { lbl: '取消', icn: 'reply' },
+    ];
+  }
+  entries.forEach(e => {
+    const it = document.createElement('div');
+    it.className = 'item';
+    it.innerHTML = `<span class="icn">${ICON[e.icn]||''}</span><span class="label">${e.lbl}</span>`;
+    it.onclick = () => { sub.remove(); flash(`${opt.id} → ${e.lbl}`); };
+    sub.appendChild(it);
+  });
+  document.querySelector('.phone').appendChild(sub);
+  setTimeout(() => {
+    const dismiss = ev => {
+      if (!sub.contains(ev.target)) { sub.remove(); document.removeEventListener('click', dismiss, true); }
+    };
+    document.addEventListener('click', dismiss, true);
+  }, 0);
+}
+
+let flashTimer = null;
+function flash(msg) {
+  let f = document.getElementById('flash');
+  if (!f) {
+    f = document.createElement('div');
+    f.id = 'flash';
+    Object.assign(f.style, {
+      position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+      background: '#000c', color: '#fff', padding: '8px 14px', borderRadius: '8px',
+      fontFamily: 'ui-monospace,monospace', fontSize: '12px', zIndex: 99,
+    });
+    document.body.appendChild(f);
+  }
+  f.textContent = msg;
+  f.style.opacity = '1';
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => f.style.opacity = '0', 1200);
+}
+
+function render() {
+  renderRows();
+  renderPos();
+  renderStack();
+}
+
+// presets
+document.querySelectorAll('[data-preset]').forEach(b => {
+  b.onclick = () => {
+    const p = b.dataset.preset;
+    const compactSet = new Set(['view_replies', 'save_gallery', 'save', 'history']);
+    OPTIONS.forEach(o => {
+      if (state.modes[o.id] === 'hide') return; // 隐藏不动
+      if (p === 'all-text')    state.modes[o.id] = 'full';
+      if (p === 'all-compact') state.modes[o.id] = o.forceFull ? 'full' : 'icon';
+      if (p === 'image-like')  state.modes[o.id] = (!o.forceFull && compactSet.has(o.id)) ? 'icon' : 'full';
+    });
+    render();
+  };
+});
+
+render();
+</script>
+</body>
+</html>

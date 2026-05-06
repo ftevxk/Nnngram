@@ -443,4 +443,8 @@
     <string name="AIEditorToneBiblical">聖經體</string>
     <string name="AIEditorToneViking">維京風</string>
     <string name="AIEditorToneZen">禪意</string>
+    <string name="SegHide">隱藏</string>
+    <string name="SegText">文字</string>
+    <string name="SegIcon">圖示</string>
+    <string name="CustomQuickMessage">自訂快速訊息</string>
 </resources>
