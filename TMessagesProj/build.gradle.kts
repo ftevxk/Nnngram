@@ -109,6 +109,13 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
 
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.ext.strikethrough)
+    implementation(libs.markwon.ext.tables)
+    implementation(libs.markwon.html)
+    implementation(libs.markwon.inline.parser)
+    implementation(libs.markwon.ext.latex)
+
     implementation(libs.kotlin.stdlib.common)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.serialization.json)

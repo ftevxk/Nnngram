@@ -201,3 +201,10 @@
 -obfuscationdictionary          proguard-dic.txt
 -classobfuscationdictionary     proguard-dic.txt
 -packageobfuscationdictionary   proguard-dic.txt
+
+-keep class io.nano.tex.** {*;}
+
+# JLatexMath: macro/atom classes are loaded reflectively by Class.forName
+-keep class org.scilab.forge.jlatexmath.** { *; }
+-keep class ru.noties.jlatexmath.** { *; }
+-dontwarn org.scilab.forge.jlatexmath.**
