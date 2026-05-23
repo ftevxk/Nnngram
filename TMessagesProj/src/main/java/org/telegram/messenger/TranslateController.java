@@ -30,6 +30,7 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_stories;
+import org.telegram.ui.Stories.StoriesStorage;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
@@ -1704,12 +1705,14 @@ public class TranslateController extends BaseController {
 
         LanguageDetector.detectLanguage(storyItem.caption, lng -> AndroidUtilities.runOnUIThread(() -> {
             storyItem.detectedLng = lng;
-            getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
             detectingStories.remove(key);
+            final StoriesStorage storiesStorage = getMessagesController().getStoriesController().getStoriesStorage();
+            getMessagesStorage().getStorageQueue().postRunnable(() -> storiesStorage.putStoryInternal(storyItem.dialogId, storyItem));
         }), err -> AndroidUtilities.runOnUIThread(() -> {
             storyItem.detectedLng = UNKNOWN_LANGUAGE;
-            getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
             detectingStories.remove(key);
+            final StoriesStorage storiesStorage = getMessagesController().getStoriesController().getStoriesStorage();
+            getMessagesStorage().getStorageQueue().postRunnable(() -> storiesStorage.putStoryInternal(storyItem.dialogId, storyItem));
         }));
     }
 
@@ -1751,8 +1754,9 @@ public class TranslateController extends BaseController {
                 var translatedText = new TLRPC.TL_textWithEntities();
                 translatedText.text = (String) translation;
                 storyItem.translatedText = translatedText;
-                getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
                 translatingStories.remove(key);
+                final StoriesStorage storiesStorage = getMessagesController().getStoriesController().getStoriesStorage();
+                getMessagesStorage().getStorageQueue().postRunnable(() -> storiesStorage.putStoryInternal(storyItem.dialogId, storyItem));
                 if (done != null) {
                     done.run();
                 }
