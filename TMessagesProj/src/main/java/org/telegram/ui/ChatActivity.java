@@ -31270,6 +31270,29 @@ public class ChatActivity extends BaseFragment implements
             }
 
             ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getParentActivity(), R.drawable.popup_fixed_alert4, themeDelegate, flags);
+            // A GapView is visible iff it has a visible non-Gap neighbor on
+            // both sides. Section separators (cells→grid) survive even when
+            // the trailing cell is hidden; cell→cell gaps collapse with their
+            // owning cell.
+            final Runnable syncGapVisibility = () -> {
+                int total = popupLayout.getItemsCount();
+                for (int gi = 0; gi < total; gi++) {
+                    View gv = popupLayout.getItemAt(gi);
+                    if (!(gv instanceof ActionBarPopupWindow.GapView)) continue;
+                    boolean before = false, after = false;
+                    for (int j = gi - 1; j >= 0; j--) {
+                        View nv = popupLayout.getItemAt(j);
+                        if (nv instanceof ActionBarPopupWindow.GapView) continue;
+                        if (nv.getVisibility() == View.VISIBLE) { before = true; break; }
+                    }
+                    for (int j = gi + 1; j < total; j++) {
+                        View nv = popupLayout.getItemAt(j);
+                        if (nv instanceof ActionBarPopupWindow.GapView) continue;
+                        if (nv.getVisibility() == View.VISIBLE) { after = true; break; }
+                    }
+                    gv.setVisibility((before && after) ? View.VISIBLE : View.GONE);
+                }
+            };
             popupLayout.setMinimumWidth(AndroidUtilities.dp(200));
             Rect backgroundPaddings = new Rect();
             Drawable shadowDrawable = getParentActivity().getResources().getDrawable(R.drawable.popup_fixed_alert4).mutate();
@@ -32093,17 +32116,7 @@ public class ChatActivity extends BaseFragment implements
                         @Override
                         public void setVisibility(int visibility) {
                             super.setVisibility(visibility);
-                            // Keep the trailing GapView (cell→next separator) in
-                            // sync — when the cell is hidden the gap is dead
-                            // space. The leading gap doubles as prev→next-
-                            // visible separator and stays.
-                            ViewGroup parent = (ViewGroup) getParent();
-                            if (parent == null) return;
-                            int idx = parent.indexOfChild(this);
-                            if (idx >= 0 && idx < parent.getChildCount() - 1) {
-                                View next = parent.getChildAt(idx + 1);
-                                if (next instanceof ActionBarPopupWindow.GapView) next.setVisibility(visibility);
-                            }
+                            if (getParent() != null) syncGapVisibility.run();
                         }
                     };
                     cell.setMinimumWidth(AndroidUtilities.dp(200));
@@ -32498,22 +32511,7 @@ public class ChatActivity extends BaseFragment implements
                     ((ViewGroup) gcur.getParent()).removeView(gcur);
                 }
             }
-            // Sync GapView visibility with the hidden cells they bracket. The
-            // per-cell setVisibility override misses gaps that were added after
-            // the cell was first hidden (e.g. OPTION_TRANSLATE goes GONE before
-            // the trailing compactIconBar-gap exists).
-            for (int gi = 0; gi < popupLayout.getItemsCount(); gi++) {
-                View gh = popupLayout.getItemAt(gi);
-                if (!(gh instanceof ActionBarMenuSubItem) || gh.getVisibility() == View.VISIBLE) continue;
-                // The gap *after* a hidden cell is the cell→next separator; with
-                // the cell gone it's purely cosmetic noise. The gap *before* the
-                // cell doubles as prev-section→next-visible separator, so keep
-                // it.
-                if (gi < popupLayout.getItemsCount() - 1) {
-                    View next = popupLayout.getItemAt(gi + 1);
-                    if (next instanceof ActionBarPopupWindow.GapView) next.setVisibility(View.GONE);
-                }
-            }
+            syncGapVisibility.run();
 
             ReactionsContainerLayout finalReactionsLayout1 = reactionsLayout;
             if (reactionsLayout != null) {
