@@ -302,6 +302,7 @@ object Defines {
     @BooleanConfig const val hideSavedAndArchivedMessagesInList = "hideSavedAndArchivedMessagesInList"
     @BooleanConfig(true) const val showIdAndDc = "showIdAndDc"
     @BooleanConfig const val scrollToNextUnreadWhenAtTop = "scrollToNextUnreadWhenAtTop"
+    @BooleanConfig const val showRecentChatsOnTabLongPress = "showRecentChatsOnTabLongPress"
 
     // Drawer List
     @BooleanConfig(true) const val showNewGroup = "showNewGroup"

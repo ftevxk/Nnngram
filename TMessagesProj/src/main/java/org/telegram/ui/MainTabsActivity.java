@@ -79,6 +79,7 @@ import java.util.Collections;
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
 
+import xyz.nextalone.gen.Config;
 import xyz.nextalone.nnngram.ui.BackButtonRecentMenu;
 
 public class MainTabsActivity extends ViewPagerActivity implements NotificationCenter.NotificationCenterDelegate, FactorAnimator.Target {
@@ -257,19 +258,21 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
         tabs = new GlassTabView[5];
         tabs[INDEX_CHATS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CHATS, R.string.MainTabsChats);
-        tabs[INDEX_CHATS].setOnLongClickListener(v -> {
-            BaseFragment fragment = getCurrentVisibleFragment();
-            if (fragment == null) {
-                fragment = this;
-            }
-            BackButtonRecentMenu.show(currentAccount, fragment, v);
-            return true;
-        });
         tabs[INDEX_CONTACTS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CONTACTS, R.string.MainTabsContacts);
         tabs[INDEX_SETTINGS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.SETTINGS, R.string.Settings);
         tabs[INDEX_CALLS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CALLS, R.string.MainTabsCalls);
         tabs[INDEX_PROFILE] = GlassTabView.createAvatar(context, resourceProvider, currentAccount, R.string.MainTabsProfile);
-        tabs[INDEX_CHATS].setOnLongClickListener(this::openFoldersSelector);
+        tabs[INDEX_CHATS].setOnLongClickListener(v -> {
+            if (Config.showRecentChatsOnTabLongPress) {
+                BaseFragment fragment = getCurrentVisibleFragment();
+                if (fragment == null) {
+                    fragment = this;
+                }
+                BackButtonRecentMenu.show(currentAccount, fragment, v);
+                return true;
+            }
+            return openFoldersSelector(v);
+        });
         tabs[INDEX_CONTACTS].setOnLongClickListener(this::openContactsSelector);
         tabs[INDEX_CALLS].setOnLongClickListener(this::openCallsSelector);
         tabs[INDEX_PROFILE].setOnLongClickListener(this::openAccountSelector);
