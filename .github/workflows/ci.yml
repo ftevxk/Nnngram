@@ -9,6 +9,7 @@ on:
         - '**.txt'
         - '.github/**'
         - '!.github/workflows/**'
+        - '!.github/scripts/**'
         - "TMessagesProj/src/main/res/values**/**"
         - '.gitignore'
   workflow_dispatch:
