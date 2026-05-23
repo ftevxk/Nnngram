@@ -129,6 +129,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore last-sent SHA
+        id: restore_last_sent
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-last-sent-sha
+          # Save key (below) embeds run_id so each successful upload writes a
+          # fresh entry. restore-keys finds the most recent prefix match.
+          key: ci-last-sent-${{ github.ref_name }}-placeholder
+          restore-keys: |
+            ci-last-sent-${{ github.ref_name }}-
+      - name: Read last-sent SHA
+        id: last_sent
+        run: |
+          if [ -f .ci-last-sent-sha ]; then
+            sha=$(tr -d '[:space:]' < .ci-last-sent-sha)
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "last sent: $sha"
+          else
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            echo "no cached last-sent sha (first run or evicted)"
+          fi
       - name: Donwload Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -162,9 +185,20 @@ jobs:
             TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
             VERSION_CODE: ${{ steps.apk.outputs.versionCode }}
             VERSION_NAME: ${{ steps.apk.outputs.versionNum }}
+            LAST_SENT_SHA: ${{ steps.last_sent.outputs.sha }}
             HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
             COMMITS_JSON: ${{ toJSON(github.event.commits) }}
             REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+
+      - name: Record successful upload SHA
+        if: success()
+        run: echo "${{ github.sha }}" > .ci-last-sent-sha
+      - name: Save last-sent SHA
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-last-sent-sha
+          key: ci-last-sent-${{ github.ref_name }}-${{ github.run_id }}
 
   telegram-bot-api:
     name: Telegram Bot API

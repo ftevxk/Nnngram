@@ -20,6 +20,15 @@ Inputs (env vars):
   APK_CHANNEL_ID          optional override (default: legacy channel)
   VERSION_NAME            e.g. "12.7.3-da90be4"
   VERSION_CODE            e.g. "1779541780"
+  LAST_SENT_SHA           optional; SHA of the previous successful upload.
+                          When present, valid locally, AND an ancestor of
+                          HEAD, commits are computed from
+                          `git log LAST_SENT_SHA..HEAD` — covering any
+                          intermediate commits whose own CI runs failed.
+                          Falls back to COMMITS_JSON otherwise (the typical
+                          force-push case is handled by that fallback,
+                          since GitHub's `event.commits` already encodes
+                          compare(before, after)).
   COMMITS_JSON            JSON array from github.event.commits (push event)
   HEAD_COMMIT_MESSAGE     fallback when COMMITS_JSON is empty (workflow_dispatch)
   REPO_URL                e.g. "https://github.com/NextAlone/Nnngram"; if set,
@@ -33,6 +42,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -126,7 +136,57 @@ def env_int(name: str, default: int) -> int:
         return default
 
 
+def _git(*args: str) -> Optional[str]:
+    """Return stdout of `git <args>` or None on non-zero exit / missing binary."""
+    try:
+        return subprocess.check_output(["git", *args], stderr=subprocess.DEVNULL).decode("utf-8")
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+
+def _commits_from_git_range(last_sent: str) -> Optional[List[Commit]]:
+    """Build the commits list from `git log <last_sent>..HEAD`.
+
+    Returns None when (a) git isn't available, (b) `last_sent` isn't a known
+    object in this clone, or (c) `last_sent` isn't an ancestor of HEAD (e.g.
+    after a force-push that rewrote history past the last successful upload).
+    The caller falls back to COMMITS_JSON / HEAD_COMMIT_MESSAGE in those cases."""
+    last_sent = last_sent.strip()
+    if not last_sent:
+        return None
+    if _git("cat-file", "-e", last_sent) is None:
+        print(f"warn: LAST_SENT_SHA {last_sent} not present locally; ignoring")
+        return None
+    if _git("merge-base", "--is-ancestor", last_sent, "HEAD") is None:
+        print(f"warn: LAST_SENT_SHA {last_sent} is not an ancestor of HEAD (force-push?); ignoring")
+        return None
+    out = _git("log", f"{last_sent}..HEAD", "--format=%H%x00%B%x01")
+    if out is None:
+        return None
+    commits: List[Commit] = []
+    for chunk in out.split("\x01"):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        sha, _, msg = chunk.partition("\x00")
+        commits.append(Commit.from_event({"id": sha.strip(), "message": msg.strip()}))
+    # git log emits newest→oldest; flip so the rendered order matches push-event order.
+    commits.reverse()
+    return commits
+
+
 def load_commits() -> List[Commit]:
+    last_sent = os.environ.get("LAST_SENT_SHA") or ""
+    if last_sent.strip():
+        from_range = _commits_from_git_range(last_sent)
+        if from_range:
+            print(f"loaded {len(from_range)} commits via git log {last_sent[:7]}..HEAD")
+            return from_range
+        if from_range == []:
+            # last_sent == HEAD: no new commits. Fall through to event.commits so
+            # a re-run (workflow_dispatch / retry) still surfaces the HEAD commit
+            # instead of rendering an empty caption.
+            print(f"info: no new commits since last sent ({last_sent[:7]}); using event payload")
     raw_json = os.environ.get("COMMITS_JSON") or ""
     if raw_json:
         try:
