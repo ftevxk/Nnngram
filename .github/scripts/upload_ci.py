@@ -307,17 +307,12 @@ def metadata_message_url(channel_id: int, message_id: int) -> str:
     return f"https://t.me/c/{short}/{message_id}"
 
 
-def _dropped_footer(dropped: int, dropped_by_group: Optional[Dict[str, int]] = None, metadata_url: str = "") -> str:
-    """Render the 'N more commits' footer with optional per-group breakdown
-    and up to two clickable links: GitHub compare/commit + metadata-channel
-    full changelog message."""
-    plural = "" if dropped == 1 else "s"
-    text = f"+ {dropped} more commit{plural}"
-    if dropped_by_group:
-        ordered = sorted(dropped_by_group.items(), key=lambda kv: GROUP_INDEX.get(kv[0], 99))
-        breakdown = ", ".join(f"{n} {GROUP_EMOJI.get(k, '·')} {k}" for k, n in ordered if n > 0)
-        if breakdown:
-            text += f" ({breakdown})"
+def _footer(dropped: int, dropped_by_group: Optional[Dict[str, int]] = None, metadata_url: str = "") -> str:
+    """Render the trailing 'quick-jump' line: optional 'N more (...)' prefix
+    when commits got truncated, followed by up to two clickable links
+    (GitHub compare/commit + metadata-channel full changelog).
+
+    Returns '' when there's nothing to show (no drops AND no links)."""
     base = repo_url()
     head = (os.environ.get("GITHUB_SHA") or "").strip()
     last_sent = (os.environ.get("LAST_SENT_SHA") or "").strip()
@@ -327,23 +322,34 @@ def _dropped_footer(dropped: int, dropped_by_group: Optional[Dict[str, int]] = N
             gh_url = f"{base}/compare/{last_sent}...{head}"
         else:
             gh_url = f"{base}/commit/{head}"
-    parts: List[str] = [f"<i>{text}</i>"]
+
+    parts: List[str] = []
+    if dropped > 0:
+        plural = "" if dropped == 1 else "s"
+        text = f"+ {dropped} more commit{plural}"
+        if dropped_by_group:
+            ordered = sorted(dropped_by_group.items(), key=lambda kv: GROUP_INDEX.get(kv[0], 99))
+            breakdown = ", ".join(f"{n} {GROUP_EMOJI.get(k, '·')} {k}" for k, n in ordered if n > 0)
+            if breakdown:
+                text += f" ({breakdown})"
+        parts.append(f"<i>{text}</i>")
     if gh_url:
         parts.append(f'<a href="{html_escape(gh_url)}">commits</a>')
     if metadata_url:
         parts.append(f'<a href="{html_escape(metadata_url)}">full changelog</a>')
-    return " · ".join(parts) if len(parts) > 1 else parts[0]
+    return " · ".join(parts)
 
 
 def _assemble(header: str, sections: List[Tuple[str, List[str]]], dropped: int,
               dropped_by_group: Optional[Dict[str, int]] = None, metadata_url: str = "") -> str:
-    """Glue header + populated sections + optional dropped-commits footer."""
+    """Glue header + populated sections + always-on quick-jump footer."""
     blocks = [header]
     body_blocks = [lines[0] + "\n" + "\n".join(lines[1:]) for _key, lines in sections if len(lines) > 1]
     if body_blocks:
         blocks.append("\n\n".join(body_blocks))
-    if dropped > 0:
-        blocks.append(_dropped_footer(dropped, dropped_by_group, metadata_url))
+    footer = _footer(dropped, dropped_by_group, metadata_url)
+    if footer:
+        blocks.append(footer)
     return "\n\n".join(blocks)
 
 
@@ -431,7 +437,7 @@ def _assemble_changelog(header: str, sections: List[Tuple[str, List[str]]], drop
         label, *entries = lines
         blocks.append(label + "\n\n" + "\n\n".join(entries))
     if dropped > 0:
-        blocks.append(_dropped_footer(dropped, dropped_by_group))
+        blocks.append(_footer(dropped, dropped_by_group))
     return "\n\n".join(blocks)
 
 
