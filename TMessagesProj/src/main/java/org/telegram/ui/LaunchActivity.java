@@ -2646,8 +2646,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                         }
                                     } else if ((url.startsWith("tg:calllog") || url.startsWith("tg://calllog"))) {
                                         showCallLog = true;
-                                    } else if (url.startsWith("tg:null") || url.startsWith("tg://null")) {
-                                        url = url.replace("tg:null", "tg://t.me/nnnsettings").replace("tg://null", "tg://t.me/nnnsettings");
+                                    } else if (url.startsWith("tg:nnn/") || url.startsWith("tg://nnn/")) {
+                                        url = url.replace("tg:nnn/", "tg://t.me/nnnsettings/").replace("tg://nnn/", "tg://t.me/nnnsettings/");
                                         data = Uri.parse(url);
                                         SettingsHelper.processDeepLink(data, fragment -> {
                                             AndroidUtilities.runOnUIThread(() -> presentFragment(fragment, false, false));
