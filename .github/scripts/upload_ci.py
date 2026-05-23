@@ -76,6 +76,11 @@ GROUPS: List[Tuple[str, str, Tuple[str, ...]]] = [
     ("other",    "📌 <b>Other</b>",       ()),
 ]
 GROUP_INDEX: Dict[str, int] = {key: i for i, (key, _label, _) in enumerate(GROUPS)}
+GROUP_EMOJI: Dict[str, str] = {
+    "feat": "✨", "fix": "🔧", "perf": "⚡", "refactor": "♻️", "docs": "📝",
+    "test": "✅", "build": "📦", "ci": "⚙️", "style": "💄", "chore": "🧹",
+    "revert": "⏪", "merge": "🔀", "other": "📌",
+}
 TYPE_TO_GROUP: Dict[str, str] = {t: key for key, _label, types in GROUPS for t in types}
 
 # `<type>(<scope>)?: <subject>` per Conventional Commits.
@@ -293,44 +298,85 @@ def header_html(version_name: str, version_code: str) -> str:
     )
 
 
-def _assemble(header: str, sections: List[List[str]], dropped: int) -> str:
+def metadata_message_url(channel_id: int, message_id: int) -> str:
+    """Telegram private-channel message link: t.me/c/<id-without-100>/<msg>."""
+    if not channel_id or not message_id:
+        return ""
+    raw = str(channel_id)
+    short = raw[4:] if raw.startswith("-100") else raw.lstrip("-")
+    return f"https://t.me/c/{short}/{message_id}"
+
+
+def _dropped_footer(dropped: int, dropped_by_group: Optional[Dict[str, int]] = None, metadata_url: str = "") -> str:
+    """Render the 'N more commits' footer with optional per-group breakdown
+    and up to two clickable links: GitHub compare/commit + metadata-channel
+    full changelog message."""
+    plural = "" if dropped == 1 else "s"
+    text = f"+ {dropped} more commit{plural}"
+    if dropped_by_group:
+        ordered = sorted(dropped_by_group.items(), key=lambda kv: GROUP_INDEX.get(kv[0], 99))
+        breakdown = ", ".join(f"{n} {GROUP_EMOJI.get(k, '·')} {k}" for k, n in ordered if n > 0)
+        if breakdown:
+            text += f" ({breakdown})"
+    base = repo_url()
+    head = (os.environ.get("GITHUB_SHA") or "").strip()
+    last_sent = (os.environ.get("LAST_SENT_SHA") or "").strip()
+    gh_url = ""
+    if base and head:
+        if last_sent and last_sent != head:
+            gh_url = f"{base}/compare/{last_sent}...{head}"
+        else:
+            gh_url = f"{base}/commit/{head}"
+    parts: List[str] = [f"<i>{text}</i>"]
+    if gh_url:
+        parts.append(f'<a href="{html_escape(gh_url)}">commits</a>')
+    if metadata_url:
+        parts.append(f'<a href="{html_escape(metadata_url)}">full changelog</a>')
+    return " · ".join(parts) if len(parts) > 1 else parts[0]
+
+
+def _assemble(header: str, sections: List[Tuple[str, List[str]]], dropped: int,
+              dropped_by_group: Optional[Dict[str, int]] = None, metadata_url: str = "") -> str:
     """Glue header + populated sections + optional dropped-commits footer."""
     blocks = [header]
-    body_blocks = [lines[0] + "\n" + "\n".join(lines[1:]) for lines in sections if len(lines) > 1]
+    body_blocks = [lines[0] + "\n" + "\n".join(lines[1:]) for _key, lines in sections if len(lines) > 1]
     if body_blocks:
         blocks.append("\n\n".join(body_blocks))
     if dropped > 0:
-        plural = "" if dropped == 1 else "s"
-        blocks.append(f"<i>+ {dropped} more commit{plural} — see metadata channel</i>")
+        blocks.append(_dropped_footer(dropped, dropped_by_group, metadata_url))
     return "\n\n".join(blocks)
 
 
-def _shrink(header: str, sections: List[List[str]], budget: int) -> str:
+def _shrink(header: str, sections: List[Tuple[str, List[str]]], budget: int, metadata_url: str = "") -> str:
     """Repeatedly drop the trailing entry until the rendered string fits the budget.
 
-    Never slices inside an HTML tag (each entry is a self-contained string)."""
+    Never slices inside an HTML tag (each entry is a self-contained string).
+    Tracks per-group drop counts so the footer can show a breakdown."""
     dropped = 0
+    dropped_by_group: Dict[str, int] = {}
     while True:
-        rendered = _assemble(header, sections, dropped)
+        rendered = _assemble(header, sections, dropped, dropped_by_group, metadata_url)
         if len(rendered) <= budget:
             return rendered
         # Find the last group that still has entries and drop its last entry.
         for i in range(len(sections) - 1, -1, -1):
-            if len(sections[i]) > 1:
-                sections[i].pop()
+            group_key, lines = sections[i]
+            if len(lines) > 1:
+                lines.pop()
                 dropped += 1
+                dropped_by_group[group_key] = dropped_by_group.get(group_key, 0) + 1
                 break
         else:
             # Nothing left to drop — header alone is the floor.
             return rendered
 
 
-def render_caption(version_name: str, version_code: str, commits: List[Commit]) -> str:
+def render_caption(version_name: str, version_code: str, commits: List[Commit], metadata_url: str = "") -> str:
     header = header_html(version_name, version_code)
     if not commits:
         return header + "\n\nNo commit metadata."
-    sections: List[List[str]] = []
-    for _key, label, items in group_commits(commits):
+    sections: List[Tuple[str, List[str]]] = []
+    for key, label, items in group_commits(commits):
         lines = [label]
         for c in items:
             chip = sha_chip(c.sha)
@@ -339,16 +385,16 @@ def render_caption(version_name: str, version_code: str, commits: List[Commit]) 
             for path in c.setting_paths:
                 entry += f"\n  ↳ ⚙ {_setting_path_html(path)}"
             lines.append(entry)
-        sections.append(lines)
-    return _shrink(header, sections, CAPTION_BUDGET)
+        sections.append((key, lines))
+    return _shrink(header, sections, CAPTION_BUDGET, metadata_url)
 
 
 def render_full_changelog(version_name: str, version_code: str, commits: List[Commit]) -> str:
     header = header_html(version_name, version_code)
     if not commits:
         return header + "\n\nNo commit metadata."
-    sections: List[List[str]] = []
-    for _key, label, items in group_commits(commits):
+    sections: List[Tuple[str, List[str]]] = []
+    for key, label, items in group_commits(commits):
         lines = [label]
         for c in items:
             chip = sha_chip(c.sha)
@@ -358,31 +404,34 @@ def render_full_changelog(version_name: str, version_code: str, commits: List[Co
             if c.body:
                 entry += "\n" + html_escape(c.body)
             lines.append(entry)
-        sections.append(lines)
+        sections.append((key, lines))
     dropped = 0
+    dropped_by_group: Dict[str, int] = {}
     while True:
-        rendered = _assemble_changelog(header, sections, dropped)
+        rendered = _assemble_changelog(header, sections, dropped, dropped_by_group)
         if len(rendered) <= MESSAGE_BUDGET:
             return rendered
         for i in range(len(sections) - 1, -1, -1):
-            if len(sections[i]) > 1:
-                sections[i].pop()
+            group_key, lines = sections[i]
+            if len(lines) > 1:
+                lines.pop()
                 dropped += 1
+                dropped_by_group[group_key] = dropped_by_group.get(group_key, 0) + 1
                 break
         else:
             return rendered
 
 
-def _assemble_changelog(header: str, sections: List[List[str]], dropped: int) -> str:
+def _assemble_changelog(header: str, sections: List[Tuple[str, List[str]]], dropped: int,
+                        dropped_by_group: Optional[Dict[str, int]] = None) -> str:
     blocks = [header]
-    for lines in sections:
+    for _key, lines in sections:
         if len(lines) <= 1:
             continue
         label, *entries = lines
         blocks.append(label + "\n\n" + "\n\n".join(entries))
     if dropped > 0:
-        plural = "" if dropped == 1 else "s"
-        blocks.append(f"<i>+ {dropped} more commit{plural} omitted</i>")
+        blocks.append(_dropped_footer(dropped, dropped_by_group))
     return "\n\n".join(blocks)
 
 
@@ -466,14 +515,17 @@ def main() -> int:
     for c in commits:
         print(f"  - [{c.short_sha}] ({c.group_key}) {c.subject}")
 
-    caption = render_caption(version_name, version_code, commits)
     changelog = render_full_changelog(version_name, version_code, commits)
-
-    print("\n--- caption ---\n" + caption + "\n--- /caption ---\n")
     print("--- changelog ---\n" + changelog + "\n--- /changelog ---\n")
 
     print("[1/4] full changelog -> metadata channel")
     changes_id = send_full_changelog(metadata_channel, changelog)
+
+    caption = render_caption(
+        version_name, version_code, commits,
+        metadata_message_url(metadata_channel, changes_id),
+    )
+    print("--- caption ---\n" + caption + "\n--- /caption ---\n")
 
     print("[2/4] APK -> main chat")
     send_apk(chat_id, caption, apk_dir)
