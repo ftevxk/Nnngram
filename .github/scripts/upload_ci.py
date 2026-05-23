@@ -81,6 +81,19 @@ TYPE_TO_GROUP: Dict[str, str] = {t: key for key, _label, types in GROUPS for t i
 # `<type>(<scope>)?: <subject>` per Conventional Commits.
 SUBJECT_RE = re.compile(r"^(?P<type>[A-Za-z]+)(?:\([^)]*\))?!?:\s*(?P<rest>.+)$")
 
+# Trailer that points readers at the in-app toggle for a feature commit.
+# Render mode: caption shows it inline so the build channel becomes a clickable
+# "quick-jump" index to every new setting.
+SETTING_PATH_RE = re.compile(r"^\s*Setting-Path\s*:\s*(.+?)\s*$", re.IGNORECASE)
+
+
+@dataclass
+class SettingPath:
+    """A setting-path trailer entry — `anchor` is the human-readable UI path,
+    `url` is an optional deep-link (rendered as a clickable href when set)."""
+    anchor: str
+    url: str = ""
+
 
 @dataclass
 class Commit:
@@ -89,6 +102,7 @@ class Commit:
     body: str
     group_key: str = field(default="other")
     type_label: str = field(default="")
+    setting_paths: List[SettingPath] = field(default_factory=list)
 
     @property
     def short_sha(self) -> str:
@@ -108,6 +122,7 @@ class Commit:
 
     @classmethod
     def _classify(cls, sha: str, subject: str, body: str) -> "Commit":
+        body, setting_paths = _extract_setting_paths(body)
         m = SUBJECT_RE.match(subject)
         if m:
             t = m.group("type").lower()
@@ -117,7 +132,36 @@ class Commit:
             group_key, type_label = "merge", "merge"
         else:
             group_key, type_label = "other", ""
-        return cls(sha=sha, subject=subject, body=body, group_key=group_key, type_label=type_label)
+        return cls(sha=sha, subject=subject, body=body, group_key=group_key,
+                   type_label=type_label, setting_paths=setting_paths)
+
+
+def _extract_setting_paths(body: str) -> Tuple[str, List[SettingPath]]:
+    if not body:
+        return body, []
+    kept: List[str] = []
+    paths: List[SettingPath] = []
+    for line in body.split("\n"):
+        m = SETTING_PATH_RE.match(line)
+        if m:
+            raw = m.group(1).strip()
+            # Format: "<anchor> | <url>"  →  clickable link
+            #         "<anchor>"          →  plain italic
+            anchor, sep, url = raw.partition("|")
+            paths.append(SettingPath(anchor=anchor.strip(), url=url.strip() if sep else ""))
+        else:
+            kept.append(line)
+    return "\n".join(kept).strip(), paths
+
+
+def _setting_path_html(p: SettingPath) -> str:
+    text = html_escape(p.anchor)
+    if p.url:
+        # Telegram client routes tg:// schemes through its own intent handler;
+        # fork-side `tg://nnn/<cat>?r=<key>` is wired up in LaunchActivity →
+        # SettingsHelper.processDeepLink → opens the SettingActivity + scrolls to row.
+        return f'<a href="{html_escape(p.url)}">{text}</a>'
+    return f"<i>{text}</i>"
 
 
 def url(method: str) -> str:
@@ -291,7 +335,10 @@ def render_caption(version_name: str, version_code: str, commits: List[Commit]) 
         for c in items:
             chip = sha_chip(c.sha)
             prefix = f"• {chip} " if chip else "• "
-            lines.append(prefix + html_escape(c.subject))
+            entry = prefix + html_escape(c.subject)
+            for path in c.setting_paths:
+                entry += f"\n  ↳ ⚙ {_setting_path_html(path)}"
+            lines.append(entry)
         sections.append(lines)
     return _shrink(header, sections, CAPTION_BUDGET)
 
@@ -306,6 +353,8 @@ def render_full_changelog(version_name: str, version_code: str, commits: List[Co
         for c in items:
             chip = sha_chip(c.sha)
             entry = (f"{chip} " if chip else "") + html_escape(c.subject)
+            for path in c.setting_paths:
+                entry += f"\n  ↳ ⚙ {_setting_path_html(path)}"
             if c.body:
                 entry += "\n" + html_escape(c.body)
             lines.append(entry)
