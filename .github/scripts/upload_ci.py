@@ -175,7 +175,8 @@ def sha_chip(full_sha: str) -> str:
     return f'<a href="{base}/commit/{full_sha}">{chip}</a>'
 
 
-def truncate(s: str, budget: int) -> str:
+def truncate_plain(s: str, budget: int) -> str:
+    """Byte-slice truncation — only safe for plain text (no markup)."""
     if len(s) <= budget:
         return s
     return s[:budget].rstrip() + "\n…(truncated)"
@@ -188,38 +189,92 @@ def header_html(version_name: str, version_code: str) -> str:
     )
 
 
+def _assemble(header: str, sections: List[List[str]], dropped: int) -> str:
+    """Glue header + populated sections + optional dropped-commits footer."""
+    blocks = [header]
+    body_blocks = [lines[0] + "\n" + "\n".join(lines[1:]) for lines in sections if len(lines) > 1]
+    if body_blocks:
+        blocks.append("\n\n".join(body_blocks))
+    if dropped > 0:
+        plural = "" if dropped == 1 else "s"
+        blocks.append(f"<i>+ {dropped} more commit{plural} — see metadata channel</i>")
+    return "\n\n".join(blocks)
+
+
+def _shrink(header: str, sections: List[List[str]], budget: int) -> str:
+    """Repeatedly drop the trailing entry until the rendered string fits the budget.
+
+    Never slices inside an HTML tag (each entry is a self-contained string)."""
+    dropped = 0
+    while True:
+        rendered = _assemble(header, sections, dropped)
+        if len(rendered) <= budget:
+            return rendered
+        # Find the last group that still has entries and drop its last entry.
+        for i in range(len(sections) - 1, -1, -1):
+            if len(sections[i]) > 1:
+                sections[i].pop()
+                dropped += 1
+                break
+        else:
+            # Nothing left to drop — header alone is the floor.
+            return rendered
+
+
 def render_caption(version_name: str, version_code: str, commits: List[Commit]) -> str:
     header = header_html(version_name, version_code)
     if not commits:
         return header + "\n\nNo commit metadata."
-    sections: List[str] = []
+    sections: List[List[str]] = []
     for _key, label, items in group_commits(commits):
-        lines = [f"{label}"]
+        lines = [label]
         for c in items:
             chip = sha_chip(c.sha)
             prefix = f"• {chip} " if chip else "• "
             lines.append(prefix + html_escape(c.subject))
-        sections.append("\n".join(lines))
-    body = "\n\n".join(sections)
-    return truncate(header + "\n\n" + body, CAPTION_BUDGET)
+        sections.append(lines)
+    return _shrink(header, sections, CAPTION_BUDGET)
 
 
 def render_full_changelog(version_name: str, version_code: str, commits: List[Commit]) -> str:
     header = header_html(version_name, version_code)
     if not commits:
         return header + "\n\nNo commit metadata."
-    sections: List[str] = []
+    sections: List[List[str]] = []
     for _key, label, items in group_commits(commits):
-        blocks = [label]
+        lines = [label]
         for c in items:
             chip = sha_chip(c.sha)
             entry = (f"{chip} " if chip else "") + html_escape(c.subject)
             if c.body:
                 entry += "\n" + html_escape(c.body)
-            blocks.append(entry)
-        sections.append("\n\n".join(blocks))
-    body = "\n\n".join(sections)
-    return truncate(header + "\n\n" + body, MESSAGE_BUDGET)
+            lines.append(entry)
+        sections.append(lines)
+    dropped = 0
+    while True:
+        rendered = _assemble_changelog(header, sections, dropped)
+        if len(rendered) <= MESSAGE_BUDGET:
+            return rendered
+        for i in range(len(sections) - 1, -1, -1):
+            if len(sections[i]) > 1:
+                sections[i].pop()
+                dropped += 1
+                break
+        else:
+            return rendered
+
+
+def _assemble_changelog(header: str, sections: List[List[str]], dropped: int) -> str:
+    blocks = [header]
+    for lines in sections:
+        if len(lines) <= 1:
+            continue
+        label, *entries = lines
+        blocks.append(label + "\n\n" + "\n\n".join(entries))
+    if dropped > 0:
+        plural = "" if dropped == 1 else "s"
+        blocks.append(f"<i>+ {dropped} more commit{plural} omitted</i>")
+    return "\n\n".join(blocks)
 
 
 def find_arm64_apk(apk_dir: str) -> Optional[str]:
