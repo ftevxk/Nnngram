@@ -414,7 +414,6 @@
     <string name="PlayerDecoderHardware">仅限设备解码器</string>
     <string name="PlayerDecoderPerferHW">设备解码器优先</string>
     <string name="showIdAndDc">显示用户 ID 和数据中心</string>
-    <string name="PhotoViewerEdgeToEdge">启用 PhotoViewer 边到边</string>
     <string name="ProviderLLMTranslate">大模型翻译</string>
     <string name="LLMTranslatorSettings">大模型翻译设置</string>
     <string name="LLMProvider">大模型提供者</string>

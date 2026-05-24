@@ -67,7 +67,6 @@ public class ExperimentSettingActivity extends BaseActivity {
     private int enchantAudioRow;
     private int linkedUserRow;
     private int overrideChannelAliasRow;
-    private int photoViewerEdgeToEdgeRow;
     private int showRPCErrorRow;
     private int showFragmentSwitchToastRow;
     private int enableXiaomiHyperAiRow;
@@ -207,11 +206,6 @@ public class ExperimentSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.alwaysSendWithoutSound);
             }
-        } else if (position == photoViewerEdgeToEdgeRow) {
-            Config.togglePhotoViewerEdgeToEdge();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(Config.photoViewerEdgeToEdge);
-            }
         } else if (position == showRPCErrorRow) {
             Config.toggleShowRPCError();
             if (view instanceof TextCheckCell) {
@@ -297,7 +291,6 @@ public class ExperimentSettingActivity extends BaseActivity {
         } else {
             overrideChannelAliasRow = -1;
         }
-        photoViewerEdgeToEdgeRow = addRow();
         var user = UserConfig.getInstance(currentAccount).getCurrentUser();
         showRPCErrorRow = user != null && user.developer() ? addRow("showRPCError") : -1;
         showFragmentSwitchToastRow = user != null && user.developer() ? addRow("showFragmentSwitchToast") : -1;
@@ -366,7 +359,7 @@ public class ExperimentSettingActivity extends BaseActivity {
 
         @Override
         public int getItemCount() {
-            return super.getItemCount();
+            return rowCount;
         }
 
         @Override
@@ -445,8 +438,6 @@ public class ExperimentSettingActivity extends BaseActivity {
                     } else if (position == alwaysSendWithoutSoundRow) {
                         textCell.setTextAndCheck(LocaleController.getString("alwaysSendWithoutSound", R.string.alwaysSendWithoutSound),
                             Config.alwaysSendWithoutSound, true);
-                    } else if (position == photoViewerEdgeToEdgeRow) {
-                        textCell.setTextAndCheck(LocaleController.getString("PhotoViewerEdgeToEdge", R.string.PhotoViewerEdgeToEdge), Config.photoViewerEdgeToEdge, true);
                     } else if (position == showRPCErrorRow) {
                         textCell.setTextAndCheck(LocaleController.getString("showRPCError", R.string.showRPCError), Config.showRPCError, true);
                     } else if (position == showFragmentSwitchToastRow) {
