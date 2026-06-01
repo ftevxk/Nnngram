@@ -29,6 +29,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.text.SpannableStringBuilder
 import android.text.style.ClickableSpan
+import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -48,6 +49,9 @@ import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.LocaleController
 import org.telegram.messenger.R
 import org.telegram.messenger.browser.Browser
+import org.telegram.tgnet.ConnectionsManager
+import org.telegram.tgnet.TLObject
+import org.telegram.tgnet.TLRPC
 import org.telegram.ui.ActionBar.AlertDialog
 import org.telegram.ui.ActionBar.BaseFragment
 import org.telegram.ui.ActionBar.BottomSheet
@@ -62,15 +66,79 @@ import org.telegram.ui.Components.LinkSpanDrawable.LinksTextView
 import xyz.nextalone.nnngram.utils.Log
 
 object QrHelper {
+    private const val LOGIN_TOKEN_PREFIX = "tg://login?token="
+
     @JvmStatic
     fun openCameraScanActivity(fragment: BaseFragment) {
         CameraScanActivity.showAsSheet(fragment, true, CameraScanActivity.TYPE_QR, object : CameraScanActivityDelegate {
+            private var loginResponse: TLObject? = null
+            private var loginError: TLRPC.TL_error? = null
+            private var loginRequested = false
+
             override fun didFindQr(link: String) {
-                Browser.openUrl(fragment.parentActivity, link, true, false)
+                if (!loginRequested) {
+                    Browser.openUrl(fragment.parentActivity, link, true, false)
+                    return
+                }
+                val response = loginResponse
+                val error = loginError
+                if (response is TLRPC.TL_authorization) {
+                    BulletinFactory.of(fragment)
+                        .createSimpleBulletin(
+                            R.raw.contact_check,
+                            LocaleController.getString(R.string.AuthAnotherClientOk),
+                            response.app_name ?: ""
+                        )
+                        .show()
+                } else if (error != null) {
+                    val text = if ("AUTH_TOKEN_EXCEPTION" == error.text) {
+                        LocaleController.getString(R.string.AccountAlreadyLoggedIn)
+                    } else {
+                        LocaleController.getString(R.string.ErrorOccurred) + "\n" + error.text
+                    }
+                    AlertsCreator.showSimpleAlert(
+                        fragment,
+                        LocaleController.getString(R.string.AuthAnotherClient),
+                        text
+                    )
+                }
             }
 
             override fun processQr(link: String, onLoadEnd: Runnable): Boolean {
-                AndroidUtilities.runOnUIThread(onLoadEnd, 750)
+                if (!link.startsWith(LOGIN_TOKEN_PREFIX)) {
+                    loginRequested = false
+                    AndroidUtilities.runOnUIThread(onLoadEnd, 750)
+                    return true
+                }
+                loginRequested = true
+                loginResponse = null
+                loginError = null
+                AndroidUtilities.runOnUIThread({
+                    try {
+                        val code = link.substring(LOGIN_TOKEN_PREFIX.length)
+                            .replace('/', '_')
+                            .replace('+', '-')
+                        val token = Base64.decode(code, Base64.URL_SAFE)
+                        val req = TLRPC.TL_auth_acceptLoginToken().apply { this.token = token }
+                        ConnectionsManager.getInstance(fragment.currentAccount).sendRequest(req) { response, error ->
+                            AndroidUtilities.runOnUIThread {
+                                loginResponse = response
+                                loginError = error
+                                onLoadEnd.run()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Failed to pass qr code auth", e)
+                        AndroidUtilities.runOnUIThread {
+                            AlertsCreator.showSimpleAlert(
+                                fragment,
+                                LocaleController.getString(R.string.AuthAnotherClient),
+                                LocaleController.getString(R.string.ErrorOccurred)
+                            )
+                        }
+                        onLoadEnd.run()
+                    }
+                }, 750)
                 return true
             }
         })

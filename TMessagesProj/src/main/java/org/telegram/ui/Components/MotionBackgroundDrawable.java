@@ -968,7 +968,7 @@ public class MotionBackgroundDrawable extends Drawable {
 
                     if (isUseFastRender) {
                         final Paint paint = motionBackgroundPaint.getPaint(currentBitmap, patternBitmap,
-                            patternColor, (int) (alpha * patternAlpha), intensity);
+                            patternColor, (int) (alpha * patternAlpha), intensity, canvas.isHardwareAccelerated());
                         motionBackgroundPaint.applyPatternMatrix(matrix);
                         motionBackgroundPaint.applyGradientMatrix(rect);
 
@@ -1025,7 +1025,7 @@ public class MotionBackgroundDrawable extends Drawable {
                 paint2.setAlpha((int) ((Math.abs(intensity) / 100f) * alpha * patternAlpha));
                 if (isUseFastRender) {
                     final Paint paint = motionBackgroundPaint.getPaint(currentBitmap, patternBitmap,
-                        patternColor, (int) (alpha * patternAlpha), intensity);
+                        patternColor, (int) (alpha * patternAlpha), intensity, canvas.isHardwareAccelerated());
 
                     motionBackgroundPaint.applyPatternMatrix(rect);
                     motionBackgroundPaint.applyGradientMatrix(rect);

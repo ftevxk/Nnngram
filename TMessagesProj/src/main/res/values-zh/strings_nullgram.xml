@@ -401,6 +401,7 @@
     <string name="showProxyEntryInDrawer">在侧滑栏显示代理入口</string>
     <string name="hideSavedAndArchivedMessagesInList">在列表里隐藏收藏夹和已归档消息</string>
     <string name="scrollToNextUnreadWhenAtTop">在列表顶部时点击聊天标签跳转到下一条未读</string>
+    <string name="showRecentChatsOnTabLongPress">长按聊天标签显示最近会话</string>
     <string name="NoUnreadChats">没有未读会话</string>
     <string name="messagePlaceholderInSaved">这里是您收藏的消息</string>
     <string name="messagePlaceholderInArchived">这里是您已归档的消息</string>
@@ -410,7 +411,6 @@
     <string name="PlayerDecoderHardware">仅限设备解码器</string>
     <string name="PlayerDecoderPerferHW">设备解码器优先</string>
     <string name="showIdAndDc">显示用户 ID 和数据中心</string>
-    <string name="PhotoViewerEdgeToEdge">启用 PhotoViewer 边到边</string>
     <string name="ProviderLLMTranslate">大模型翻译</string>
     <string name="LLMTranslatorSettings">大模型翻译设置</string>
     <string name="LLMProvider">大模型提供者</string>

@@ -457,6 +457,7 @@
     <string name="showProxyEntryInDrawer">Show proxy entry in drawer</string>
     <string name="hideSavedAndArchivedMessagesInList">Hide saved and archived messages in list</string>
     <string name="scrollToNextUnreadWhenAtTop">Scroll to next unread when chat tab is at top</string>
+    <string name="showRecentChatsOnTabLongPress">Show recent chats on chat tab long-press</string>
     <string name="NoUnreadChats">No unread chats</string>
     <string name="messagePlaceholderInSaved">Here are your saved messages</string>
     <string name="messagePlaceholderInArchived">Here are your archived messages</string>
@@ -466,7 +467,6 @@
     <string name="PlayerDecoderHardware">Only device decoders</string>
     <string name="PlayerDecoderPerferHW">Prefer device decoders</string>
     <string name="showIdAndDc">Show ID and DC</string>
-    <string name="PhotoViewerEdgeToEdge">Enable PhotoViewer edgeToEdge</string>
     <string name="mentionReadIndicator">Show mention read indicator</string>
     <!-- //wd 自定义 -->
     <string name="SearchVideoMinDuration">Search Video Min Duration(Second)</string>

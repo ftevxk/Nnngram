@@ -153,7 +153,7 @@
 .elseif \numbytes == 1
         pixldst0 \op, b, %(\basereg+0), 1, \mem_operand, \abits, 1
 .else
-    .error "unsupported size: \numbytes"
+    .error "unsupported size: numbytes"
 .endif
 .endm
 
@@ -197,10 +197,6 @@
     pixldst30 st3, b, %(\basereg+0), %(\basereg+1), %(\basereg+2), 3, \mem_operand
 .elseif (\bpp == 24) && (\numpix == 1)
     pixldst30 st3, b, %(\basereg+0), %(\basereg+1), %(\basereg+2), 1, \mem_operand
-.elseif \numpix * \bpp == 32 && \abits == 32
-    pixldst 4, st1, 32, \basereg, \mem_operand, \abits
-.elseif \numpix * \bpp == 16 && \abits == 16
-    pixldst 2, st1, 16, \basereg, \mem_operand, \abits
 .else
     pixldst %(\numpix * \bpp / 8), st1, %(\bpp), \basereg, \mem_operand, \abits
 .endif
@@ -284,7 +280,7 @@
 .endm
 
 .macro pixld2_s elem_size, reg1, reg2, mem_operand
-.if 0 /* \elem_size == 32 */
+.if 0 /* elem_size == 32 */
     mov     TMP1, VX, asr #16
     add     VX, VX, UNIT_X, asl #1
     add     TMP1, \mem_operand, TMP1, asl #2
@@ -373,7 +369,7 @@
 
 .macro vuzp8 reg1, reg2
     umov DUMMY, v16.d[0]
-    uzp1 v16.8b,          v\()\reg1\().8b, v\()\reg2\().8b
+    uzp1 v16.8b,     v\()\reg1\().8b, v\()\reg2\().8b
     uzp2 v\()\reg2\().8b, v\()\reg1\().8b, v\()\reg2\().8b
     mov  v\()\reg1\().8b, v16.8b
     mov  v16.d[0], DUMMY
@@ -381,7 +377,7 @@
 
 .macro vzip8 reg1, reg2
     umov DUMMY, v16.d[0]
-    zip1 v16.8b,          v\()\reg1\().8b, v\()\reg2\().8b
+    zip1 v16.8b,     v\()\reg1\().8b, v\()\reg2\().8b
     zip2 v\()\reg2\().8b, v\()\reg1\().8b, v\()\reg2\().8b
     mov  v\()\reg1\().8b, v16.8b
     mov  v16.d[0], DUMMY
@@ -444,45 +440,45 @@
 .macro cache_preload std_increment, boost_increment
 .if (src_bpp_shift >= 0) || (dst_r_bpp != 0) || (mask_bpp_shift >= 0)
 .if \std_increment != 0
-    PF add, PF_X, PF_X, #\std_increment
+    PF add PF_X, PF_X, #\std_increment
 .endif
-    PF tst, PF_CTL, #0xF
-    PF beq, 71f
-    PF add, PF_X, PF_X, #\boost_increment
-    PF sub, PF_CTL, PF_CTL, #1
+    PF tst PF_CTL, #0xF
+    PF beq 71f
+    PF add PF_X, PF_X, #\boost_increment
+    PF sub PF_CTL, PF_CTL, #1
 71:
-    PF cmp, PF_X, ORIG_W
+    PF cmp PF_X, ORIG_W
 .if src_bpp_shift >= 0
-    PF lsl, DUMMY, PF_X, #src_bpp_shift
-    PF prfm, PREFETCH_MODE, [PF_SRC, DUMMY]
+    PF lsl DUMMY, PF_X, #src_bpp_shift
+    PF prfm PREFETCH_MODE, [PF_SRC, DUMMY]
 .endif
 .if dst_r_bpp != 0
-    PF lsl, DUMMY, PF_X, #dst_bpp_shift
-    PF prfm, PREFETCH_MODE, [PF_DST, DUMMY]
+    PF lsl DUMMY, PF_X, #dst_bpp_shift
+    PF prfm PREFETCH_MODE, [PF_DST, DUMMY]
 .endif
 .if mask_bpp_shift >= 0
-    PF lsl, DUMMY, PF_X, #mask_bpp_shift
-    PF prfm, PREFETCH_MODE, [PF_MASK, DUMMY]
+    PF lsl DUMMY, PF_X, #mask_bpp_shift
+    PF prfm PREFETCH_MODE, [PF_MASK, DUMMY]
 .endif
-    PF ble, 71f
-    PF sub, PF_X, PF_X, ORIG_W
-    PF subs, PF_CTL, PF_CTL, #0x10
+    PF ble 71f
+    PF sub PF_X, PF_X, ORIG_W
+    PF subs PF_CTL, PF_CTL, #0x10
 71:
-    PF ble, 72f
+    PF ble 72f
 .if src_bpp_shift >= 0
-    PF lsl, DUMMY, SRC_STRIDE, #src_bpp_shift
-    PF ldrsb, DUMMY, [PF_SRC, DUMMY]
-    PF add, PF_SRC, PF_SRC, #1
+    PF lsl DUMMY, SRC_STRIDE, #src_bpp_shift
+    PF ldrsb DUMMY, [PF_SRC, DUMMY]
+    PF add PF_SRC, PF_SRC, #1
 .endif
 .if dst_r_bpp != 0
-    PF lsl, DUMMY, DST_STRIDE, #dst_bpp_shift
-    PF ldrsb, DUMMY, [PF_DST, DUMMY]
-    PF add, PF_DST, PF_DST, #1
+    PF lsl DUMMY, DST_STRIDE, #dst_bpp_shift
+    PF ldrsb DUMMY, [PF_DST, DUMMY]
+    PF add PF_DST, PF_DST, #1
 .endif
 .if mask_bpp_shift >= 0
-    PF lsl, DUMMY, MASK_STRIDE, #mask_bpp_shift
-    PF ldrsb, DUMMY, [PF_MASK, DUMMY]
-    PF add, PF_MASK, PF_MASK, #1
+    PF lsl DUMMY, MASK_STRIDE, #mask_bpp_shift
+    PF ldrsb DUMMY, [PF_MASK, DUMMY]
+    PF add PF_MASK, PF_MASK, #1
 .endif
 72:
 .endif
@@ -518,10 +514,7 @@
 .if dst_w_bpp != 24
     tst         DST_R, #0xF
     beq         52f
-
-.if src_bpp > 0 || mask_bpp > 0 || dst_r_bpp > 0
 .irp lowbit, 1, 2, 4, 8, 16
-
 .if (dst_w_bpp <= (\lowbit * 8)) && ((\lowbit * 8) < (pixblock_size * dst_w_bpp))
 .if \lowbit < 16 /* we don't need more than 16-byte alignment */
     tst         DST_R, #\lowbit
@@ -534,12 +527,11 @@
 .else
     add         DST_R, DST_R, #\lowbit
 .endif
-    PF add,     PF_X, PF_X, #(\lowbit * 8 / dst_w_bpp)
+    PF add      PF_X, PF_X, #(\lowbit * 8 / dst_w_bpp)
     sub         W, W, #(\lowbit * 8 / dst_w_bpp)
 51:
 .endif
 .endr
-.endif
     pixdeinterleave src_bpp, src_basereg
     pixdeinterleave mask_bpp, mask_basereg
     pixdeinterleave dst_r_bpp, dst_r_basereg
@@ -556,9 +548,6 @@
 .if \lowbit < 16 /* we don't need more than 16-byte alignment */
     tst         DST_W, #\lowbit
     beq         51f
-.endif
-.if src_bpp == 0 && mask_bpp == 0 && dst_r_bpp == 0
-    sub         W, W, #(\lowbit * 8 / dst_w_bpp)
 .endif
     pixst_a     (\lowbit * 8 / dst_w_bpp), dst_w_bpp, dst_w_basereg, DST_W
 51:
@@ -590,7 +579,6 @@
                                process_pixblock_tail_head
     tst         W, #(pixblock_size - 1)
     beq         52f
-.if src_bpp > 0 || mask_bpp > 0 || dst_r_bpp > 0
 .irp chunk_size, 16, 8, 4, 2, 1
 .if pixblock_size > \chunk_size
     tst         W, #\chunk_size
@@ -603,12 +591,11 @@
     pixld       \chunk_size, dst_r_bpp, dst_r_basereg, DST_R
 .endif
 .if \cache_preload_flag != 0
-    PF add,     PF_X, PF_X, #\chunk_size
+    PF add      PF_X, PF_X, #\chunk_size
 .endif
 51:
 .endif
 .endr
-.endif
     pixdeinterleave src_bpp, src_basereg
     pixdeinterleave mask_bpp, mask_basereg
     pixdeinterleave dst_r_bpp, dst_r_basereg
@@ -663,13 +650,6 @@
     bge         \start_of_loop_label
 .endm
 
-/*
- * Registers are allocated in the following way by default:
- * v0, v1, v2, v3     - reserved for loading source pixel data
- * v4, v5, v6, v7     - reserved for loading destination pixel data
- * v24, v25, v26, v27 - reserved for loading mask pixel data
- * v28, v29, v30, v31 - final destination pixel data for writeback to memory
- */
 .macro generate_composite_function fname, \
                                    src_bpp_, \
                                    mask_bpp_, \
@@ -690,7 +670,7 @@
     pixman_asm_function \fname
     stp         x29, x30, [sp, -16]!
     mov         x29, sp
-    sub         sp,   sp, 232  /* push all registers */
+    sub         sp,   sp, 232
     sub         x29, x29, 64
     st1         {v8.8b, v9.8b, v10.8b, v11.8b}, [x29], #32
     st1         {v12.8b, v13.8b, v14.8b, v15.8b}, [x29], #32
@@ -706,11 +686,6 @@
     stp         x26,  x27, [x29, -224]
     str         x28, [x29, -232]
 
-/*
- * Select prefetch type for this function. If prefetch distance is
- * set to 0 or one of the color formats is 24bpp, SIMPLE prefetch
- * has to be used instead of ADVANCED.
- */
     .set PREFETCH_TYPE_CURRENT, PREFETCH_TYPE_DEFAULT
 .if \prefetch_distance == 0
     .set PREFETCH_TYPE_CURRENT, PREFETCH_TYPE_NONE
@@ -719,10 +694,6 @@
     .set PREFETCH_TYPE_CURRENT, PREFETCH_TYPE_SIMPLE
 .endif
 
-/*
- * Make some macro arguments globally visible and accessible
- * from other macros
- */
     .set src_bpp, \src_bpp_
     .set mask_bpp, \mask_bpp_
     .set dst_w_bpp, \dst_w_bpp_
@@ -822,10 +793,10 @@
 .endif
 
 .if \prefetch_distance < 0 || \prefetch_distance > 15
-    .error "invalid prefetch distance (\prefetch_distance)"
+    .error "invalid prefetch distance (prefetch_distance)"
 .endif
 
-    PF mov,     PF_X, #0
+    PF mov      PF_X, #0
     mov         DST_R, DST_W
 
 .if src_bpp == 24
@@ -844,13 +815,13 @@
 /*
  * Setup advanced prefetcher initial state
  */
-    PF mov,     PF_SRC, SRC
-    PF mov,     PF_DST, DST_R
-    PF mov,     PF_MASK, MASK
-    /* PF_CTL = \prefetch_distance | ((h - 1) << 4) */
-    PF lsl,     DUMMY, H, #4
-    PF mov,     PF_CTL, DUMMY
-    PF add,     PF_CTL, PF_CTL, #(\prefetch_distance - 0x10)
+    PF mov      PF_SRC, SRC
+    PF mov      PF_DST, DST_R
+    PF mov      PF_MASK, MASK
+    /* PF_CTL = prefetch_distance | ((h - 1) << 4) */
+    PF lsl      DUMMY, H, #4
+    PF mov      PF_CTL, DUMMY
+    PF add      PF_CTL, PF_CTL, #(\prefetch_distance - 0x10)
 
     \init
     subs        H, H, #1
@@ -873,7 +844,7 @@
     fetch_src_pixblock
     pixld       pixblock_size, mask_bpp, \
                 (mask_basereg - pixblock_size * mask_bpp / 64), MASK
-    PF add,     PF_X, PF_X, #pixblock_size
+    PF add      PF_X, PF_X, #pixblock_size
     \process_pixblock_head
     cache_preload 0, pixblock_size
     cache_preload_simple
@@ -917,25 +888,8 @@
     ldr         x28, [x29, -232]
     mov         sp, x29
     ldp         x29, x30, [sp], 16
-    ret  /* exit */
-/*
- * This is the start of the loop, designed to process images with small width
- * (less than pixblock_size * 2 pixels). In this case neither pipelining
- * nor prefetch are used.
- */
+    ret
 800:
-.if src_bpp_shift >= 0
-    PF lsl, DUMMY, SRC_STRIDE, #src_bpp_shift
-    PF prfm, PREFETCH_MODE, [SRC, DUMMY]
-.endif
-.if dst_r_bpp != 0
-    PF lsl,  DUMMY, DST_STRIDE, #dst_bpp_shift
-    PF prfm, PREFETCH_MODE, [DST_R, DUMMY]
-.endif
-.if mask_bpp_shift >= 0
-    PF lsl,  DUMMY, MASK_STRIDE, #mask_bpp_shift
-    PF prfm, PREFETCH_MODE, [MASK, DUMMY]
-.endif
     /* Process exactly pixblock_size pixels if needed */
     tst         W, #pixblock_size
     beq         100f
@@ -957,7 +911,6 @@
     advance_to_next_scanline 800b
 9:
     \cleanup
-    /* pop all registers */
     sub         x29, x29, 64
     ld1         {v8.8b, v9.8b, v10.8b, v11.8b}, [x29], 32
     ld1         {v12.8b, v13.8b, v14.8b, v15.8b}, [x29], 32
@@ -973,7 +926,7 @@
     ldp         x26,  x27, [x29, -224]
     ldr         x28, [x29, -232]
     mov         sp, x29
-    ldp         x29, x30, [sp], 16
+    ldp         x29, x30, [sp], 16 
     ret  /* exit */
 
     .purgem     fetch_src_pixblock
@@ -995,7 +948,6 @@
     .unreq      PF_DST
     .unreq      PF_MASK
     .unreq      DUMMY
-    pixman_end_asm_function
 .endm
 
 /*
@@ -1021,7 +973,6 @@
 
     pixman_asm_function \fname
     .set PREFETCH_TYPE_CURRENT, PREFETCH_TYPE_NONE
-
 /*
  * Make some macro arguments globally visible and accessible
  * from other macros
@@ -1154,14 +1105,14 @@
     ldp         x8, x9, [x29, -80]
     ldr         x10, [x29, -96]
     mov         sp, x29
-    ldp         x29, x30, [sp], 16
+    ldp         x29, x30, [sp], 16 
     ret  /* exit */
 .else
     sub         x29, x29, 64
     ld1         {v8.8b, v9.8b, v10.8b, v11.8b}, [x29], 32
     ld1         {v12.8b, v13.8b, v14.8b, v15.8b}, [x29], 32
     mov         sp, x29
-    ldp         x29, x30, [sp], 16
+    ldp         x29, x30, [sp], 16 
     ret  /* exit */
 .endif
 800:
@@ -1179,7 +1130,7 @@
     ldp         x8, x9, [x29, -80]
     ldr         x10, [x29, -88]
     mov         sp, x29
-    ldp         x29, x30, [sp], 16
+    ldp         x29, x30, [sp], 16 
     ret  /* exit */
 
     .unreq      DUMMY
@@ -1199,7 +1150,7 @@
     ld1         {v8.8b, v9.8b, v10.8b, v11.8b}, [x29], 32
     ld1         {v12.8b, v13.8b, v14.8b, v15.8b}, [x29], 32
     mov          sp, x29
-    ldp          x29, x30, [sp], 16
+    ldp          x29, x30, [sp], 16 
     ret  /* exit */
 
     .unreq      DUMMY
@@ -1213,7 +1164,6 @@
     .purgem     fetch_src_pixblock
     .purgem     pixld_src
 
-    pixman_end_asm_function
 .endm
 
 .macro generate_composite_function_single_scanline x:vararg
@@ -1245,66 +1195,3 @@
 .endm
 
 /******************************************************************************/
-
-/*
- * Conversion of 8 r5g6b6 pixels packed in 128-bit register (in)
- * into a planar a8r8g8b8 format (with a, r, g, b color components
- * stored into 64-bit registers out_a, out_r, out_g, out_b respectively).
- *
- * Warning: the conversion is destructive and the original
- *          value (in) is lost.
- */
-.macro convert_0565_to_8888 in, out_a, out_r, out_g, out_b
-    shrn        \()\out_r\().8b, \()\in\().8h,    #8
-    shrn        \()\out_g\().8b, \()\in\().8h,    #3
-    sli         \()\in\().8h,    \()\in\().8h,    #5
-    movi        \()\out_a\().8b, #255
-    sri         \()\out_r\().8b, \()\out_r\().8b, #5
-    sri         \()\out_g\().8b, \()\out_g\().8b, #6
-    shrn        \()\out_b\().8b, \()\in\().8h,    #2
-.endm
-
-.macro convert_0565_to_x888 in, out_r, out_g, out_b
-    shrn        \()\out_r\().8b, \()\in\().8h,    #8
-    shrn        \()\out_g\().8b, \()\in\().8h,    #3
-    sli         \()\in\().8h,    \()\in\().8h,    #5
-    sri         \()\out_r\().8b, \()\out_r\().8b, #5
-    sri         \()\out_g\().8b, \()\out_g\().8b, #6
-    shrn        \()\out_b\().8b, \()\in\().8h,    #2
-.endm
-
-/*
- * Conversion from planar a8r8g8b8 format (with a, r, g, b color components
- * in 64-bit registers in_a, in_r, in_g, in_b respectively) into 8 r5g6b6
- * pixels packed in 128-bit register (out). Requires two temporary 128-bit
- * registers (tmp1, tmp2)
- */
-.macro convert_8888_to_0565 in_r, in_g, in_b, out, tmp1, tmp2
-    ushll       \()\tmp1\().8h, \()\in_g\().8b, #7
-    shl         \()\tmp1\().8h, \()\tmp1\().8h, #1
-    ushll       \()\out\().8h,  \()\in_r\().8b, #7
-    shl         \()\out\().8h,  \()\out\().8h,  #1
-    ushll       \()\tmp2\().8h, \()\in_b\().8b, #7
-    shl         \()\tmp2\().8h, \()\tmp2\().8h, #1
-    sri         \()\out\().8h, \()\tmp1\().8h, #5
-    sri         \()\out\().8h, \()\tmp2\().8h, #11
-.endm
-
-/*
- * Conversion of four r5g6b5 pixels (in) to four x8r8g8b8 pixels
- * returned in (out0, out1) registers pair. Requires one temporary
- * 64-bit register (tmp). 'out1' and 'in' may overlap, the original
- * value from 'in' is lost
- */
-.macro convert_four_0565_to_x888_packed in, out0, out1, tmp
-    shl         \()\out0\().4h, \()\in\().4h,   #5  /* G top 6 bits */
-    shl         \()\tmp\().4h,  \()\in\().4h,   #11 /* B top 5 bits */
-    sri         \()\in\().4h,   \()\in\().4h,   #5  /* R is ready \in top bits */
-    sri         \()\out0\().4h, \()\out0\().4h, #6  /* G is ready \in top bits */
-    sri         \()\tmp\().4h,  \()\tmp\().4h,  #5  /* B is ready \in top bits */
-    ushr        \()\out1\().4h, \()\in\().4h,   #8  /* R is \in place */
-    sri         \()\out0\().4h, \()\tmp\().4h,  #8  /* G \() B is \in place */
-    zip1        \()\tmp\().4h,  \()\out0\().4h, \()\out1\().4h  /* everything is \in place */
-    zip2        \()\out1\().4h, \()\out0\().4h, \()\out1\().4h
-    mov         \()\out0\().d[0], \()\tmp\().d[0]
-.endm
