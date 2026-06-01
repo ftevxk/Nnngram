@@ -286,6 +286,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import xyz.nextalone.gen.Config;
+import xyz.nextalone.nnngram.config.ConfigManager;
 import xyz.nextalone.nnngram.config.ForwardContext;
 import xyz.nextalone.nnngram.helpers.PasscodeHelper;
 import xyz.nextalone.nnngram.helpers.QrHelper;
@@ -6798,17 +6799,28 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     selectWithStableId = true;
                 }
                 filterTabsView.removeTabs();
+                //wd 文件夹可见性检查：读取folderVisibilityPrefix配置，隐藏不可见的标签页
+                //使用ConfigManager实时读取而非Config缓存，确保与FiltersSetupActivity写入的配置同步
                 for (int a = 0, N = filters.size(); a < N; a++) {
-                    if (filters.get(a).isDefault()) {
-                        if (!Config.hideAllTab) {
-                            filterTabsView.addTab(a, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats), "\uD83D\uDCAC", null, false, true, filters.get(a).locked);
-                        }
+                    MessagesController.DialogFilter filter = filters.get(a);
+                    boolean isVisible;
+                    if (filter.isDefault()) {
+                        boolean hideFromGeneral = ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false);
+                        boolean hideFromFolderSettings = !ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+                        isVisible = !hideFromGeneral && !hideFromFolderSettings;
                     } else {
-                        filterTabsView.addTab(a, filters.get(a).localId, filters.get(a).name, filters.get(a).emoticon == null ? "\uD83D\uDCC1" : filters.get(a).emoticon,filters.get(a).entities,
-                            filters.get(a).title_noanimate, false, filters.get(a).locked);
+                        isVisible = ConfigManager.getBooleanOrDefault(Defines.folderVisibilityPrefix + filter.id, true);
+                    }
+                    if (!isVisible) continue;
+                    if (filter.isDefault()) {
+                        filterTabsView.addTab(a, 0, LocaleController.getString("FilterAllChats", R.string.FilterAllChats), "\uD83D\uDCAC", null, false, true, filter.locked);
+                    } else {
+                        filterTabsView.addTab(a, filter.localId, filter.name, filter.emoticon == null ? "\uD83D\uDCC1" : filter.emoticon,filter.entities,
+                            filter.title_noanimate, false, filter.locked);
                     }
                 }
-                if (Config.hideAllTab && stableId <= 0) {
+                boolean hideAllTab = ConfigManager.getBooleanOrDefault(Defines.hideAllTab, false);
+                if (hideAllTab && stableId <= 0) {
                     id = filterTabsView.getFirstTabId();
                     updateCurrentTab = true;
                     viewPages[0].selectedType = id;
@@ -7989,6 +8001,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 args.putLong("chat_id", -did);
             }
+            //wd 注入fromDialogsList标记，使ChatActivity自动跳转(直接打开媒体对话)功能生效
+            args.putBoolean("fromDialogsList", true);
             if (message_id != 0) {
                 args.putInt("message_id", message_id);
             } else if (!isGlobalSearch) {
@@ -8403,6 +8417,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (message_id != 0) {
             args.putInt("message_id", message_id);
         }
+        args.putBoolean("fromDialogsList", true);
 
         final ArrayList<Long> dialogIdArray = new ArrayList<>();
         dialogIdArray.add(dialogId);
@@ -12864,6 +12879,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     } else {
                         args.putLong("chat_id", -did);
                     }
+                    //wd 注入fromDialogsList标记，使ChatActivity自动跳转(直接打开媒体对话)功能生效
+                    args.putBoolean("fromDialogsList", true);
                     closeSearch();
                     if (AndroidUtilities.isTablet() && viewPages != null) {
                         for (int a = 0; a < viewPages.length; a++) {

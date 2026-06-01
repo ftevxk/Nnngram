@@ -6683,8 +6683,8 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwards(TLRPC.Chat chat) {
-        //wd 去除复制保存消息限制，增加开关控制
-        if (ConfigManager.getBooleanOrDefault(Defines.noForwardsBypass, true)) {
+        //wd 去除复制保存消息限制，统一使用Config.ignoreChatStrict与UI开关同步
+        if (Config.ignoreChatStrict) {
             return false;
         }
         if (chat == null) {
@@ -6712,8 +6712,8 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isUserNoForwards(TLRPC.UserFull userFull) {
-        //wd 去除复制保存消息限制，增加开关控制
-        if (ConfigManager.getBooleanOrDefault(Defines.noForwardsBypass, true)) {
+        //wd 去除复制保存消息限制，统一使用Config.ignoreChatStrict与UI开关同步
+        if (Config.ignoreChatStrict) {
             return false;
         }
         if (userFull == null) {

@@ -288,7 +288,8 @@ object Defines {
     const val unreadDialogRetention5Min = 300
     const val unreadDialogRetention30Min = 1800
     const val unreadDialogRetention2Hour = 7200
-    @BooleanConfig const val ignoreChatStrict = "ignoreChatStrict"
+    //wd 绕过转发限制，默认true(绕过)，与ExperimentSettingActivity UI开关统一
+    @BooleanConfig(true) const val ignoreChatStrict = "ignoreChatStrict"
     @StringConfig("Nnngram") const val customTitle = "customTitle"
     @StringConfig("") const val textStyleSettings = "textStyleSettings"
     @BooleanConfig const val hideSendAsButton = "hideSendAsButton"
@@ -341,8 +342,6 @@ object Defines {
 
     //wd 消息防撤回
     @BooleanConfig(true) const val antiRecallEnabled = "antiRecallEnabled"
-    //wd 绕过转发限制
-    @BooleanConfig(true) const val noForwardsBypass = "noForwardsBypass"
 
     // Ad Filter
     @BooleanConfig const val adFilterEnabled = "adFilterEnabled"
