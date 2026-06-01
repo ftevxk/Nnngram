@@ -154,6 +154,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int cancelLoadingVideoWhenCloseRow;
     private int hideSavedAndArchivedMessagesInListRow;
     private int scrollToNextUnreadWhenAtTopRow;
+    private int showRecentChatsOnTabLongPressRow;
     private int chat2Row;
 
     private int markdownRow;
@@ -540,6 +541,11 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.scrollToNextUnreadWhenAtTop);
             }
+        } else if (position == showRecentChatsOnTabLongPressRow) {
+            Config.toggleShowRecentChatsOnTabLongPress();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.showRecentChatsOnTabLongPress);
+            }
         }
     }
 
@@ -619,6 +625,7 @@ public class ChatSettingActivity extends BaseActivity {
         cancelLoadingVideoWhenCloseRow = addRow("cancelLoadingVideoWhenClose");
         hideSavedAndArchivedMessagesInListRow = addRow("hideSavedAndArchivedMessagesInList");
         scrollToNextUnreadWhenAtTopRow = addRow("scrollToNextUnreadWhenAtTop");
+        showRecentChatsOnTabLongPressRow = addRow("showRecentChatsOnTabLongPress");
         chat2Row = addRow();
 
         markdownRow = addRow();
@@ -823,6 +830,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.hideSavedAndArchivedMessagesInList), Config.hideSavedAndArchivedMessagesInList, true);
                     } else if (position == scrollToNextUnreadWhenAtTopRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.scrollToNextUnreadWhenAtTop), Config.scrollToNextUnreadWhenAtTop, true);
+                    } else if (position == showRecentChatsOnTabLongPressRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.showRecentChatsOnTabLongPress), Config.showRecentChatsOnTabLongPress, true);
                     }
                     break;
                 }

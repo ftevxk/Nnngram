@@ -9,6 +9,7 @@ on:
         - '**.txt'
         - '.github/**'
         - '!.github/workflows/**'
+        - '!.github/scripts/**'
         - "TMessagesProj/src/main/res/values**/**"
         - '.gitignore'
   workflow_dispatch:
@@ -92,30 +93,6 @@ jobs:
           name: mapping
           path: TMessagesProj/build/outputs/mapping
 
-      - name: Debug Build (Telegram)
-        run: |
-          echo -e "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}\nRELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}\nRELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}">>local.properties
-          mkdir -p TMessagesProj/config/
-          echo "${{ secrets.KEYSTORE }}" | base64 -d > TMessagesProj/config/release.keystore
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > TMessagesProj/google-services.json
-          sed -i 's@xyz.nextalone.nnngram@org.telegram.messenger@' TMessagesProj/build.gradle.kts
-          sed -i 's@xyz.nextalone.nnngram@org.telegram.messenger@' TMessagesProj/google-services.json
-          ./gradlew TMessagesProj:assembleRelease
-          find TMessagesProj/build/outputs/apk -name '*arm64*.apk' -exec mv {} TMessagesProj/build/outputs/apk/Nnngram-arm64-v8a-${{ env.SHA7 }}-Telegram.apk \;
-          echo "APK_FILE=$(find TMessagesProj/build/outputs/apk -name '*arm64*.apk')" >> $GITHUB_ENV
-
-      - uses: actions/upload-artifact@master
-        name: Upload apk (arm64-v8a) (Telegram)
-        with:
-          name: Nnngram-arm64-v8a-${{ env.SHA7 }}-Telegram
-          path: ${{ env.APK_FILE }}
-
-      - name: Upload mapping
-        uses: actions/upload-artifact@master
-        with:
-          name: mapping-Telegram
-          path: TMessagesProj/build/outputs/mapping
-
 
 
   upload:
@@ -126,6 +103,31 @@ jobs:
       - build
       - telegram-bot-api
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore last-sent SHA
+        id: restore_last_sent
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci-last-sent-sha
+          # Save key (below) embeds run_id so each successful upload writes a
+          # fresh entry. restore-keys finds the most recent prefix match.
+          key: ci-last-sent-${{ github.ref_name }}-placeholder
+          restore-keys: |
+            ci-last-sent-${{ github.ref_name }}-
+      - name: Read last-sent SHA
+        id: last_sent
+        run: |
+          if [ -f .ci-last-sent-sha ]; then
+            sha=$(tr -d '[:space:]' < .ci-last-sent-sha)
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "last sent: $sha"
+          else
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            echo "no cached last-sent sha (first run or evicted)"
+          fi
       - name: Donwload Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -139,7 +141,6 @@ jobs:
       - name: find apk
         run: |
             mkdir apks
-            find artifacts -name "*Telegram.apk" -exec rm {} \;
             find artifacts -name "*.apk" -exec cp {} apks \;
             echo "APK_FILE_UPLOAD=$(find apks -name '*arm64*.apk')" >> $GITHUB_ENV
       - name: Get Apk Info
@@ -152,30 +153,27 @@ jobs:
         run: |
           chmod +x telegram-bot-api-binary
           ./telegram-bot-api-binary --api-id=21724 --api-hash=3e0cb5efcd52300aec5994fdfc5bdc16 --local 2>&1 > /dev/null &
-          curl https://raw.githubusercontent.com/PreviousAlone/ActionScript/main/uploadCI.py -o uploadCI.py
-          # Normalise COMMIT_MESSAGE for the Telegram uploader:
-          # 1. Strip backticks — legacy Markdown parse_mode trips on
-          #    "can't parse entities" when the commit body contains them
-          #    because they collide with the ``` fence in the template.
-          # 2. Cap length — sendDocument caption limit is 1024 chars;
-          #    template + version adds ~120, so truncate the body to 800
-          #    to leave headroom and avoid HTTP 400.
-          sanitized=$(python3 <<'PY'
-          import os
-          s = os.environ["COMMIT_MESSAGE"].replace("`", "").replace("\r", "")
-          MAX = 800
-          if len(s) > MAX:
-              s = s[:MAX].rstrip() + "\n…(truncated)"
-          print(s)
-          PY
-          )
-          COMMIT_MESSAGE="$sanitized" python uploadCI.py
+          pip install --quiet requests
+          python3 .github/scripts/upload_ci.py
         env:
             CHAT_ID: ${{ secrets.TELEGRAM_CHATID }}
             TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
             VERSION_CODE: ${{ steps.apk.outputs.versionCode }}
             VERSION_NAME: ${{ steps.apk.outputs.versionNum }}
-            COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+            LAST_SENT_SHA: ${{ steps.last_sent.outputs.sha }}
+            HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+            COMMITS_JSON: ${{ toJSON(github.event.commits) }}
+            REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+
+      - name: Record successful upload SHA
+        if: success()
+        run: echo "${{ github.sha }}" > .ci-last-sent-sha
+      - name: Save last-sent SHA
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: .ci-last-sent-sha
+          key: ci-last-sent-${{ github.ref_name }}-${{ github.run_id }}
 
   telegram-bot-api:
     name: Telegram Bot API

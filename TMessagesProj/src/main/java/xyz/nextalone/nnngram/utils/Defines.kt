@@ -99,7 +99,6 @@ object Defines {
     @BooleanConfig const val markdownDisabled = "markdownEnable"
     @BooleanConfig(true) const val markdownParseLinks = "markdownParseLinks"
     @BooleanConfig(true) const val newMarkdownParser = "newMarkdownParser"
-    @BooleanConfig(true)  const val photoViewerEdgeToEdge = "photoViewerEdgeToEdge"
     @BooleanConfig const val showRPCError = "showRPCError"
     @BooleanConfig const val showFragmentSwitchToast = "showFragmentSwitchToast"
     @BooleanConfig const val enablePanguOnSending = "enablePanguOnSending"
@@ -302,6 +301,7 @@ object Defines {
     @BooleanConfig const val hideSavedAndArchivedMessagesInList = "hideSavedAndArchivedMessagesInList"
     @BooleanConfig(true) const val showIdAndDc = "showIdAndDc"
     @BooleanConfig const val scrollToNextUnreadWhenAtTop = "scrollToNextUnreadWhenAtTop"
+    @BooleanConfig const val showRecentChatsOnTabLongPress = "showRecentChatsOnTabLongPress"
 
     // Drawer List
     @BooleanConfig(true) const val showNewGroup = "showNewGroup"

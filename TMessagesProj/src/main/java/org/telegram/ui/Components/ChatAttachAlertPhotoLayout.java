@@ -360,6 +360,11 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         public boolean allowLivePhotos() {
             return parentAlert != null && parentAlert.allowLivePhotos;
         }
+
+        @Override
+        public void updatedLivePhotos() {
+            ChatAttachAlertPhotoLayout.this.updateCells();
+        }
     }
 
     private void setCurrentSpoilerVisible(int i, boolean visible) {
@@ -1765,6 +1770,8 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         if (selectedPhotos.containsKey(key)) {
             object.starsAmount = 0;
             object.hasSpoiler = false;
+            object.discardLivePhoto = null;
+            object.highQuality = null;
 
             selectedPhotos.remove(key);
             int position = selectedPhotosOrder.indexOf(key);
@@ -1783,6 +1790,10 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             object.hasSpoiler = getStarsPrice() > 0;
             object.isChatPreviewSpoilerRevealed = false;
             object.isAttachSpoilerRevealed = false;
+            if (hasLivePhotos()) {
+                object.discardLivePhoto = !areLivePhotosEnabled();
+            }
+            object.highQuality = object.isHighQuality();
 
             boolean changed = checkSelectedCount(true);
             selectedPhotos.put(key, object);
@@ -4899,7 +4910,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         for (HashMap.Entry<Object, Object> entry : selectedPhotos.entrySet()) {
             if (entry.getValue() instanceof MediaController.PhotoEntry) {
                 final MediaController.PhotoEntry photoEntry = (MediaController.PhotoEntry) entry.getValue();
-                if (photoEntry.isLivePhoto) {
+                if (photoEntry.isLivePhoto()) {
                     return true;
                 }
             }
@@ -4912,8 +4923,8 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         for (HashMap.Entry<Object, Object> entry : selectedPhotos.entrySet()) {
             if (entry.getValue() instanceof MediaController.PhotoEntry) {
                 final MediaController.PhotoEntry photoEntry = (MediaController.PhotoEntry) entry.getValue();
-                if (photoEntry.isLivePhoto) {
-                    if (photoEntry.discardLivePhoto)
+                if (photoEntry.isLivePhoto()) {
+                    if (photoEntry.isUnalivePhoto())
                         return false;
                 }
             }
@@ -4926,7 +4937,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         for (HashMap.Entry<Object, Object> entry : selectedPhotos.entrySet()) {
             if (entry.getValue() instanceof MediaController.PhotoEntry) {
                 final MediaController.PhotoEntry photoEntry = (MediaController.PhotoEntry) entry.getValue();
-                if (photoEntry.isLivePhoto) {
+                if (photoEntry.isLivePhoto()) {
                     photoEntry.discardLivePhoto = !enable;
 
                     for (int a = 0; a < gridView.getChildCount(); a++) {
@@ -4938,6 +4949,21 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
                             }
                         }
                     }
+                }
+            }
+        }
+
+        ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE)
+            .edit().putBoolean("photoLiveDefault", SharedConfig.photoLiveDefault = enable).apply();
+        updateCells();
+    }
+
+    private void updateCells() {
+        if (gridView != null) {
+            for (int i = 0; i < gridView.getChildCount(); ++i) {
+                final View child = gridView.getChildAt(i);
+                if (child instanceof PhotoAttachPhotoCell) {
+                    ((PhotoAttachPhotoCell) child).imageView.invalidate();
                 }
             }
         }
