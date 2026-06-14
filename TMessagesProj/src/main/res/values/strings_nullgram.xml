@@ -549,4 +549,8 @@
     <string name="SegText">Text</string>
     <string name="SegIcon">Icon</string>
     <string name="CustomQuickMessage">Custom quick message</string>
+    <string name="FolderSelectOnJoin">Select folders after joining group</string>
+    <string name="FolderSelectOnJoinTitle">Add chat to folders</string>
+    <string name="FolderSelectOnJoinDone">Done</string>
+    <string name="FolderSelectOnJoinSkip">Skip</string>
 </resources>

@@ -340,6 +340,9 @@ object Defines {
     @BooleanConfig(true) const val showTextDate = "showTextDate"
     @BooleanConfig(false) const val enableXiaomiHyperAi = "enableXiaomiHyperAi"
 
+    //wd 加入群组/频道后选择文件夹
+    @BooleanConfig(true) const val folderSelectOnJoin = "folderSelectOnJoin"
+
     //wd 消息防撤回
     @BooleanConfig(true) const val antiRecallEnabled = "antiRecallEnabled"
 

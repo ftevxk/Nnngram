@@ -448,4 +448,8 @@
     <string name="SegText">文字</string>
     <string name="SegIcon">圖示</string>
     <string name="CustomQuickMessage">自訂快速訊息</string>
+    <string name="FolderSelectOnJoin">加入群組後選擇資料夾</string>
+    <string name="FolderSelectOnJoinTitle">新增聊天到資料夾</string>
+    <string name="FolderSelectOnJoinDone">完成</string>
+    <string name="FolderSelectOnJoinSkip">略過</string>
 </resources>

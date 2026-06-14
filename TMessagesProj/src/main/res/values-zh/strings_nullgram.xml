@@ -542,4 +542,8 @@
     <string name="SegText">文本</string>
     <string name="SegIcon">图标</string>
     <string name="CustomQuickMessage">自定义快速消息</string>
+    <string name="FolderSelectOnJoin">加入群组后选择文件夹</string>
+    <string name="FolderSelectOnJoinTitle">添加聊天到文件夹</string>
+    <string name="FolderSelectOnJoinDone">完成</string>
+    <string name="FolderSelectOnJoinSkip">跳过</string>
 </resources>

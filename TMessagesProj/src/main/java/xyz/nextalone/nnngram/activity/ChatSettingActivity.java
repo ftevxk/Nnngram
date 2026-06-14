@@ -158,6 +158,7 @@ public class ChatSettingActivity extends BaseActivity {
     private int hideSavedAndArchivedMessagesInListRow;
     private int scrollToNextUnreadWhenAtTopRow;
     private int showRecentChatsOnTabLongPressRow;
+    private int folderSelectOnJoinRow;
     private int chat2Row;
 
     private int markdownRow;
@@ -559,6 +560,11 @@ public class ChatSettingActivity extends BaseActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(Config.showRecentChatsOnTabLongPress);
             }
+        } else if (position == folderSelectOnJoinRow) {
+            Config.toggleFolderSelectOnJoin();
+            if (view instanceof TextCheckCell) {
+                ((TextCheckCell) view).setChecked(Config.folderSelectOnJoin);
+            }
         }
     }
 
@@ -641,6 +647,7 @@ public class ChatSettingActivity extends BaseActivity {
         hideSavedAndArchivedMessagesInListRow = addRow("hideSavedAndArchivedMessagesInList");
         scrollToNextUnreadWhenAtTopRow = addRow("scrollToNextUnreadWhenAtTop");
         showRecentChatsOnTabLongPressRow = addRow("showRecentChatsOnTabLongPress");
+        folderSelectOnJoinRow = addRow("folderSelectOnJoin");
         chat2Row = addRow();
 
         markdownRow = addRow();
@@ -853,6 +860,8 @@ public class ChatSettingActivity extends BaseActivity {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.scrollToNextUnreadWhenAtTop), Config.scrollToNextUnreadWhenAtTop, true);
                     } else if (position == showRecentChatsOnTabLongPressRow) {
                         textCell.setTextAndCheck(LocaleController.getString(R.string.showRecentChatsOnTabLongPress), Config.showRecentChatsOnTabLongPress, true);
+                    } else if (position == folderSelectOnJoinRow) {
+                        textCell.setTextAndCheck(LocaleController.getString(R.string.FolderSelectOnJoin), Config.folderSelectOnJoin, true);
                     }
                     break;
                 }

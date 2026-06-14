@@ -41,11 +41,16 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+
+import java.util.ArrayList;
+
+import xyz.nextalone.gen.Config;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -345,7 +350,8 @@ public class JoinGroupAlert extends BottomSheet {
                                 chat.kicked = false;
                                 MessagesController.getInstance(currentAccount).putUsers(updates.users, false);
                                 MessagesController.getInstance(currentAccount).putChats(updates.chats, false);
-                                openChat(chat.id, !ChatObject.isChannelAndNotMegaGroup(chat));
+                                //wd 加入成功后按需弹出文件夹选择 Sheet
+                                showFolderSelectSheetIfNeeded(chat);
                             }
                         } else {
                             if ("USER_ALREADY_PARTICIPANT".equals(error.text) && origination == ORIGINATION_SPONSORED_CHAT && chatInvite != null && chatInvite.chat != null) {
@@ -358,6 +364,40 @@ public class JoinGroupAlert extends BottomSheet {
                 }, ConnectionsManager.RequestFlagFailOnServerErrors);
             });
         }
+    }
+
+    //wd 若开启设置且存在自定义文件夹，则弹出选择 Sheet；否则直接进入聊天
+    private void showFolderSelectSheetIfNeeded(TLRPC.Chat chat) {
+        if (chat == null) {
+            FileLog.e("wd showFolderSelectSheetIfNeeded chat 为空");
+            return;
+        }
+        if (!Config.folderSelectOnJoin) {
+            FileLog.d("wd 加入后文件夹选择功能已关闭，直接进入聊天");
+            openChat(chat.id, !ChatObject.isChannelAndNotMegaGroup(chat));
+            return;
+        }
+        ArrayList<MessagesController.DialogFilter> allFilters = MessagesController.getInstance(currentAccount).getDialogFilters();
+        boolean hasCustomFolder = false;
+        if (allFilters != null) {
+            for (int i = 0; i < allFilters.size(); i++) {
+                MessagesController.DialogFilter filter = allFilters.get(i);
+                if (filter != null && !filter.isDefault()) {
+                    hasCustomFolder = true;
+                    break;
+                }
+            }
+        }
+        if (!hasCustomFolder) {
+            FileLog.d("wd 不存在自定义文件夹，跳过选择 Sheet");
+            openChat(chat.id, !ChatObject.isChannelAndNotMegaGroup(chat));
+            return;
+        }
+        FileLog.d("wd 准备显示加入后文件夹选择 Sheet，chatId=" + chat.id);
+        JoinGroupFolderSelectSheet.show(fragment, chat.id, resourcesProvider, selectedIds -> {
+            FileLog.d("wd 文件夹选择 Sheet 关闭，进入聊天，chatId=" + chat.id + "，选中文件夹数=" + selectedIds.size());
+            openChat(chat.id, !ChatObject.isChannelAndNotMegaGroup(chat));
+        });
     }
 
     private Drawable getVerifiedCrossfadeDrawable() {
