@@ -68,8 +68,10 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.utils.WindowVisibilityManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
@@ -107,6 +109,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
     public final Theme.ResourcesProvider resourcesProvider;
     public final int currentAccount = UserConfig.selectedAccount;
 
+    private WindowVisibilityManager.Controller activityVisibilityController;
     private Insets insets = Insets.NONE;
     private Bitmap blurBitmap;
     private BitmapShader blurBitmapShader;
@@ -170,9 +173,14 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         this.context = context;
         this.resourcesProvider = resourcesProvider;
 
+        activityVisibilityController = LaunchActivity.obtainActivityVisibilityController();
         windowView = new FrameLayout(context) {
             @Override
-            protected void dispatchDraw(Canvas canvas) {
+            protected void dispatchDraw(@NonNull Canvas canvas) {
+                if (activityVisibilityController != null) {
+                    activityVisibilityController.setHidden(openProgress == 1 && blurBitmapPaint != null);
+                }
+
                 if (openProgress > 0 && blurBitmapPaint != null) {
                     blurMatrix.reset();
                     final float s = (float) getWidth() / blurBitmap.getWidth();
@@ -1127,17 +1135,14 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         public MessageCell(Context context, int currentAccount, boolean canDrawBackgroundInParent, ChatMessageSharedResources sharedResources, Theme.ResourcesProvider resourcesProvider) {
             super(context, currentAccount, canDrawBackgroundInParent, sharedResources, resourcesProvider);
         }
-
         @Override
         protected SpoilerEffect2 makeSpoilerEffect() {
             return SpoilerEffect2.getInstance(SpoilerEffect2.TYPE_PREVIEW, this, windowView);
         }
-
         @Override
         public boolean isPressed() {
             return false;
         }
-
         public int top = Integer.MAX_VALUE;
         public int bottom = Integer.MAX_VALUE;
         private int pastId = -1;
@@ -1145,17 +1150,10 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
             super.onLayout(changed, left, top, right, bottom);
             if (transitionParams.animateBackgroundBoundsInner && top != 0 && this.top != Integer.MAX_VALUE && bottom != 0 && this.bottom != Integer.MAX_VALUE && pastId == (getMessageObject() == null ? 0 : getMessageObject().getId())) {
-//                if (!scrolledToLast) {
-//                } else {
-//                    setTranslationY(-(bottom - this.bottom));
-//                }
                 if (!scrolledToLast) {
                     setTranslationY(-(top - this.top));
                     animate().translationY(0).setDuration(320).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).start();
-                } else {
-
                 }
-
                 this.top = getTop();
                 this.bottom = getBottom();
                 pastId = getMessageObject() == null ? 0 : getMessageObject().getId();
@@ -1424,7 +1422,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         } else {
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableEffectsUpdate);
         }
-        if (effectSelector != null) {
+        if (effectSelector != null /*&& SharedConfig.getDevicePerformanceClass() < SharedConfig.PERFORMANCE_CLASS_HIGH*/) {
             effectSelector.setPaused(true, true);
         }
 
@@ -1687,7 +1685,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         });
         windowView.invalidate();
 
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableEffectsUpdate);
+        afterDismiss();
     }
 
     public void dismiss(boolean sent) {
@@ -1705,7 +1703,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         }
         super.dismiss();
 
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableEffectsUpdate);
+        afterDismiss();
     }
 
     @Override
@@ -1727,7 +1725,15 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         });
         windowView.invalidate();
 
+        afterDismiss();
+    }
+
+    private void afterDismiss() {
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableEffectsUpdate);
+        if (activityVisibilityController != null) {
+            activityVisibilityController.destroy();
+            activityVisibilityController = null;
+        }
     }
 
     private ValueAnimator openAnimator;

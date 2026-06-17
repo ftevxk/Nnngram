@@ -96,7 +96,6 @@ import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLocation;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -1105,7 +1104,7 @@ public class QrActivity extends BaseFragment {
                 }
                 if (contentBitmap != null) {
                     canvas.drawBitmap(contentBitmap, 0f, 0f, bitmapGradientPaint);
-                    gradientDrawable.updateAnimation(true);
+                    gradientDrawable.updateAnimation();
                 } else {
                     drawLoading(canvas);
                 }

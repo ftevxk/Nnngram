@@ -71,7 +71,7 @@ public class BackButtonMenu {
         int folderId;
         int filterId;
     }
-    
+
     public static ActionBarPopupWindow show(BaseFragment thisFragment, View backButton, long currentDialogId, long topicId, Theme.ResourcesProvider resourcesProvider) {
         if (thisFragment == null) {
             return null;
@@ -88,44 +88,45 @@ public class BackButtonMenu {
         } else {
             dialogs = getStackedHistoryDialogs(thisFragment, currentDialogId);
         }
-        
+
         if (dialogs.size() <= 0) {
             return null;
         }
-        
-        ActionBarPopupWindow.ActionBarPopupWindowLayout layout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(context, resourcesProvider);
+
+        ActionBarPopupWindow.ActionBarPopupWindowLayout layout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(context, R.drawable.popup_fixed_alert4, resourcesProvider);
         android.graphics.Rect backgroundPaddings = new Rect();
-        Drawable shadowDrawable = thisFragment.getParentActivity().getResources().getDrawable(R.drawable.popup_fixed_alert).mutate();
+        Drawable shadowDrawable = thisFragment.getParentActivity().getResources().getDrawable(R.drawable.popup_fixed_alert4).mutate();
         shadowDrawable.getPadding(backgroundPaddings);
         layout.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground, resourcesProvider));
-        
+
         AtomicReference<ActionBarPopupWindow> scrimPopupWindowRef = new AtomicReference<>();
-        
+
         boolean hadDialogs = false;
-        for (int i = 0; i < dialogs.size(); ++i) {
+        for (int i = 0, N = dialogs.size(); i < N; ++i) {
+            final boolean first = i == 0;
+            final boolean last = i == (N - 1);
             final PulledDialog pDialog = dialogs.get(i);
             final TLRPC.Chat chat = pDialog.chat;
             final TLRPC.User user = pDialog.user;
             final TLRPC.TL_forumTopic topic = pDialog.topic;
             FrameLayout cell = new FrameLayout(context);
             cell.setMinimumWidth(AndroidUtilities.dp(200));
-            
+
             BackupImageView imageView = new BackupImageView(context);
             if (chat == null && user == null) {
                 imageView.setRoundRadius(0);
             } else {
                 imageView.setRoundRadius(chat != null && chat.forum ? AndroidUtilities.dp(8) : AndroidUtilities.dp(16));
             }
-            cell.addView(imageView, LayoutHelper.createFrameRelatively(32, 32, Gravity.START | Gravity.CENTER_VERTICAL, 13, 0, 0, 0));
-            
+            cell.addView(imageView, LayoutHelper.createFrameRelatively(32, 32, Gravity.START | Gravity.CENTER_VERTICAL, 8, 0, 0, 0));
+
             TextView titleView = new TextView(context);
             titleView.setLines(1);
             titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             titleView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, resourcesProvider));
             titleView.setEllipsize(TextUtils.TruncateAt.END);
-            cell.addView(titleView, LayoutHelper.createFrameRelatively(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL, 59, 0, 12,
-                0));
-            
+            cell.addView(titleView, LayoutHelper.createFrameRelatively(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL, 52, 0, 8, 0));
+
             AvatarDrawable avatarDrawable = new AvatarDrawable();
             avatarDrawable.setScaleSize(.8f);
             Drawable thumb = avatarDrawable;
@@ -184,7 +185,7 @@ public class BackButtonMenu {
                 titleView.setText(LocaleController.getString(R.string.AllChats));
                 addDivider = true;
             }
-            
+
             cell.setBackground(Theme.getSelectorDrawable(Theme.getColor(Theme.key_listSelector, resourcesProvider), false));
             cell.setOnClickListener(e2 -> {
                 if (scrimPopupWindowRef.get() != null) {
@@ -226,7 +227,7 @@ public class BackButtonMenu {
                 }
                 goToPulledDialog(thisFragment, pDialog);
             });
-            layout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
+            layout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 44, 0, Gravity.NO_GRAVITY, 0, first ? 3 : 0, 0, last ? 3 : 0));
             if (addDivider) {
                 FrameLayout gap = new FrameLayout(context);
                 gap.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuSeparator, resourcesProvider));
@@ -234,9 +235,9 @@ public class BackButtonMenu {
                 layout.addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
             }
         }
-        
+
         if (!hadDialogs) return null;
-        
+
         ActionBarPopupWindow scrimPopupWindow = new ActionBarPopupWindow(layout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT);
         scrimPopupWindowRef.set(scrimPopupWindow);
         scrimPopupWindow.setPauseNotifications(true);
@@ -251,23 +252,23 @@ public class BackButtonMenu {
         scrimPopupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED);
         scrimPopupWindow.getContentView().setFocusableInTouchMode(true);
         layout.setFitItems(true);
-        
-        int popupX = AndroidUtilities.dp(8) - backgroundPaddings.left;
+
+        int popupX = AndroidUtilities.dp(7) - backgroundPaddings.left;
         if (AndroidUtilities.isTablet()) {
             int[] location = new int[2];
             fragmentView.getLocationInWindow(location);
             popupX += location[0];
         }
-        int popupY = (int) (backButton.getBottom() - backgroundPaddings.top - AndroidUtilities.dp(8));
+        int popupY = (int) (backButton.getBottom() - backgroundPaddings.top - AndroidUtilities.dp(1));
         scrimPopupWindow.showAtLocation(fragmentView, Gravity.LEFT | Gravity.TOP, popupX, popupY);
 
 //        try {
 //            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
 //        } catch (Exception ignore) {}
-        
+
         return scrimPopupWindow;
     }
-    
+
     private static ArrayList<PulledDialog> getStackedHistoryForTopic(BaseFragment thisFragment, long currentDialogId, long topicId) {
         ArrayList<PulledDialog> dialogs = new ArrayList<>();
         if (thisFragment == null) {
@@ -296,7 +297,7 @@ public class BackButtonMenu {
             dialogs.add(pulledDialog);
             pulledDialog.stackIndex = ++maxStackIndex;
             pulledDialog.activity = DialogsActivity.class;
-            
+
             pulledDialog = new PulledDialog();
             dialogs.add(pulledDialog);
             pulledDialog.stackIndex = -1;
@@ -312,7 +313,7 @@ public class BackButtonMenu {
         Collections.sort(dialogs, (d1, d2) -> d2.stackIndex - d1.stackIndex);
         return dialogs;
     }
-    
+
     public static void goToPulledDialog(BaseFragment fragment, PulledDialog dialog) {
         if (dialog == null) {
             return;
@@ -346,7 +347,7 @@ public class BackButtonMenu {
             fragment.presentFragment(new DialogsActivity(null), true);
         }
     }
-    
+
     public static ArrayList<PulledDialog> getStackedHistoryDialogs(BaseFragment thisFragment, long ignoreDialogId) {
         ArrayList<PulledDialog> dialogs = new ArrayList<>();
         if (thisFragment == null) {
@@ -438,7 +439,7 @@ public class BackButtonMenu {
         Collections.sort(dialogs, (d1, d2) -> d2.stackIndex - d1.stackIndex);
         return dialogs;
     }
-    
+
     public static void addToPulledDialogs(BaseFragment thisFragment, int stackIndex, TLRPC.Chat chat, TLRPC.User user, TLRPC.TL_forumTopic topic, long dialogId, int folderId,
                                           int filterId) {
         if (chat == null && user == null) {
@@ -461,7 +462,7 @@ public class BackButtonMenu {
                 break;
             }
         }
-        
+
         if (!alreadyAdded) {
             PulledDialog d = new PulledDialog();
             d.activity = ChatActivity.class;
@@ -475,7 +476,7 @@ public class BackButtonMenu {
             parentLayout.getPulledDialogs().add(d);
         }
     }
-    
+
     public static void clearPulledDialogs(BaseFragment thisFragment, int fromIndex) {
         if (thisFragment == null) {
             return;
@@ -493,7 +494,7 @@ public class BackButtonMenu {
             }
         }
     }
-    
+
     public static ActionBarPopupWindow showHistory(BaseFragment thisFragment, View backButton) {
         if (thisFragment == null) {
             return null;
@@ -508,25 +509,25 @@ public class BackButtonMenu {
         if (dialogs.size() <= 0) {
             return null;
         }
-        
+
         ActionBarPopupWindow.ActionBarPopupWindowLayout layout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(context, null);
         android.graphics.Rect backgroundPaddings = new Rect();
         Drawable shadowDrawable = thisFragment.getParentActivity().getResources().getDrawable(R.drawable.popup_fixed_alert).mutate();
         shadowDrawable.getPadding(backgroundPaddings);
         layout.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground));
-        
+
         AtomicReference<ActionBarPopupWindow> scrimPopupWindowRef = new AtomicReference<>();
-        
+
         for (PulledDialog pDialog : dialogs) {
             final TLRPC.Chat chat = pDialog.chat;
             final TLRPC.User user = pDialog.user;
             FrameLayout cell = new FrameLayout(context);
             cell.setMinimumWidth(AndroidUtilities.dp(200));
-            
+
             BackupImageView imageView = new BackupImageView(context);
             imageView.setRoundRadius(AndroidUtilities.dp(32));
             cell.addView(imageView, LayoutHelper.createFrameRelatively(32, 32, Gravity.START | Gravity.CENTER_VERTICAL, 13, 0, 0, 0));
-            
+
             TextView titleView = new TextView(context);
             titleView.setLines(1);
             titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
@@ -534,7 +535,7 @@ public class BackButtonMenu {
             titleView.setEllipsize(TextUtils.TruncateAt.END);
             cell.addView(titleView, LayoutHelper.createFrameRelatively(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL, 59, 0, 12,
                 0));
-            
+
             AvatarDrawable avatarDrawable = new AvatarDrawable();
             avatarDrawable.setScaleSize(.8f);
             Drawable thumb = avatarDrawable;
@@ -569,7 +570,7 @@ public class BackButtonMenu {
                 }
                 titleView.setText(name);
             }
-            
+
             cell.setBackground(Theme.getSelectorDrawable(Theme.getColor(Theme.key_listSelector), false));
             cell.setOnClickListener(e2 -> {
                 if (scrimPopupWindowRef.get() != null) {
@@ -610,7 +611,7 @@ public class BackButtonMenu {
             });
             layout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
         }
-        
+
         ActionBarPopupWindow scrimPopupWindow = new ActionBarPopupWindow(layout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT);
         scrimPopupWindowRef.set(scrimPopupWindow);
         scrimPopupWindow.setPauseNotifications(true);
@@ -625,7 +626,7 @@ public class BackButtonMenu {
         scrimPopupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED);
         scrimPopupWindow.getContentView().setFocusableInTouchMode(true);
         layout.setFitItems(true);
-        
+
         int popupX = AndroidUtilities.dp(8) - backgroundPaddings.left;
         if (AndroidUtilities.isTablet()) {
             int[] location = new int[2];
@@ -634,10 +635,10 @@ public class BackButtonMenu {
         }
         int popupY = (int) (backButton.getBottom() - backgroundPaddings.top - AndroidUtilities.dp(8));
         scrimPopupWindow.showAtLocation(fragmentView, Gravity.LEFT | Gravity.TOP, popupX, popupY);
-        
+
         return scrimPopupWindow;
     }
-    
+
     private static LinkedList<PulledDialog> getRecentDialogs(int currentAccount) {
         LinkedList<PulledDialog> ret = recentDialogs.get(currentAccount);
         if (ret == null) {
@@ -646,10 +647,10 @@ public class BackButtonMenu {
         }
         return ret;
     }
-    
+
     private static final int maxLastAccessedDialogs = 20;
     private static final SparseArray<LinkedList<PulledDialog>> recentDialogs = new SparseArray<>();
-    
+
     public static void addToAccessedDialogs(int currentAccount, TLRPC.Chat chat, TLRPC.User user, long dialogId, int folderId, int filterId) {
         LinkedList<PulledDialog> recents = getRecentDialogs(currentAccount);
         for (int i = 0; i < recents.size(); i++) {
@@ -674,7 +675,7 @@ public class BackButtonMenu {
             recents.get(i).stackIndex = i;
         }
     }
-    
+
     private static void goToPulledDialogWithoutRemove(BaseFragment fragment, PulledDialog dialog) {
         if (dialog == null) {
             return;
