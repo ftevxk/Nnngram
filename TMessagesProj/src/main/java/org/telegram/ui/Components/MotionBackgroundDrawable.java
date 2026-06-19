@@ -133,7 +133,7 @@ public class MotionBackgroundDrawable extends Drawable {
     private boolean rotatingPreview;
 
     private Runnable updateAnimationRunnable = () -> {
-        updateAnimation(true);
+        updateAnimation();
     };
 
     private android.graphics.Rect patternBounds = new android.graphics.Rect();
@@ -307,7 +307,7 @@ public class MotionBackgroundDrawable extends Drawable {
 
     public void setPosAnimationProgress(float posAnimationProgress) {
         this.posAnimationProgress = posAnimationProgress;
-        updateAnimation(true);
+        updateAnimation();
     }
 
     public void switchToNextPosition() {
@@ -428,7 +428,7 @@ public class MotionBackgroundDrawable extends Drawable {
         }
         if (postInvalidateParent) {
             NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.invalidateMotionBackground);
-            updateAnimation(false);
+            updateAnimation();
             AndroidUtilities.cancelRunOnUIThread(updateAnimationRunnable);
             AndroidUtilities.runOnUIThread(updateAnimationRunnable, 16);
         }
@@ -691,7 +691,7 @@ public class MotionBackgroundDrawable extends Drawable {
         }
         canvas.restore();
 
-        updateAnimation(true);
+        updateAnimation();
     }
     public void drawPattern(Canvas canvas) {
         android.graphics.Rect bounds = getBounds();
@@ -834,7 +834,7 @@ public class MotionBackgroundDrawable extends Drawable {
         }
         canvas.restore();
 
-        updateAnimation(true);
+        updateAnimation();
     }
 
     @Override
@@ -1040,15 +1040,15 @@ public class MotionBackgroundDrawable extends Drawable {
         }
         canvas.restore();
 
-        updateAnimation(true);
+        updateAnimation();
     }
 
     public void setAnimationProgressProvider(GenericProvider<MotionBackgroundDrawable, Float> animationProgressProvider) {
         this.animationProgressProvider = animationProgressProvider;
-        updateAnimation(true);
+        updateAnimation();
     }
 
-    public void updateAnimation(boolean invalidate) {
+    public void updateAnimation() {
         long newTime = SystemClock.elapsedRealtime();
         long dt = newTime - lastUpdateTime;
         if (dt > 20) {
@@ -1191,9 +1191,7 @@ public class MotionBackgroundDrawable extends Drawable {
                     }
                 }
             }
-            if (invalidate) {
-                invalidateParent();
-            }
+            invalidateParent();
         }
     }
 

@@ -63,7 +63,6 @@ import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
-import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
@@ -78,7 +77,7 @@ import org.telegram.ui.Components.Paint.Views.EditTextOutline;
 import org.telegram.ui.Components.Paint.Views.LinkPreview;
 import org.telegram.ui.Components.Paint.Views.LocationMarker;
 import org.telegram.ui.Components.Paint.Views.PaintTextOptionsView;
-import org.telegram.ui.Components.RLottieDrawable;
+import org.telegram.ui.Components.RLottieNative;
 import org.telegram.ui.Stories.recorder.PreviewView;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 
@@ -771,7 +770,7 @@ public class TextureRenderer {
             if (entity.bitmap == null || entity.W <= 0 || entity.H <= 0) {
                 return;
             }
-            RLottieDrawable.getFrame(entity.ptr, (int) entity.currentFrame, entity.bitmap, true);
+            RLottieNative.getFrame(entity.ptr, (int) entity.currentFrame, entity.bitmap, true);
             applyRoundRadius(entity, entity.bitmap, (entity.subType & 8) != 0 ? textColor : 0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, stickerTexture[0]);
             GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, entity.bitmap, 0);
@@ -1529,7 +1528,7 @@ public class TextureRenderer {
             }
             entity.bitmap = Bitmap.createBitmap(entity.W, entity.H, Bitmap.Config.ARGB_8888);
             entity.metadata = new int[3];
-            entity.ptr = RLottieDrawable.create(entity.text, null, entity.W, entity.H, entity.metadata, false, null, false, 0);
+            entity.ptr = RLottieNative.create(entity.text, null, entity.W, entity.H, entity.metadata, false, null, false, 0);
             entity.framesPerDraw = entity.metadata[1] / videoFps;
         } else if ((entity.subType & 4) != 0) {
             entity.looped = false;
@@ -1888,7 +1887,7 @@ public class TextureRenderer {
             for (int a = 0, N = mediaEntities.size(); a < N; a++) {
                 VideoEditedInfo.MediaEntity entity = mediaEntities.get(a);
                 if (entity.ptr != 0) {
-                    RLottieDrawable.destroy(entity.ptr);
+                    RLottieNative.destroy(entity.ptr);
                 }
                 if (entity.animatedFileDrawable != null) {
                     entity.animatedFileDrawable.recycle();

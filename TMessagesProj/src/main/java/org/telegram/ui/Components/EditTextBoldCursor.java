@@ -58,7 +58,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -76,6 +75,7 @@ import org.telegram.messenger.LocationController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.XiaomiUtilities;
+import org.telegram.messenger.utils.Choreographer60FpsContent;
 import org.telegram.ui.ActionBar.FloatingActionMode;
 import org.telegram.ui.ActionBar.FloatingToolbar;
 import org.telegram.ui.ActionBar.Theme;
@@ -109,15 +109,7 @@ public class EditTextBoldCursor extends EditTextEffects {
     private SubstringLayoutAnimator hintAnimator;
     float rightHintOffset;
 
-    private Runnable invalidateRunnable = new Runnable() {
-        @Override
-        public void run() {
-            invalidate();
-            if (attachedToWindow != null) {
-                AndroidUtilities.runOnUIThread(this, 500);
-            }
-        }
-    };
+    private final Choreographer60FpsContent.FrameCallback invalidateCallback = d -> invalidate();
 
     private Paint linePaint;
     private Paint activeLinePaint;
@@ -1201,14 +1193,14 @@ public class EditTextBoldCursor extends EditTextEffects {
             FileLog.e(e);
         }
         attachedToWindow = getRootView();
-        AndroidUtilities.runOnUIThread(invalidateRunnable);
+        Choreographer60FpsContent.getInstance().addFrameCallback(invalidateCallback, 2);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         attachedToWindow = null;
-        AndroidUtilities.cancelRunOnUIThread(invalidateRunnable);
+        Choreographer60FpsContent.getInstance().removeFrameCallback(invalidateCallback);
     }
 
     BlurredBackgroundDrawableViewFactory blurredBackgroundDrawableViewFactory;
@@ -1275,7 +1267,7 @@ public class EditTextBoldCursor extends EditTextEffects {
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         }
     }
-    
+
     private void addTranslate(Menu menu) {
         if (!TranslateHelper.getCurrentEditTextTargetLanguage().equals("no") && menu.findItem(R.id.menu_translate) == null) {
             menu.add(Menu.NONE, R.id.menu_translate, 0, LocaleController.getString(R.string.TranslateMessage));
@@ -1296,11 +1288,11 @@ public class EditTextBoldCursor extends EditTextEffects {
             final int selEnd = getSelectionEnd();
             final String originalText = getText().toString();
             final boolean hasSelection = selStart >= 0 && selEnd >= 0 && selStart != selEnd;
-            
+
             String textToTranslate = hasSelection
                 ? originalText.substring(selStart, selEnd)
                 : originalText;
-            
+
             TranslateHelper.translate(textToTranslate, "auto", "en", (translation, sourceLanguage, ignore) -> {
                 AndroidUtilities.runOnUIThread(() -> {
                     CharSequence translatedText = translation.toString();
@@ -1309,14 +1301,14 @@ public class EditTextBoldCursor extends EditTextEffects {
                         SpannableStringBuilder newText = new SpannableStringBuilder(originalText)
                             .replace(selStart, selEnd, translatedText);
                         setText(newText);
-                        
+
                         // Adjust selection to cover the translated portion
                         int newLength = translatedText.length();
                         setSelection(selStart, selStart + newLength);
                     } else {
                         // Replace entire text
                         setText(translatedText);
-                        
+
                         // Select all text if no original selection existed
                         setSelection(0, translatedText.length());
                     }
@@ -1442,8 +1434,4 @@ public class EditTextBoldCursor extends EditTextEffects {
         }
     }
 
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        super.dispatchDraw(canvas);
-    }
 }
