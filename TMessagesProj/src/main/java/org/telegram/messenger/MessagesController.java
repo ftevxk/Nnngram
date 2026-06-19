@@ -17907,8 +17907,8 @@ public class MessagesController extends BaseController implements NotificationCe
             int originalSize = updates.size();
             ArrayList<TLRPC.Update> newUpdates = new ArrayList<>();
             for (TLRPC.Update update : updates) {
-                if (!(update instanceof TLRPC.TL_updateDeleteChannelMessages) &&
-                    !(update instanceof TLRPC.TL_updateDeleteMessages)) {
+                if (!(update instanceof TL_update.TL_updateDeleteChannelMessages) &&
+                    !(update instanceof TL_update.TL_updateDeleteMessages)) {
                     newUpdates.add(update);
                 }
             }
