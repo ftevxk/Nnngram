@@ -236,7 +236,7 @@ public class JoinGroupAlert extends BottomSheet {
                             this::dismiss,
                             err -> {
                                 if (err != null && "INVITE_REQUEST_SENT".equals(err.text)) {
-                                    setOnDismissListener(di -> showBulletin(getContext(), fragment, isChannel));
+                                    setOnDismissListener(di -> showBulletin(getContext(), fragment, bulletinFactory, isChannel));
                                 }
                                 dismiss();
                                 return false;
@@ -255,7 +255,7 @@ public class JoinGroupAlert extends BottomSheet {
                             AndroidUtilities.runOnUIThread(() -> {
                                 MessagesController.getInstance(currentAccount).putUsers(resultWebView.users, false);
                                 BotGuardHelper.getInstance(currentAccount).openGuardBotWebApp(dialogId,
-                                        resultWebView.bot_id, resultWebView.webview);
+                                        resultWebView.bot_id, resultWebView.query_id);
                             });
                             updates = null;
                         } else {
@@ -268,7 +268,7 @@ public class JoinGroupAlert extends BottomSheet {
                             }
                             if (error != null) {
                                 if ("INVITE_REQUEST_SENT".equals(error.text)) {
-                                    setOnDismissListener(di -> showBulletin(getContext(), fragment, isChannel));
+                                    setOnDismissListener(di -> showBulletin(getContext(), fragment, bulletinFactory, isChannel));
                                 } else {
                                     AlertsCreator.processError(currentAccount, error, fragment, request);
                                 }
@@ -365,7 +365,7 @@ public class JoinGroupAlert extends BottomSheet {
                         AndroidUtilities.runOnUIThread(() -> {
                             MessagesController.getInstance(currentAccount).putUsers(resultWebView.users, false);
                             BotGuardHelper.getInstance(currentAccount).openGuardBotWebApp(dialogId,
-                                    resultWebView.bot_id, resultWebView.webview);
+                                    resultWebView.bot_id, resultWebView.query_id);
                         });
                         updates = null;
                     } else {
@@ -432,6 +432,13 @@ public class JoinGroupAlert extends BottomSheet {
         });
     }
 
+    private BulletinFactory bulletinFactory;
+
+    public JoinGroupAlert setBulletinFactory(BulletinFactory bulletinFactory) {
+        this.bulletinFactory = bulletinFactory;
+        return this;
+    }
+
     private Drawable getVerifiedCrossfadeDrawable() {
         Drawable verifiedDrawable = Theme.dialogs_verifiedDrawable;
         Drawable verifiedCheckDrawable = Theme.dialogs_verifiedCheckDrawable;
@@ -439,6 +446,10 @@ public class JoinGroupAlert extends BottomSheet {
     }
 
     public static void showBulletin(Context context, BaseFragment fragment, boolean isChannel) {
+        showBulletin(context, fragment, BulletinFactory.of(fragment), isChannel);
+    }
+
+    public static void showBulletin(Context context, BaseFragment fragment, BulletinFactory bulletinFactory, boolean isChannel) {
         if (context == null) {
             if (fragment != null) {
                 context = fragment.getContext();
@@ -448,6 +459,10 @@ public class JoinGroupAlert extends BottomSheet {
             }
             return;
         }
+        if (bulletinFactory == null) {
+            bulletinFactory = BulletinFactory.of(fragment);
+        }
+
         Bulletin.TwoLineLottieLayout layout = new Bulletin.TwoLineLottieLayout(context, fragment.getResourceProvider());
         layout.imageView.setAnimation(R.raw.timer_3, 28, 28);
         layout.titleTextView.setText(getString(R.string.RequestToJoinSent));
@@ -455,7 +470,7 @@ public class JoinGroupAlert extends BottomSheet {
                 ? getString(R.string.RequestToJoinChannelSentDescription)
                 : getString(R.string.RequestToJoinGroupSentDescription);
         layout.subtitleTextView.setText(subTitle);
-        Bulletin.make(fragment, layout, Bulletin.DURATION_LONG).show();
+        bulletinFactory.create(layout, Bulletin.DURATION_LONG).show();
     }
 
     private CharSequence ellipsize(TextView textView, TLRPC.ChatInvite chatInvite, int pos) {

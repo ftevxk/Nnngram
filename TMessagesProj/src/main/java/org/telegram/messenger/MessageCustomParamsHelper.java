@@ -24,6 +24,7 @@ import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.OutputSerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_iv;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,6 +48,7 @@ public class MessageCustomParamsHelper {
             message.translatedToLanguage == null &&
             message.translatedPoll == null &&
             message.translatedText == null &&
+            message.translatedRichMessage == null &&
             message.errorAllowedPriceStars == 0 &&
             message.errorNewPriceStars == 0 &&
             message.params == null
@@ -65,6 +67,7 @@ public class MessageCustomParamsHelper {
         toMessage.translatedToLanguage = fromMessage.translatedToLanguage;
         toMessage.translatedPoll = fromMessage.translatedPoll;
         toMessage.translatedText = fromMessage.translatedText;
+        toMessage.translatedRichMessage = fromMessage.translatedRichMessage;
         toMessage.errorAllowedPriceStars = fromMessage.errorAllowedPriceStars;
         toMessage.errorNewPriceStars = fromMessage.errorNewPriceStars;
         toMessage.translatedVoiceTranscription = fromMessage.translatedVoiceTranscription;
@@ -138,6 +141,8 @@ public class MessageCustomParamsHelper {
             flags = setFlag(flags, FLAG_11, message.translatedSummaryText != null);
             flags = setFlag(flags, FLAG_12, message.translatedSummaryLanguage != null);
             flags |= message.params != null ? 512 : 0;
+
+            flags = setFlag(flags, FLAG_13, message.translatedRichMessage != null);
         }
 
         @Override
@@ -199,6 +204,9 @@ public class MessageCustomParamsHelper {
                     stream.writeInt32(0);
                 }
             }
+            if (hasFlag(flags, FLAG_13)) {
+                message.translatedRichMessage.serializeToStream(stream);
+            }
         }
 
         @Override
@@ -258,6 +266,9 @@ public class MessageCustomParamsHelper {
                 } else {
                     message.params = null;
                 }
+            }
+            if (hasFlag(flags, FLAG_13)) {
+                message.translatedRichMessage = TL_iv.RichMessage.TLdeserialize(stream, stream.readInt32(exception), exception);
             }
         }
 

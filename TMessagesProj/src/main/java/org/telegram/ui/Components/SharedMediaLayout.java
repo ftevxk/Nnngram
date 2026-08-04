@@ -1069,6 +1069,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     long minDuration = Config.getSearchVideoMinDuration();
                     for (int a = 0; a < arr.size(); a++) {
                         MessageObject obj = arr.get(a);
+                        if (obj.isEphemeral()) {
+                            continue;
+                        }
                         if (topicId != 0 && topicId != MessageObject.getTopicId(currentAccount, obj.messageOwner, true)) {
                             continue;
                         }
