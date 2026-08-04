@@ -501,6 +501,10 @@ public class TextureViewRenderer extends TextureView
         surfaceWidth = surfaceHeight = 0;
         updateSurfaceSize();
         eglRenderer.onSurfaceTextureAvailable(surface, width, height);
+        if (parentSink instanceof VoIPService.ProxyVideoSink) {
+            VoIPService.ProxyVideoSink proxyVideoSink = (VoIPService.ProxyVideoSink) parentSink;
+            proxyVideoSink.setTarget(this);
+        }
     }
 
     @Override
@@ -512,11 +516,6 @@ public class TextureViewRenderer extends TextureView
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-        if (parentSink instanceof VoIPService.ProxyVideoSink) {
-            VoIPService.ProxyVideoSink proxyVideoSink = (VoIPService.ProxyVideoSink) parentSink;
-            proxyVideoSink.removeTarget(this);
-            proxyVideoSink.removeBackground(this);
-        }
         eglRenderer.onSurfaceTextureDestroyed(surfaceTexture);
         return true;
     }
