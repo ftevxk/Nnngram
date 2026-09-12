@@ -23,6 +23,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_keyboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -249,25 +250,30 @@ public class MessageTextExtractor {
         }
 
         TLRPC.ReplyMarkup markup = messageObject.messageOwner.reply_markup;
-        if (markup.rows == null) {
+        if (!(markup instanceof TLRPC.TL_replyKeyboardMarkup)) {
+            return "";
+        }
+
+        TLRPC.TL_replyKeyboardMarkup keyboard = (TLRPC.TL_replyKeyboardMarkup) markup;
+        if (keyboard.rows == null) {
             return "";
         }
 
         StringBuilder buttonText = new StringBuilder();
 
-        for (TLRPC.TL_keyboardButtonRow row : markup.rows) {
+        for (TL_keyboard.KeyboardButtonRow row : keyboard.rows) {
             if (row.buttons == null) continue;
 
-            for (TLRPC.KeyboardButton button : row.buttons) {
+            for (TL_keyboard.KeyboardButton button : row.buttons) {
                 if (!TextUtils.isEmpty(button.text)) {
                     buttonText.append(button.text).append(" ");
                 }
 
                 //wd URL按钮的URL也提取（可能包含广告链接）
-                if (button instanceof TLRPC.TL_keyboardButtonUrl) {
-                    TLRPC.TL_keyboardButtonUrl urlButton = (TLRPC.TL_keyboardButtonUrl) button;
-                    if (!TextUtils.isEmpty(urlButton.url)) {
-                        buttonText.append(urlButton.url).append(" ");
+                if (button.type instanceof TL_keyboard.TL_buttonTypeSimpleWebView) {
+                    String url = ((TL_keyboard.TL_buttonTypeSimpleWebView) button.type).url;
+                    if (!TextUtils.isEmpty(url)) {
+                        buttonText.append(url).append(" ");
                     }
                 }
             }

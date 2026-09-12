@@ -80,6 +80,7 @@ import org.telegram.tgnet.tl.TL_phone;
 import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.tgnet.tl.TL_chatlists;
+import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.ActionBarLayout;
@@ -21904,24 +21905,26 @@ public class MessagesController extends BaseController implements NotificationCe
             }
         }
 
-        if (message.reply_markup != null && message.reply_markup.rows != null && !message.reply_markup.rows.isEmpty()) {
-            for (int r = 0; r < message.reply_markup.rows.size(); r++) {
-                TLRPC.TL_keyboardButtonRow row = message.reply_markup.rows.get(r);
-                if (row == null || row.buttons == null) {
-                    continue;
-                }
-                for (int b = 0; b < row.buttons.size(); b++) {
-                    TLRPC.KeyboardButton button = row.buttons.get(b);
-                    if (button == null) {
+        if (message.reply_markup instanceof TLRPC.TL_replyKeyboardMarkup) {
+            TLRPC.TL_replyKeyboardMarkup markup = (TLRPC.TL_replyKeyboardMarkup) message.reply_markup;
+            if (markup.rows != null && !markup.rows.isEmpty()) {
+                for (TL_keyboard.KeyboardButtonRow row : markup.rows) {
+                    if (row == null || row.buttons == null) {
                         continue;
                     }
-                    if (!TextUtils.isEmpty(button.text)) {
-                        sb.append(' ').append(button.text);
-                    }
-                    if (button instanceof TLRPC.TL_keyboardButtonUrl) {
-                        String url = ((TLRPC.TL_keyboardButtonUrl) button).url;
-                        if (!TextUtils.isEmpty(url)) {
-                            sb.append(' ').append(url);
+                    for (int b = 0; b < row.buttons.size(); b++) {
+                        TL_keyboard.KeyboardButton button = row.buttons.get(b);
+                        if (button == null) {
+                            continue;
+                        }
+                        if (!TextUtils.isEmpty(button.text)) {
+                            sb.append(' ').append(button.text);
+                        }
+                        if (button.type instanceof TL_keyboard.TL_buttonTypeSimpleWebView) {
+                            String url = ((TL_keyboard.TL_buttonTypeSimpleWebView) button.type).url;
+                            if (!TextUtils.isEmpty(url)) {
+                                sb.append(' ').append(url);
+                            }
                         }
                     }
                 }
