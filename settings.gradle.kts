@@ -37,12 +37,11 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
-        // 依赖优先走镜像，减轻直连 Maven Central 的 TLS/网络问题
-        maven("https://maven.aliyun.com/repository/google")
-        maven("https://maven.aliyun.com/repository/public")
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://maven.aliyun.com/repository/public")
         maven("https://jitpack.io")
         maven("https://developer.huawei.com/repo/")
         maven("https://developer.hihonor.com/repo")
