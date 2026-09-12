@@ -35,7 +35,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         // 依赖优先走镜像，减轻直连 Maven Central 的 TLS/网络问题
         maven("https://maven.aliyun.com/repository/google")
@@ -69,7 +69,9 @@ develocity {
 rootProject.name = "Nnngram"
 include(
     ":TMessagesProj",
+    ":jlatexmath",
     ":libs:tcp2ws",
     ":libs:pangu",
-    ":libs:ksp"
+    ":libs:ksp",
 )
+project(":jlatexmath").projectDir = file("TMessagesProj/lib/jlatexmath/jlatexmath")

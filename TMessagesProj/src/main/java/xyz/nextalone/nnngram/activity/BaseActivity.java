@@ -266,6 +266,7 @@ public abstract class BaseActivity extends BaseFragment {
     protected void updateRows() {
         rowCount = 0;
         rowMap.clear();
+        rowMapReverse.clear();
     }
 
     public int getBaseGuid() {

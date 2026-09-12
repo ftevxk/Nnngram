@@ -20,3 +20,4 @@ libtmessages.*.so
 android-sdk/
 .DS_Store
 **/.DS_Store
+TMessagesProj/jni/ffmpeg/build_android
