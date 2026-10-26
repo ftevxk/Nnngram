@@ -79,6 +79,7 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilteredSearchView;
+import xyz.nextalone.gen.Config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -966,6 +967,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         recentSearchObject.date = (int) (System.currentTimeMillis() / 1000);
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        putRecentSearch(currentAccount, did);
+    }
+
+    public static void putRecentSearch(int currentAccount, long did) {
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
                 SQLitePreparedStatement state = MessagesStorage.getInstance(currentAccount).getDatabase().executeFast("REPLACE INTO search_recent VALUES(?, ?)");
@@ -974,6 +979,16 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 state.bindInteger(2, (int) (System.currentTimeMillis() / 1000));
                 state.step();
                 state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public static void clearRecentSearch(int currentAccount) {
+        MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
+            try {
+                MessagesStorage.getInstance(currentAccount).getDatabase().executeFast("DELETE FROM search_recent WHERE 1").stepThis().dispose();
             } catch (Exception e) {
                 FileLog.e(e);
             }
@@ -1010,6 +1025,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         final StringBuilder finalQueryFilter = queryFilter;
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        if (!searchWas) {
+            clearRecentSearch(currentAccount);
+            return;
+        }
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
                 finalQueryFilter.insert(0, "DELETE FROM search_recent WHERE ");
@@ -1230,7 +1249,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 ConnectionsManager.getInstance(currentAccount).cancelRequest(sponsoredReqId, true);
                 sponsoredReqId = 0;
             }
-            if (query == null || query.length() < 4 || UserConfig.getInstance(currentAccount).isPremium() && MessagesController.getInstance(currentAccount).isSponsoredDisabled()) {
+            if (Config.blockSponsorAds || query == null || query.length() < 4 || UserConfig.getInstance(currentAccount).isPremium() && MessagesController.getInstance(currentAccount).isSponsoredDisabled()) {
                 sponsoredQuery = null;
             } else {
                 final TLRPC.TL_contacts_getSponsoredPeers req = new TLRPC.TL_contacts_getSponsoredPeers();
@@ -2526,7 +2545,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             setOrientation(LinearLayout.VERTICAL);
 
             BackupImageView imageView = new BackupImageView(context);
-            imageView.setImageDrawable(new RLottieDrawable(R.raw.utyan_empty, "utyan_empty", dp(120), dp(120)));
+            imageView.setImageDrawable(new RLottieDrawable(R.raw.utyan_empty, dp(120), dp(120)));
             addView(imageView, LayoutHelper.createLinear(120, 120, Gravity.CENTER_HORIZONTAL, 0, 27, 0, 0));
 
             TextView titleView = new TextView(context);
