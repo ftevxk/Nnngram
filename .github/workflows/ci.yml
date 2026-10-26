@@ -59,8 +59,8 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: |
-                      ${{ env.ANDROID_HOME }}/ndk/28.1.13356709
-                  key: ${{ runner.os }}-android-ndk-28.1.13356709
+                      ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
+                  key: ${{ runner.os }}-android-ndk-28.2.13676358
 
             - name: Get short SHA
               run: |
@@ -90,10 +90,7 @@ jobs:
             - name: Setup Android SDK Tools
               uses: android-actions/setup-android@v3
               with:
-                  api-level: 36
-                  build-tools: 36.0.2
-                  ndk: 28.1.13356709
-                  cache: true
+                  packages: platform-tools
 
             - name: Prepare Environment
               run: |
