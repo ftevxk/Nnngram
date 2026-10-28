@@ -4948,6 +4948,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     }
                     closePhoto(true, false);
                 } else if (id == gallery_menu_save) {
+                    if (pageBlocksAdapter != null && !allowShare) {
+                        return;
+                    }
                     if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && parentActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                         parentActivity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 4);
                         return;
@@ -14140,6 +14143,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
         menuItem.hideSubItem(gallery_menu_set_as_main);
         menuItem.hideSubItem(gallery_menu_delete);
         menuItem.hideSubItem(gallery_menu_translate);
+        menuItem.hideSubItem(gallery_menu_cancel_loading);
         speedItem.setVisibility(View.GONE);
         speedGap.setVisibility(View.GONE);
         videoItem.setVisibility(View.GONE);
@@ -15120,7 +15124,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                     }
                     if (isLivePhoto && object instanceof MediaController.PhotoEntry) {
                         final MediaController.PhotoEntry entry = (MediaController.PhotoEntry) object;
-                        compressItem.setVisibility(sendPhotoTypeIsGif || sendPhotoTypeIsPollMedia ? View.GONE : View.VISIBLE);
+                        compressItem.setVisibility(sendPhotoTypeIsGif || sendPhotoTypeIsPollMedia || sendPhotoType == SELECT_TYPE_QR ? View.GONE : View.VISIBLE);
                         compressItem.setPhotoState(highQuality);
                     }
                 } else {
@@ -15135,7 +15139,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                     isCurrentVideo = false;
                     if (object instanceof MediaController.PhotoEntry && !((MediaController.PhotoEntry) object).isVideo) {
                         final MediaController.PhotoEntry entry = (MediaController.PhotoEntry) object;
-                        if (!entry.isVideo && sendPhotoType != SELECT_TYPE_STICKER && (currentIndex == index ? getCurrentVideoEditedInfo() : entry.editedInfo) == null) {
+                        if (!entry.isVideo && sendPhotoType != SELECT_TYPE_STICKER && sendPhotoType != SELECT_TYPE_QR && (currentIndex == index ? getCurrentVideoEditedInfo() : entry.editedInfo) == null) {
                             compressItem.setVisibility(sendPhotoTypeIsGif || sendPhotoTypeIsPollMedia ? View.GONE : View.VISIBLE);
                             compressItem.setPhotoState(highQuality);
                         } else {
@@ -15263,7 +15267,7 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
             if (switchingToIndex < 0 || switchingToIndex >= size) {
                 return;
             }
-            allowShare = Config.ignoreChatStrict || !MessagesController.getInstance(currentAccount).isPeerNoForwards(currentDialogId) && (currentMessageObject == null || !currentMessageObject.hasRevealedExtendedMedia());
+            allowShare = Config.ignoreChatStrict || !MessagesController.getInstance(currentAccount).isPeerNoForwards(currentDialogId) && (currentMessageObject == null || !currentMessageObject.hasRevealedExtendedMedia()) && !isPageBlocksNoForwards(pageBlocksAdapter);
             TL_iv.PageBlock pageBlock = pageBlocksAdapter.get(switchingToIndex);
             caption = pageBlocksAdapter.getCaption(switchingToIndex);
             isVideo = pageBlocksAdapter.isVideo(switchingToIndex);
@@ -15314,8 +15318,8 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
                         title = getString(R.string.AttachPhoto);
                     }
                 }
-                galleryButton.setVisibility(View.VISIBLE);
-                galleryGap.setVisibility(View.VISIBLE);
+                galleryButton.setVisibility(allowShare ? View.VISIBLE : View.GONE);
+                galleryGap.setVisibility(allowShare ? View.VISIBLE : View.GONE);
                 menuItem.showSubItem(gallery_menu_save);
                 menuItem.showSubItem(gallery_menu_save_messages);
                 menuItem.hideSubItem(gallery_menu_savegif);
@@ -17544,7 +17548,8 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
             if (!Config.allowScreenshotOnNoForwardChat && (chatActivity != null && chatActivity.getCurrentEncryptedChat() != null ||
                 avatarsDialogId != 0 && MessagesController.getInstance(currentAccount).isPeerNoForwards(avatarsDialogId) ||
                 messageObject != null && (MessagesController.getInstance(currentAccount).isPeerNoForwards(messageObject.getDialogId()) ||
-                (messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) || messageObject != null && messageObject.hasRevealedExtendedMedia()
+                (messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) || messageObject != null && messageObject.hasRevealedExtendedMedia() ||
+                isPageBlocksNoForwards(pageBlocksAdapter)
             )) {
                 windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SECURE;
                 AndroidUtilities.logFlagSecure();
@@ -19547,6 +19552,20 @@ accountInstance.getUserConfig().getClientUserId(), false, false, true, 0, 0);
 
     private boolean shouldMessageObjectAutoPlayed(MessageObject messageObject) {
         return messageObject != null && messageObject.isVideo() && (messageObject.mediaExists || messageObject.attachPathExists || messageObject.hasVideoQualities() || messageObject.canStreamVideo() && SharedConfig.streamMedia) && SharedConfig.isAutoplayVideo();
+    }
+
+    private boolean isPageBlocksNoForwards(PageBlocksAdapter adapter) {
+        if (adapter == null) {
+            return false;
+        }
+        // rich messages open their media as page blocks without a MessageObject/dialogId,
+        // so protected content has to be resolved from the adapter's parent message
+        final Object parent = adapter.getParentObject();
+        if (parent instanceof MessageObject && ((MessageObject) parent).messageOwner != null) {
+            final MessageObject messageObject = (MessageObject) parent;
+            return MessagesController.getInstance(currentAccount).isPeerNoForwards(messageObject.getDialogId()) || messageObject.messageOwner.noforwards || messageObject.hasRevealedExtendedMedia();
+        }
+        return false;
     }
 
     private boolean shouldIndexAutoPlayed(int index) {
