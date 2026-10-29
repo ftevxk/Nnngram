@@ -48,12 +48,10 @@ jobs:
       - name: Prepare Environment
         run: |
             echo "Removing large packages"
-            sudo apt-get remove -y '^dotnet-.*' aspnetcore-targeting-pack-6.0
-            sudo apt-get remove -y '^llvm-.*'
-            sudo apt-get remove -y 'php.*'
-            sudo apt-get remove -y '^mongodb-.*'
-            sudo apt-get remove -y '^mysql-.*'
-            sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+            # the runner image changes what it ships, and apt-get remove fails the job on a package it cannot find
+            installed=$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' | awk '$1 == "ii" {print $2}')
+            pkgs=$(echo "$installed" | grep -E '^(dotnet-|llvm-|mongodb-|mysql-)|php|^(aspnetcore-targeting-pack-6\.0|azure-cli|google-chrome-stable|firefox|powershell|mono-devel|libgl1-mesa-dri)$' || true)
+            [ -z "$pkgs" ] || sudo apt-get remove -y $pkgs
             sudo apt-get autoremove -y
             sudo apt-get clean
             echo "Removing large directories"

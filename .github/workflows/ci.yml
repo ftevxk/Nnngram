@@ -54,12 +54,10 @@ jobs:
       - name: Prepare Environment
         run: |
             echo "Removing large packages"
-            sudo apt-get remove -y '^dotnet-.*' aspnetcore-targeting-pack-6.0
-            sudo apt-get remove -y '^llvm-.*'
-            sudo apt-get remove -y 'php.*'
-            sudo apt-get remove -y '^mongodb-.*'
-            sudo apt-get remove -y '^mysql-.*'
-            sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+            # the runner image changes what it ships, and apt-get remove fails the job on a package it cannot find
+            installed=$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' | awk '$1 == "ii" {print $2}')
+            pkgs=$(echo "$installed" | grep -E '^(dotnet-|llvm-|mongodb-|mysql-)|php|^(aspnetcore-targeting-pack-6\.0|azure-cli|google-chrome-stable|firefox|powershell|mono-devel|libgl1-mesa-dri)$' || true)
+            [ -z "$pkgs" ] || sudo apt-get remove -y $pkgs
             sudo apt-get autoremove -y
             sudo apt-get clean
             echo "Removing large directories"
@@ -101,6 +99,10 @@ jobs:
     name: Upload Release
     if: ${{ github.event_name != 'pull_request' && success() && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Read last-sent SHA falls back to the last successful run's head commit
+      actions: read
     needs:
       - build
       - telegram-bot-api
@@ -121,14 +123,25 @@ jobs:
             ci-last-sent-${{ github.ref_name }}-
       - name: Read last-sent SHA
         id: last_sent
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -f .ci-last-sent-sha ]; then
             sha=$(tr -d '[:space:]' < .ci-last-sent-sha)
             echo "sha=$sha" >> "$GITHUB_OUTPUT"
             echo "last sent: $sha"
           else
-            echo "sha=" >> "$GITHUB_OUTPUT"
-            echo "no cached last-sent sha (first run or evicted)"
+            # The cache is evicted after 7 days without access, so a quiet week
+            # would otherwise shrink the changelog to this push's own commits.
+            # A run only succeeds after its upload, so its head commit was sent.
+            sha=$(gh run list --repo "${{ github.repository }}" --workflow ci.yml --branch "${{ github.ref_name }}" \
+              --status success --limit 1 --json headSha --jq '.[0].headSha // ""')
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            if [ -n "$sha" ]; then
+              echo "no cached last-sent sha; using last successful run: $sha"
+            else
+              echo "no cached last-sent sha and no successful run (first run)"
+            fi
           fi
       - name: Donwload Artifacts
         uses: actions/download-artifact@v4
